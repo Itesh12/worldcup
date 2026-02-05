@@ -28,6 +28,13 @@ export default function UserMatchesPage() {
 
   useEffect(() => {
     handleAutoSync();
+
+    // 30s silent background polling for performance & leaderboard
+    const interval = setInterval(() => {
+      fetchDashboardStats(true);
+    }, 30000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const handleAutoSync = async () => {
@@ -43,12 +50,16 @@ export default function UserMatchesPage() {
     }
   };
 
-  const fetchDashboardStats = async () => {
+  const fetchDashboardStats = async (silent = false) => {
     try {
-      setStatsLoading(true);
+      if (!silent) setStatsLoading(true);
+
+      const headers: any = {};
+      if (silent) headers['x-silent-fetch'] = 'true';
+
       const [statsRes, leaderboardRes] = await Promise.all([
-        fetch("/api/user/stats"),
-        fetch("/api/leaderboard?limit=3")
+        fetch("/api/user/stats", { headers }),
+        fetch("/api/leaderboard?limit=3", { headers })
       ]);
 
       if (statsRes.ok) {
@@ -60,7 +71,7 @@ export default function UserMatchesPage() {
     } catch (err) {
       console.error("Failed to fetch dashboard stats", err);
     } finally {
-      setStatsLoading(false);
+      if (!silent) setStatsLoading(false);
     }
   };
 

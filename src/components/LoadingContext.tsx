@@ -17,13 +17,23 @@ let onCountChange: (count: number) => void = () => { };
 if (typeof window !== 'undefined') {
     const originalFetch = window.fetch;
     window.fetch = async (...args) => {
-        activeRequests++;
-        onCountChange(activeRequests);
+        const options = args[1] as RequestInit | undefined;
+        const isSilent = options?.headers &&
+            ((options.headers as any)['x-silent-fetch'] === 'true' ||
+                (options.headers as any).get?.('x-silent-fetch') === 'true');
+
+        if (!isSilent) {
+            activeRequests++;
+            onCountChange(activeRequests);
+        }
+
         try {
             return await originalFetch(...args);
         } finally {
-            activeRequests = Math.max(0, activeRequests - 1);
-            onCountChange(activeRequests);
+            if (!isSilent) {
+                activeRequests = Math.max(0, activeRequests - 1);
+                onCountChange(activeRequests);
+            }
         }
     };
 }
