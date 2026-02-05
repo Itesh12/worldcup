@@ -68,15 +68,22 @@ export async function performMatchSync() {
             );
         }
 
-        // Cleanup: Remove matches that are no longer present in the source scraper
-        // (This replaces the aggressive deleteMany({}) to prevent ID churning)
-        const cleanupResult = await Match.deleteMany({
-            externalMatchId: { $nin: syncedExternalIds }
-        });
+        /* 
+           Cleanup: Remove matches that are no longer present in the source scraper
+           (This replaces the aggressive deleteMany({}) to prevent ID churning)
+           
+           CRITICAL: Disabling this for now because finished matches (e.g. from yesterday)
+           fall out of the scraper's "recent" list, causing them to be deleted along 
+           with all associated user slots and stats.
+        
+           const cleanupResult = await Match.deleteMany({
+               externalMatchId: { $nin: syncedExternalIds }
+           });
 
-        if (cleanupResult.deletedCount > 0) {
-            console.log(`Match Sync Utility - Removed ${cleanupResult.deletedCount} outdated matches`);
-        }
+           if (cleanupResult.deletedCount > 0) {
+               console.log(`Match Sync Utility - Removed ${cleanupResult.deletedCount} outdated matches`);
+           }
+        */
 
         console.log(`Match Sync Utility - Successfully synced ${matchesToSync.length} matches (IDs preserved)`);
 
