@@ -7,7 +7,7 @@ const MatchSchema = new mongoose.Schema({
         shortName: { type: String, required: true },
         logo: { type: String }
     }],
-    status: { type: String, enum: ['upcoming', 'live', 'finished'], default: 'upcoming' },
+    status: { type: String, enum: ['upcoming', 'live', 'finished', 'completed', 'result', 'settled'], default: 'upcoming' },
     startTime: { type: Date, required: true },
     venue: { type: String },
     result: { type: String }
