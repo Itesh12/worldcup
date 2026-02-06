@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Users, Trophy, Activity, TrendingUp, ShieldCheck, Clock, CheckCircle, Ticket, Medal, Flame, ArrowLeft } from "lucide-react";
+import { Users, Trophy, Activity, TrendingUp, ShieldCheck, Clock, CheckCircle, Ticket, Medal, Flame, ArrowLeft, Trash2, AlertTriangle, X } from "lucide-react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 
@@ -37,6 +37,11 @@ export default function AdminDashboardPage() {
     const [data, setData] = useState<AnalyticsData | null>(null);
     const [loading, setLoading] = useState(true);
 
+    // Reset Modal State
+    const [showResetModal, setShowResetModal] = useState(false);
+    const [resetConfirmation, setResetConfirmation] = useState("");
+    const [resetting, setResetting] = useState(false);
+
     useEffect(() => {
         fetchAnalytics();
     }, []);
@@ -56,6 +61,26 @@ export default function AdminDashboardPage() {
         }
     };
 
+    const handleResetDatabase = async () => {
+        setResetting(true);
+        try {
+            const res = await fetch("/api/admin/reset-db", { method: "POST" });
+            const json = await res.json();
+
+            if (res.ok) {
+                alert("Database Reset Successfully!\n\n" + JSON.stringify(json.details, null, 2));
+                window.location.reload();
+            } else {
+                alert("Failed: " + json.error);
+                setResetting(false);
+            }
+        } catch (error) {
+            console.error(error);
+            alert("An error occurred.");
+            setResetting(false);
+        }
+    };
+
     if (loading) {
         return (
             <div className="flex h-[50vh] items-center justify-center">
@@ -68,6 +93,78 @@ export default function AdminDashboardPage() {
 
     return (
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 relative">
+            {/* Reset Confirmation Modal */}
+            {showResetModal && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setShowResetModal(false)} />
+                    <div className="relative w-full max-w-lg bg-[#0f172a] border border-red-500/30 rounded-[2rem] p-8 shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
+                        {/* Background Effects */}
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-red-500/10 blur-[80px] rounded-full pointer-events-none" />
+                        <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-red-600 via-orange-500 to-red-600" />
+
+                        <button
+                            onClick={() => setShowResetModal(false)}
+                            className="absolute top-6 right-6 p-2 rounded-full bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
+                        >
+                            <X className="w-5 h-5" />
+                        </button>
+
+                        <div className="flex flex-col items-center text-center">
+                            <div className="w-16 h-16 rounded-2xl bg-red-500/10 flex items-center justify-center border border-red-500/20 mb-6 shadow-lg shadow-red-500/10">
+                                <AlertTriangle className="w-8 h-8 text-red-500" />
+                            </div>
+
+                            <h2 className="text-2xl font-black text-white uppercase tracking-tight mb-2">Nuclear Option</h2>
+                            <p className="text-slate-400 text-sm font-medium leading-relaxed max-w-sm mb-8">
+                                You are about to wipe the entire database. This deletes
+                                <span className="text-red-400 font-bold"> matches, user stats, and assignments</span>.
+                                <br />Admin accounts will be preserved.
+                            </p>
+
+                            <div className="w-full bg-red-950/20 border border-red-500/20 rounded-xl p-4 mb-6 relative overflow-hidden">
+                                <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10 mix-blend-overlay pointer-events-none" />
+                                <label className="block text-[10px] font-black text-red-400 uppercase tracking-widest mb-2 text-left relative z-10">
+                                    Type "RESET" to confirm
+                                </label>
+                                <input
+                                    type="text"
+                                    value={resetConfirmation}
+                                    onChange={(e) => setResetConfirmation(e.target.value.toUpperCase())}
+                                    placeholder="RESET"
+                                    className="w-full bg-slate-900 border border-red-500/30 rounded-lg px-4 py-3 text-white font-black tracking-[0.2em] placeholder:text-slate-700 focus:outline-none focus:border-red-500 transition-all text-center uppercase relative z-10"
+                                />
+                            </div>
+
+                            <div className="flex gap-3 w-full">
+                                <button
+                                    onClick={() => setShowResetModal(false)}
+                                    className="flex-1 py-4 rounded-xl bg-slate-800 text-slate-300 font-bold hover:bg-slate-700 transition-all uppercase tracking-wider text-xs"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleResetDatabase}
+                                    disabled={resetConfirmation !== "RESET" || resetting}
+                                    className="flex-1 py-4 rounded-xl bg-red-600 text-white font-black hover:bg-red-500 transition-all uppercase tracking-wider text-xs shadow-lg shadow-red-600/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                >
+                                    {resetting ? (
+                                        <>
+                                            <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                            Wiping...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Trash2 className="w-4 h-4" />
+                                            Confirm Wipe
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Premium Dashboard Header */}
             <header className="sticky top-0 z-50 bg-[#050B14]/80 backdrop-blur-xl border-b border-white/5 py-6">
                 <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -335,6 +432,36 @@ export default function AdminDashboardPage() {
                                 <div className="text-3xl font-black text-white tracking-tighter">{data.matches.finished}</div>
                                 <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-1 text-center">Settled</div>
                             </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* DANGER ZONE - Database Reset */}
+                <div className="mt-20 border-t border-red-500/20 pt-10">
+                    <div className="bg-red-500/5 border border-red-500/10 rounded-[32px] p-8 md:p-12 relative overflow-hidden group">
+                        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10 mix-blend-overlay" />
+                        <div className="absolute -right-20 -bottom-20 w-64 h-64 bg-red-500/10 blur-[100px] rounded-full pointer-events-none" />
+
+                        <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
+                            <div className="max-w-2xl">
+                                <div className="flex items-center gap-4 mb-4">
+                                    <div className="w-12 h-12 rounded-2xl bg-red-500/10 flex items-center justify-center border border-red-500/20">
+                                        <AlertTriangle className="w-6 h-6 text-red-500" />
+                                    </div>
+                                    <h3 className="text-2xl font-black text-white tracking-tight uppercase">Danger Zone</h3>
+                                </div>
+                                <p className="text-slate-400 font-medium leading-relaxed">
+                                    Perform a hard reset of the entire platform database. This action will permanently delete all matches, assignments, analytics, and standard user accounts. <span className="text-red-400 font-bold">Admin accounts will be preserved.</span>
+                                </p>
+                            </div>
+
+                            <button
+                                onClick={() => setShowResetModal(true)}
+                                className="group relative px-8 py-4 bg-red-500 hover:bg-red-600 text-white font-black uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-red-500/20 hover:shadow-red-500/40 active:scale-95 flex items-center gap-3 whitespace-nowrap"
+                            >
+                                <Trash2 className="w-5 h-5 group-hover:rotate-12 transition-transform" />
+                                Hard Reset Database
+                            </button>
                         </div>
                     </div>
                 </div>
