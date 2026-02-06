@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { redirect } from "next/navigation";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
+import { AdminLayoutWrapper } from "@/components/admin/AdminLayoutWrapper";
 
 export default async function AdminLayout({
     children,
@@ -15,16 +16,8 @@ export default async function AdminLayout({
     }
 
     return (
-        <div className="flex h-screen bg-background text-white">
-            <AdminSidebar />
-
-            {/* Main Content */}
-            <main className="flex-1 overflow-y-auto bg-[url('/grid-pattern.svg')] bg-fixed relative">
-                <div className="absolute inset-0 bg-[#050B14]/90 pointer-events-none" />
-                <div className="relative z-10">
-                    {children}
-                </div>
-            </main>
-        </div>
+        <AdminLayoutWrapper>
+            {children}
+        </AdminLayoutWrapper>
     );
 }

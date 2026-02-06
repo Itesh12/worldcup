@@ -185,7 +185,7 @@ export default function MatchSlotsPage({ params }: { params: Promise<{ id: strin
 
             {/* Page Header Area */}
             <div className="max-w-7xl mx-auto px-4 pt-12 relative z-10">
-                <p className="text-slate-400 font-medium italic">Strategic assignment of player slots for 10 total positions.</p>
+                <p className="text-slate-400 font-medium italic">Strategic assignment of player slots for 8 total positions.</p>
             </div>
 
             {/* Innings Grid - Only show if slots are generated */}
@@ -199,12 +199,12 @@ export default function MatchSlotsPage({ params }: { params: Promise<{ id: strin
                                         <span className="w-10 h-10 rounded-xl bg-indigo-600/20 border border-indigo-500/30 text-indigo-400 flex items-center justify-center text-lg font-black shadow-lg shadow-indigo-500/10">
                                             {innings}
                                         </span>
-                                        Innings {innings} <span className="text-slate-500 font-bold uppercase text-xs tracking-[0.3em] ml-2">Positions 1-5</span>
+                                        Innings {innings} <span className="text-slate-500 font-bold uppercase text-xs tracking-[0.3em] ml-2">Positions 1-4</span>
                                     </h2>
                                 </div>
 
                                 <div className="space-y-3">
-                                    {Array.from({ length: 5 }, (_, i) => i + 1).map((pos) => {
+                                    {Array.from({ length: 4 }, (_, i) => i + 1).map((pos) => {
                                         const assignment = getAssignment(innings, pos);
                                         return (
                                             <div key={pos} className="group relative overflow-hidden bg-slate-950/40 border border-white/5 rounded-2xl p-4 hover:border-indigo-500/30 transition-all duration-300 flex items-center gap-6">
@@ -274,7 +274,7 @@ export default function MatchSlotsPage({ params }: { params: Promise<{ id: strin
                         <h3 className="text-2xl font-black text-white mb-3">Database Initialization Required</h3>
                         <p className="text-slate-400 max-w-md mx-auto mb-10 font-medium leading-relaxed">
                             This match has no batting slots defined in the system. <br />
-                            Please initialize the **10 core slots** to begin player assignments.
+                            Please initialize the **8 core slots** to begin player assignments.
                         </p>
                         <button
                             onClick={handleGenerateSlots}
@@ -284,7 +284,7 @@ export default function MatchSlotsPage({ params }: { params: Promise<{ id: strin
                             <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]" />
                             <Plus className="w-5 h-5" />
                             <span className="uppercase tracking-[0.2em] text-xs leading-none">
-                                {generating ? "Initializing System..." : "Initialize 10 Batting Slots"}
+                                {generating ? "Initializing System..." : "Initialize 8 Batting Slots"}
                             </span>
                         </button>
                     </div>

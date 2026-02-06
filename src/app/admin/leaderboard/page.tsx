@@ -187,6 +187,7 @@ export default async function AdminLeaderboardPage() {
                         </div>
                     </section>
 
+
                     {/* --- THE ELITE PERFORMANCE INDEX --- */}
                     <div className="relative z-10 w-full animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-500">
                         <div className="flex items-center justify-between mb-8 px-2">
@@ -200,7 +201,52 @@ export default async function AdminLeaderboardPage() {
                             </div>
                         </div>
 
-                        <div className="bg-slate-950/40 backdrop-blur-3xl rounded-[40px] border border-white/[0.05] overflow-hidden shadow-2xl">
+                        {/* Mobile Card Layout */}
+                        <div className="md:hidden space-y-4">
+                            {leaderboard.map((player: any, index: number) => (
+                                <div
+                                    key={player._id}
+                                    className="bg-slate-950/40 backdrop-blur-3xl rounded-3xl border border-white/[0.05] p-6 flex items-center justify-between gap-4"
+                                >
+                                    <div className="flex items-center gap-4 min-w-0">
+                                        {/* Rank Indicator */}
+                                        <div className={`flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center font-black italic text-sm ${index === 0 ? "bg-yellow-500/10 text-yellow-500" :
+                                            index === 1 ? "bg-slate-400/10 text-slate-400" :
+                                                index === 2 ? "bg-amber-700/10 text-amber-700" :
+                                                    "bg-white/[0.03] text-slate-600"
+                                            }`}>
+                                            {index + 1}
+                                        </div>
+
+                                        {/* Identity */}
+                                        <div className="flex items-center gap-3 min-w-0">
+                                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center p-[2px] ${index === 0 ? "bg-indigo-500 shadow-lg shadow-indigo-500/20" : "bg-white/10"
+                                                }`}>
+                                                <div className="w-full h-full bg-slate-950 rounded-[10px] overflow-hidden flex items-center justify-center">
+                                                    {player.image ? <img src={player.image} className="w-full h-full object-cover" /> : <span className="text-xs font-black text-white">{player.name.charAt(0)}</span>}
+                                                </div>
+                                            </div>
+                                            <div className="flex flex-col min-w-0">
+                                                <span className="text-sm font-black text-white tracking-tight truncate">{player.name}</span>
+                                                <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest truncate">{player.email}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Score */}
+                                    <div className="text-right flex-shrink-0">
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-xl font-black text-white italic tracking-tighter tabular-nums">{player.totalRuns}</span>
+                                            <Crown className={`w-4 h-4 ${index === 0 ? "text-yellow-500" : "text-indigo-400"}`} />
+                                        </div>
+                                        <span className="block text-[8px] font-black text-slate-600 uppercase tracking-widest mt-1">XP Points</span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Desktop Table Layout */}
+                        <div className="hidden md:block bg-slate-950/40 backdrop-blur-3xl rounded-[40px] border border-white/[0.05] overflow-hidden shadow-2xl">
                             <div className="overflow-x-auto">
                                 <table className="w-full border-collapse">
                                     <thead>

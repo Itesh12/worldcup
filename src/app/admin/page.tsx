@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Users, Trophy, Activity, TrendingUp, ShieldCheck, Clock, CheckCircle, Ticket, Medal, Flame } from "lucide-react";
+import { Users, Trophy, Activity, TrendingUp, ShieldCheck, Clock, CheckCircle, Ticket, Medal, Flame, ArrowLeft } from "lucide-react";
 import { useSession } from "next-auth/react";
+import Link from "next/link";
 
 interface AnalyticsData {
     users: {

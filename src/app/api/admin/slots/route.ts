@@ -18,10 +18,10 @@ export async function POST(req: NextRequest) {
 
         await connectDB();
 
-        // Generate 5 slots for each innings
+        // Generate 4 slots for each innings (8 total)
         const slots = [];
         for (const innings of [1, 2]) {
-            for (const pos of Array.from({ length: 5 }, (_, i) => i + 1)) {
+            for (const pos of Array.from({ length: 4 }, (_, i) => i + 1)) {
                 slots.push({
                     matchId,
                     inningsNumber: innings,

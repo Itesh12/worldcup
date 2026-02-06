@@ -128,11 +128,11 @@ export default function UserMatchesPage() {
       {/* Header / Nav */}
       <header className="sticky top-0 z-40 bg-[#050B14]/80 backdrop-blur-xl border-b border-white/5">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Trophy className="w-8 h-8 text-indigo-500" />
+          <div className="flex items-center gap-2 md:gap-3">
+            <Trophy className="w-6 h-6 md:w-8 md:h-8 text-indigo-500" />
             <div>
-              <h1 className="text-xl font-black text-white tracking-tight leading-none">WORLD CUP <span className="text-indigo-500">HUB</span></h1>
-              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest hidden md:block">Official Player Portal</p>
+              <h1 className="text-lg md:text-xl font-black text-white tracking-tight leading-none">WORLD CUP <span className="text-indigo-500">HUB</span></h1>
+              <p className="text-[9px] md:text-[10px] text-slate-500 font-bold uppercase tracking-widest hidden sm:block">Official Player Portal</p>
             </div>
           </div>
 
@@ -193,20 +193,18 @@ export default function UserMatchesPage() {
         {/* HERO: Today's / Live Matches */}
         {heroMatches.length > 0 && (
           <section className="animate-in fade-in slide-in-from-bottom-5 duration-700">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-black text-white flex items-center gap-3">
-                <span className="w-2 h-8 bg-indigo-500 rounded-full" />
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
+              <h2 className="text-xl md:text-2xl font-black text-white flex items-center gap-3">
+                <span className="w-1.5 h-6 md:w-2 md:h-8 bg-indigo-500 rounded-full" />
                 Matchday Action
-                <span className="px-2 py-0.5 rounded bg-red-500/10 text-red-500 text-[10px] font-bold uppercase border border-red-500/20 animate-pulse">
+                <span className="px-2 py-0.5 rounded bg-red-500/10 text-red-500 text-[9px] md:text-[10px] font-bold uppercase border border-red-500/20 animate-pulse">
                   Live Updates
                 </span>
               </h2>
-              {heroMatches.length > 1 && (
-                <div className="flex gap-2">
-                  <span className="text-xs text-slate-500 font-medium">Scroll for more</span>
-                  <ArrowRight className="w-4 h-4 text-slate-500" />
-                </div>
-              )}
+              <div className="flex gap-2 items-center">
+                <span className="text-[10px] md:text-xs text-slate-500 font-medium whitespace-nowrap">Scroll for more</span>
+                <ArrowRight className="w-3 h-3 md:w-4 md:h-4 text-slate-500" />
+              </div>
             </div>
 
             {/* Horizontal Scroll Snap Container */}
@@ -223,17 +221,17 @@ export default function UserMatchesPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
           <div className="lg:col-span-2">
             {/* Tabs */}
-            <div className="flex items-center gap-8 mb-8 border-b border-white/10 pb-1">
+            <div className="flex items-center gap-4 md:gap-8 mb-8 border-b border-white/10 pb-1 overflow-x-auto scrollbar-hide">
               <button
                 onClick={() => setActiveTab('upcoming')}
-                className={`pb-3 text-sm font-bold uppercase tracking-widest transition-all relative ${activeTab === 'upcoming' ? 'text-white' : 'text-slate-500 hover:text-slate-300'}`}
+                className={`pb-3 text-[10px] md:text-sm font-bold uppercase tracking-widest transition-all relative whitespace-nowrap ${activeTab === 'upcoming' ? 'text-white' : 'text-slate-500 hover:text-slate-300'}`}
               >
                 Upcoming Fixtures
                 {activeTab === 'upcoming' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-indigo-500 rounded-full shadow-[0_0_10px_rgba(99,102,241,0.5)]" />}
               </button>
               <button
                 onClick={() => setActiveTab('finished')}
-                className={`pb-3 text-sm font-bold uppercase tracking-widest transition-all relative ${activeTab === 'finished' ? 'text-white' : 'text-slate-500 hover:text-slate-300'}`}
+                className={`pb-3 text-[10px] md:text-sm font-bold uppercase tracking-widest transition-all relative whitespace-nowrap ${activeTab === 'finished' ? 'text-white' : 'text-slate-500 hover:text-slate-300'}`}
               >
                 Past Results
                 {activeTab === 'finished' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-indigo-500 rounded-full shadow-[0_0_10px_rgba(99,102,241,0.5)]" />}
@@ -275,30 +273,30 @@ export default function UserMatchesPage() {
           {/* Sidebar */}
           <aside className="space-y-6">
             {/* User Stats Card */}
-            <div className="relative overflow-hidden rounded-3xl p-8 bg-gradient-to-br from-indigo-900 via-indigo-950 to-slate-950 border border-white/10 shadow-2xl">
+            <div className="relative overflow-hidden rounded-3xl p-6 md:p-8 bg-gradient-to-br from-indigo-900 via-indigo-950 to-slate-950 border border-white/10 shadow-2xl">
               <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/20 blur-[60px] rounded-full pointer-events-none" />
 
-              <h3 className="text-xl font-bold text-white mb-1">Your Performance</h3>
-              <p className="text-indigo-200 text-xs mb-6 opacity-70">Batting stats across all leagues</p>
+              <h3 className="text-lg md:text-xl font-bold text-white mb-1">Your Performance</h3>
+              <p className="text-indigo-200 text-[10px] md:text-xs mb-6 opacity-70">Batting stats across all leagues</p>
 
               {session ? (
                 <>
                   <div className="grid grid-cols-2 gap-3 mb-6">
-                    <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-4 border border-white/5">
+                    <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-3 md:p-4 border border-white/5">
                       <div className="flex items-center gap-2 mb-2">
-                        <Activity className="w-4 h-4 text-indigo-400" />
-                        <span className="text-[10px] font-bold text-slate-400 uppercase">Runs</span>
+                        <Activity className="w-3 h-3 md:w-4 md:h-4 text-indigo-400" />
+                        <span className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase">Runs</span>
                       </div>
-                      <span className="text-2xl font-black text-white">
+                      <span className="text-xl md:text-2xl font-black text-white">
                         {statsLoading ? "---" : (userStats?.totalRuns ?? 0)}
                       </span>
                     </div>
-                    <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-4 border border-white/5">
+                    <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-3 md:p-4 border border-white/5">
                       <div className="flex items-center gap-2 mb-2">
-                        <TrendingUp className="w-4 h-4 text-purple-400" />
-                        <span className="text-[10px] font-bold text-slate-400 uppercase">Rank</span>
+                        <TrendingUp className="w-3 h-3 md:w-4 md:h-4 text-purple-400" />
+                        <span className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase">Rank</span>
                       </div>
-                      <span className="text-2xl font-black text-white">
+                      <span className="text-xl md:text-2xl font-black text-white">
                         {statsLoading ? "#--" : `#${userStats?.rank ?? "--"}`}
                       </span>
                     </div>
@@ -397,67 +395,84 @@ function HeroMatchCard({ match }: { match: Match }) {
   const date = new Date(match.startTime);
 
   return (
-    <Link href={`/matches/${match._id}`} className="group relative block w-full h-[280px] rounded-3xl overflow-hidden shadow-2xl transition-transform hover:scale-[1.01]">
-      {/* Background Image / Gradient */}
-      <div className="absolute inset-0 bg-gradient-to-br from-indigo-950 via-slate-900 to-black" />
-      <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay" />
+    <Link href={`/matches/${match._id}`} className="group relative block w-full h-[240px] md:h-[300px] rounded-3xl overflow-hidden shadow-2xl transition-all duration-500 hover:scale-[1.02] hover:shadow-indigo-500/10">
+      {/* Background with Gradient & Mesh */}
+      <div className="absolute inset-0 bg-[#050B14]" />
+      <div className="absolute inset-0 bg-gradient-to-br from-indigo-600/20 via-slate-900/40 to-purple-600/20 opacity-60 group-hover:opacity-80 transition-opacity" />
+      <div className="absolute -top-24 -left-24 w-64 h-64 bg-indigo-500/10 blur-[80px] rounded-full group-hover:bg-indigo-500/20 transition-all duration-700" />
+      <div className="absolute -bottom-24 -right-24 w-64 h-64 bg-purple-600/10 blur-[80px] rounded-full group-hover:bg-purple-500/20 transition-all duration-700" />
+      <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03] mix-blend-overlay" />
 
-      {/* Live/Status Indicator Bar */}
-      {isLive && <div className="absolute top-0 left-0 w-full h-1 bg-red-500 shadow-[0_0_20px_rgba(239,68,68,0.6)] z-20" />}
-      {isFinished && <div className="absolute top-0 left-0 w-full h-1 bg-emerald-500/50 z-20" />}
+      {/* Shine Effect */}
+      <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out pointer-events-none" />
 
-      <div className="relative z-10 h-full flex flex-col justify-between p-8">
-        {/* Top Row */}
-        <div className="flex justify-between items-start">
-          <div className="flex items-center gap-3 bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/10">
+      <div className="relative z-10 h-full flex flex-col items-center justify-between p-6 md:p-10">
+        {/* Compact Header */}
+        <div className="flex flex-col items-center gap-2">
+          <div className="flex items-center gap-3 bg-white/5 backdrop-blur-xl px-4 py-1.5 rounded-full border border-white/10 shadow-lg">
             {isLive ? (
-              <span className="flex items-center gap-2 text-red-400 text-xs font-bold uppercase tracking-wider animate-pulse">
-                <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
-                Live Now
+              <span className="flex items-center gap-2 text-red-500 text-[10px] font-black uppercase tracking-[0.2em] animate-pulse">
+                <span className="w-1.5 h-1.5 rounded-full bg-red-500 shadow-[0_0_8px_#ef4444]" />
+                Live
               </span>
             ) : isFinished ? (
-              <span className="flex items-center gap-2 text-emerald-400 text-xs font-bold uppercase tracking-wider">
+              <span className="text-emerald-500 text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2">
                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                Completed
+                Finished
               </span>
             ) : (
-              <span className="flex items-center gap-2 text-indigo-300 text-xs font-bold uppercase tracking-wider">
+              <span className="text-indigo-400 text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2">
                 <Clock className="w-3 h-3" />
-                Today
+                Upcoming
               </span>
             )}
-            <span className="w-px h-3 bg-white/20" />
-            <span className="text-slate-400 text-xs font-medium">{match.venue.split(',')[0]}</span>
+            <span className="w-px h-3 bg-white/10" />
+            <span className="text-slate-400 text-[9px] font-black uppercase tracking-widest">{match.venue.split(',')[0]}</span>
           </div>
         </div>
 
-        {/* Teams */}
-        <div className="flex items-center justify-between px-4">
-          <div className="text-center group-hover:-translate-x-2 transition-transform duration-500">
-            <h3 className="text-5xl font-black text-white mb-2">{match.teams[0].shortName}</h3>
-            <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">{match.teams[0].name}</p>
+        {/* Teams Layout */}
+        <div className="w-full flex items-center justify-center gap-4 sm:gap-8 md:gap-16">
+          {/* Team 1 */}
+          <div className="flex flex-col items-center flex-1 min-w-0">
+            <h3 className="text-3xl sm:text-4xl md:text-6xl font-black text-white tracking-tighter group-hover:scale-110 transition-transform duration-500 drop-shadow-2xl">
+              {match.teams[0].shortName}
+            </h3>
+            <p className="text-[8px] md:text-[10px] text-slate-500 font-black uppercase tracking-[0.2em] mt-1 md:mt-3 truncate w-full text-center px-2">
+              {match.teams[0].name}
+            </p>
           </div>
 
-          <div className="flex flex-col items-center">
-            <div className="w-12 h-12 rounded-full border border-white/10 flex items-center justify-center bg-white/5 backdrop-blur shadow-xl mb-2">
-              <span className="text-slate-500 font-bold text-xs">VS</span>
+          {/* VS Divider */}
+          <div className="flex flex-col items-center shrink-0">
+            <div className="relative">
+              <div className="absolute inset-0 bg-indigo-500/20 blur-xl rounded-full scale-150 opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="w-10 h-10 md:w-14 md:h-14 rounded-full border border-white/10 flex items-center justify-center bg-white/5 backdrop-blur-md shadow-2xl relative z-10">
+                <span className="text-slate-400 italic font-black text-[10px] md:text-sm">VS</span>
+              </div>
             </div>
-            <span className="px-3 py-1 bg-indigo-500/10 text-indigo-400 text-[10px] font-bold rounded-full border border-indigo-500/20">
-              {date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-            </span>
+            {!isLive && !isFinished && (
+              <span className="mt-3 px-3 py-1 bg-indigo-500/10 text-indigo-400 text-[8px] md:text-[9px] font-black rounded-full border border-indigo-500/20 uppercase tracking-widest whitespace-nowrap">
+                {date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </span>
+            )}
           </div>
 
-          <div className="text-center group-hover:translate-x-2 transition-transform duration-500">
-            <h3 className="text-5xl font-black text-white mb-2">{match.teams[1].shortName}</h3>
-            <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">{match.teams[1].name}</p>
+          {/* Team 2 */}
+          <div className="flex flex-col items-center flex-1 min-w-0">
+            <h3 className="text-3xl sm:text-4xl md:text-6xl font-black text-white tracking-tighter group-hover:scale-110 transition-transform duration-500 drop-shadow-2xl">
+              {match.teams[1].shortName}
+            </h3>
+            <p className="text-[8px] md:text-[10px] text-slate-500 font-black uppercase tracking-[0.2em] mt-1 md:mt-3 truncate w-full text-center px-2">
+              {match.teams[1].name}
+            </p>
           </div>
         </div>
 
-        {/* Bottom Action */}
-        <div className="flex justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 translate-y-2 group-hover:translate-y-0">
-          <span className="text-indigo-400 text-xs font-bold uppercase tracking-widest flex items-center gap-2">
-            Enter Match Center <ArrowRight className="w-4 h-4" />
-          </span>
+        {/* View Indicator */}
+        <div className="flex flex-col items-center gap-2 translate-y-2 group-hover:translate-y-0 transition-all duration-500">
+          <span className="text-[8px] md:text-[9px] font-black text-indigo-500 uppercase tracking-[0.3em] opacity-0 group-hover:opacity-100 transition-opacity">Match Center</span>
+          <div className="w-1 h-1 rounded-full bg-indigo-500 shadow-[0_0_10px_#6366f1]" />
         </div>
       </div>
     </Link>
@@ -480,8 +495,8 @@ function StandardMatchCard({ match }: { match: Match }) {
       {/* Top Section: Status & Time */}
       <div className="flex justify-between items-center mb-6">
         <div className={`flex items-center gap-2 px-2.5 py-1 rounded-lg border text-[10px] font-black uppercase tracking-widest ${isLive ? 'bg-red-500/10 border-red-500/20 text-red-500' :
-            isFinished ? 'bg-slate-800 border-white/5 text-slate-500' :
-              'bg-indigo-500/10 border-indigo-500/20 text-indigo-400'
+          isFinished ? 'bg-slate-800 border-white/5 text-slate-500' :
+            'bg-indigo-500/10 border-indigo-500/20 text-indigo-400'
           }`}>
           {isLive ? (
             <span className="flex items-center gap-1.5">
@@ -496,24 +511,24 @@ function StandardMatchCard({ match }: { match: Match }) {
       </div>
 
       {/* Middle Section: Teams Grid */}
-      <div className="flex items-center justify-between gap-2 mb-6 px-2">
+      <div className="flex items-center justify-between gap-2 mb-6 px-1 md:px-2">
         <div className="flex-1 flex flex-col items-center gap-2">
-          <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-center group-hover:border-indigo-500/30 transition-colors shadow-inner">
-            <span className="text-xl font-black text-white">{match.teams[0].shortName}</span>
+          <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-white/5 border border-white/5 flex items-center justify-center group-hover:border-indigo-500/30 transition-colors shadow-inner">
+            <span className="text-base md:text-xl font-black text-white">{match.teams[0].shortName}</span>
           </div>
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight text-center truncate w-full">{match.teams[0].name}</span>
+          <span className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-tight text-center truncate w-full">{match.teams[0].name}</span>
         </div>
 
         <div className="flex flex-col items-center">
-          <div className="text-[10px] font-black text-slate-600 mb-1">VS</div>
+          <div className="text-[9px] md:text-[10px] font-black text-slate-600 mb-1">VS</div>
           <div className="w-px h-6 bg-gradient-to-b from-transparent via-slate-700 to-transparent" />
         </div>
 
         <div className="flex-1 flex flex-col items-center gap-2">
-          <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-center group-hover:border-indigo-500/30 transition-colors shadow-inner">
-            <span className="text-xl font-black text-white">{match.teams[1].shortName}</span>
+          <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-white/5 border border-white/5 flex items-center justify-center group-hover:border-indigo-500/30 transition-colors shadow-inner">
+            <span className="text-base md:text-xl font-black text-white">{match.teams[1].shortName}</span>
           </div>
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight text-center truncate w-full">{match.teams[1].name}</span>
+          <span className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-tight text-center truncate w-full">{match.teams[1].name}</span>
         </div>
       </div>
 
