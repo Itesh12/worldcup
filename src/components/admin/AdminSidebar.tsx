@@ -16,7 +16,7 @@ export function AdminSidebar() {
     ];
 
     return (
-        <aside className="w-72 bg-background/80 backdrop-blur-xl border-r border-white/5 flex flex-col relative overflow-hidden">
+        <aside className="w-72 flex-shrink-0 bg-background/80 backdrop-blur-xl border-r border-white/5 flex flex-col relative overflow-hidden z-50">
             {/* Ambient Background Glow */}
             <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-indigo-900/20 to-transparent pointer-events-none" />
 
@@ -26,8 +26,8 @@ export function AdminSidebar() {
                         <Trophy className="w-5 h-5 text-white" />
                     </div>
                     <div>
-                        <h2 className="text-xl font-black text-white tracking-tight">ADMIN</h2>
-                        <span className="text-[10px] uppercase font-bold text-indigo-400 tracking-widest">Dashboard</span>
+                        <h2 className="text-xl font-black text-white tracking-tight">MANAGEMENT</h2>
+                        <span className="text-[10px] uppercase font-bold text-slate-500 tracking-widest">Control Center</span>
                     </div>
                 </div>
 
@@ -59,13 +59,8 @@ export function AdminSidebar() {
                 </nav>
             </div>
 
-            <div className="mt-auto p-8 relative z-10 border-t border-white/5">
-                <Link href="/" className="flex items-center gap-3 text-slate-500 hover:text-white transition-colors group">
-                    <div className="w-8 h-8 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center group-hover:border-slate-600 transition-colors">
-                        <ArrowLeft className="w-4 h-4" />
-                    </div>
-                    <span className="text-xs font-bold uppercase tracking-widest">Back to Site</span>
-                </Link>
+            <div className="mt-auto p-8 relative z-10 text-center">
+                <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Premium Admin Suite v2.0</p>
             </div>
         </aside>
     );

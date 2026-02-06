@@ -39,14 +39,18 @@ export default function UserMatchesPage() {
 
   const handleAutoSync = async () => {
     try {
-      // Trigger the background sync (this activates GlobalLoader via interceptor)
-      await fetch("/api/matches/sync", { method: "POST" });
+      // Trigger the background sync (loud for initial load)
+      await fetch("/api/matches/sync", {
+        method: "POST"
+      });
     } catch (err) {
       console.error("Auto-sync failed", err);
     } finally {
-      // Fetch the updated matches from our DB
-      fetchMatches();
-      fetchDashboardStats();
+      // Await both so the loader stays visible until data is ready
+      await Promise.all([
+        fetchMatches(false),
+        fetchDashboardStats(false)
+      ]);
     }
   };
 
@@ -75,9 +79,13 @@ export default function UserMatchesPage() {
     }
   };
 
-  const fetchMatches = async () => {
+  const fetchMatches = async (silent = true) => {
     try {
-      const res = await fetch("/api/matches");
+      if (!silent) setLoading(true);
+      const headers: any = {};
+      if (silent) headers['x-silent-fetch'] = 'true';
+
+      const res = await fetch("/api/matches", { headers });
       const data = await res.json();
       if (res.ok) setMatches(data);
     } catch (err) {
@@ -97,20 +105,20 @@ export default function UserMatchesPage() {
     return isLive || isToday;
   }).sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
 
-  // 2. Upcoming
+  // 2. Upcoming (Limit to top 5 for dashboard)
   const upcomingMatches = matches.filter(m => {
     const isFuture = m.status === 'upcoming';
     const isToday = new Date(m.startTime).toDateString() === today;
     return isFuture && !isToday;
-  }).sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime()); // Ascending
+  }).sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime()).slice(0, 5); // Ascending
 
-  // 3. Finished
+  // 3. Finished (Limit to top 5 for dashboard)
   const finishedMatches = matches.filter(m =>
     m.status === 'finished' ||
     m.status === 'completed' ||
     m.status === 'result' ||
     m.status === 'settled'
-  ).sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime()); // Descending
+  ).sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime()).slice(0, 5); // Descending
 
   return (
     <div className="min-h-screen bg-[#050B14] pb-20 relative overflow-x-hidden">
@@ -232,22 +240,36 @@ export default function UserMatchesPage() {
               </button>
             </div>
 
-            {/* Content */}
-            <div className="space-y-4">
+            {/* Content - 2 Column Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
               {activeTab === 'upcoming' ? (
                 upcomingMatches.length > 0 ? (
                   upcomingMatches.map(match => <StandardMatchCard key={match._id} match={match} />)
                 ) : (
-                  <EmptyState message="No upcoming matches scheduled." />
+                  <div className="md:col-span-2">
+                    <EmptyState message="No upcoming matches scheduled." />
+                  </div>
                 )
               ) : (
                 finishedMatches.length > 0 ? (
                   finishedMatches.map(match => <StandardMatchCard key={match._id} match={match} />)
                 ) : (
-                  <EmptyState message="No completed matches yet." />
+                  <div className="md:col-span-2">
+                    <EmptyState message="No completed matches yet." />
+                  </div>
                 )
               )}
             </div>
+
+            {/* View All Button */}
+            <Link
+              href="/matches"
+              className="group flex items-center justify-center gap-2 w-full py-4 rounded-2xl bg-slate-900/40 border border-white/5 hover:bg-slate-800/60 hover:border-indigo-500/30 transition-all text-sm font-bold text-slate-400 hover:text-white uppercase tracking-widest"
+            >
+              <Calendar className="w-4 h-4 text-indigo-500 group-hover:scale-110 transition-transform" />
+              {activeTab === 'upcoming' ? "View Full Schedule" : "View All Results"}
+              <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+            </Link>
           </div>
 
           {/* Sidebar */}
@@ -448,42 +470,64 @@ function StandardMatchCard({ match }: { match: Match }) {
     match.status === 'completed' ||
     match.status === 'result' ||
     match.status === 'settled';
+  const isLive = match.status === 'live';
 
   return (
-    <Link href={`/matches/${match._id}`} className="group flex items-center justify-between p-6 bg-slate-900/50 border border-white/5 rounded-2xl hover:bg-slate-800/50 hover:border-indigo-500/30 transition-all duration-300 shadow-sm hover:shadow-xl hover:shadow-indigo-900/10">
-      {/* Left: Time & Venue */}
-      <div className="flex flex-col gap-1 min-w-[100px]">
-        <span className={`text-xs font-bold uppercase tracking-wider ${isFinished ? 'text-slate-500' : 'text-indigo-400'}`}>
-          {date.toLocaleDateString([], { month: 'short', day: 'numeric' })}
+    <Link href={`/matches/${match._id}`} className="group relative flex flex-col p-5 bg-slate-900/40 border border-white/5 rounded-3xl hover:bg-slate-800/60 hover:border-indigo-500/30 transition-all duration-500 overflow-hidden shadow-lg h-full">
+      {/* Background Glow */}
+      <div className="absolute -top-12 -right-12 w-24 h-24 bg-indigo-500/10 blur-[40px] rounded-full pointer-events-none group-hover:bg-indigo-500/20 transition-all" />
+
+      {/* Top Section: Status & Time */}
+      <div className="flex justify-between items-center mb-6">
+        <div className={`flex items-center gap-2 px-2.5 py-1 rounded-lg border text-[10px] font-black uppercase tracking-widest ${isLive ? 'bg-red-500/10 border-red-500/20 text-red-500' :
+            isFinished ? 'bg-slate-800 border-white/5 text-slate-500' :
+              'bg-indigo-500/10 border-indigo-500/20 text-indigo-400'
+          }`}>
+          {isLive ? (
+            <span className="flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+              Live
+            </span>
+          ) : isFinished ? 'Completed' : 'Upcoming'}
+        </div>
+        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+          {date.toLocaleDateString([], { month: 'short', day: 'numeric' })} • {date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
         </span>
-        <span className="text-sm font-medium text-slate-300">
-          {date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-        </span>
-        <span className="text-[10px] text-slate-500 truncate max-w-[120px]">{match.venue.split(',')[0]}</span>
       </div>
 
-      {/* Middle: Teams */}
-      <div className="flex-1 flex items-center justify-center gap-8">
-        <div className="text-right w-24">
-          <span className="text-lg font-black text-white block">{match.teams[0].shortName}</span>
-        </div>
-        <span className="text-xs text-slate-600 font-bold">VS</span>
-        <div className="text-left w-24">
-          <span className="text-lg font-black text-white block">{match.teams[1].shortName}</span>
-        </div>
-      </div>
-
-      {/* Right: Status / Action */}
-      <div className="min-w-[100px] flex justify-end">
-        {isFinished ? (
-          <span className="px-4 py-1.5 bg-slate-900 rounded-full text-[10px] font-black uppercase tracking-widest text-emerald-500/80 border border-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.1)]">
-            Completed
-          </span>
-        ) : (
-          <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white transition-colors">
-            <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-white" />
+      {/* Middle Section: Teams Grid */}
+      <div className="flex items-center justify-between gap-2 mb-6 px-2">
+        <div className="flex-1 flex flex-col items-center gap-2">
+          <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-center group-hover:border-indigo-500/30 transition-colors shadow-inner">
+            <span className="text-xl font-black text-white">{match.teams[0].shortName}</span>
           </div>
-        )}
+          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight text-center truncate w-full">{match.teams[0].name}</span>
+        </div>
+
+        <div className="flex flex-col items-center">
+          <div className="text-[10px] font-black text-slate-600 mb-1">VS</div>
+          <div className="w-px h-6 bg-gradient-to-b from-transparent via-slate-700 to-transparent" />
+        </div>
+
+        <div className="flex-1 flex flex-col items-center gap-2">
+          <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-center group-hover:border-indigo-500/30 transition-colors shadow-inner">
+            <span className="text-xl font-black text-white">{match.teams[1].shortName}</span>
+          </div>
+          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight text-center truncate w-full">{match.teams[1].name}</span>
+        </div>
+      </div>
+
+      {/* Bottom Section: Venue */}
+      <div className="mt-auto flex items-center justify-between pt-4 border-t border-white/5">
+        <div className="flex items-center gap-1.5">
+          <MapPin className="w-3 h-3 text-slate-600" />
+          <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wide truncate max-w-[140px]">
+            {match.venue.split(',')[0]}
+          </span>
+        </div>
+        <div className="w-7 h-7 rounded-lg bg-indigo-500/10 flex items-center justify-center group-hover:bg-indigo-600 transition-all">
+          <ChevronRight className="w-4 h-4 text-indigo-400 group-hover:text-white" />
+        </div>
       </div>
     </Link>
   );

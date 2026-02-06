@@ -17,12 +17,25 @@ let onCountChange: (count: number) => void = () => { };
 if (typeof window !== 'undefined') {
     const originalFetch = window.fetch;
     window.fetch = async (...args) => {
+        const input = args[0];
         const options = args[1] as RequestInit | undefined;
-        const isSilent = options?.headers &&
-            ((options.headers as any)['x-silent-fetch'] === 'true' ||
-                (options.headers as any).get?.('x-silent-fetch') === 'true');
 
-        if (!isSilent) {
+        // Extract URL and check if it is an API call
+        const url = typeof input === 'string' ? input : (input instanceof URL ? input.href : input.url);
+        const isApiCall = url.includes('/api/');
+
+        // Check for silent fetch flag in headers
+        let isSilent = false;
+        if (options?.headers) {
+            isSilent = (options.headers as any)['x-silent-fetch'] === 'true' ||
+                (options.headers as any).get?.('x-silent-fetch') === 'true';
+        } else if (input instanceof Request) {
+            isSilent = input.headers.get('x-silent-fetch') === 'true';
+        }
+
+        const shouldShowLoader = isApiCall && !isSilent;
+
+        if (shouldShowLoader) {
             activeRequests++;
             onCountChange(activeRequests);
         }
@@ -30,7 +43,7 @@ if (typeof window !== 'undefined') {
         try {
             return await originalFetch(...args);
         } finally {
-            if (!isSilent) {
+            if (shouldShowLoader) {
                 activeRequests = Math.max(0, activeRequests - 1);
                 onCountChange(activeRequests);
             }

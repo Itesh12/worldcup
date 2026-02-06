@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Trophy, Medal, Award, TrendingUp, Search } from "lucide-react";
+import { Trophy, Medal, Award, TrendingUp, Search, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
 interface LeaderboardEntry {
@@ -36,19 +36,35 @@ export default function LeaderboardPage() {
     }, []);
 
     return (
-        <div className="min-h-screen bg-slate-950 pb-20">
-            {/* Header Section */}
-            <div className="bg-slate-900 border-b border-slate-800 pt-20 pb-12">
-                <div className="max-w-4xl mx-auto px-4 text-center">
-                    <div className="bg-blue-600/20 text-blue-500 w-16 h-16 rounded-3xl flex items-center justify-center mx-auto mb-6 border border-blue-500/20 shadow-2xl shadow-blue-500/20">
-                        <Trophy className="w-8 h-8" />
+        <div className="min-h-screen bg-slate-950 pb-20 pt-24">
+            {/* Standardized Header */}
+            <header className="fixed top-0 left-0 right-0 z-50 bg-[#050B14]/80 backdrop-blur-xl border-b border-white/5">
+                <div className="max-w-7xl mx-auto px-4 py-4 flex items-center gap-6">
+                    <Link href="/dashboard" className="w-10 h-10 rounded-full bg-slate-900 border border-white/5 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800 transition-colors shadow-lg">
+                        <ArrowLeft className="w-5 h-5" />
+                    </Link>
+                    <div className="flex items-center gap-3">
+                        <Trophy className="w-6 h-6 text-indigo-500" />
+                        <h1 className="text-xl font-black text-white tracking-tight">GLOBAL <span className="text-indigo-500">LEADERBOARD</span></h1>
                     </div>
-                    <h1 className="text-4xl font-black text-white mb-2">Global Leaderboard</h1>
-                    <p className="text-slate-400 font-medium">Top performing users across all World Cup matches</p>
+                </div>
+            </header>
+
+            {/* Top Cards Hero replacement */}
+            <div className="max-w-7xl mx-auto px-4 mb-12">
+                <div className="relative overflow-hidden rounded-[40px] p-10 bg-gradient-to-br from-indigo-900/20 via-slate-900 to-slate-950 border border-white/5 text-center shadow-2xl">
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-64 bg-indigo-500/10 blur-[100px] rounded-full" />
+                    <div className="relative z-10">
+                        <div className="w-20 h-20 rounded-3xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center mx-auto mb-6 shadow-glow">
+                            <Trophy className="w-10 h-10 text-indigo-500" />
+                        </div>
+                        <h2 className="text-3xl font-black text-white tracking-tighter mb-2 italic uppercase">The Elite Hall of Fame</h2>
+                        <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">Top performing users across all World Cup matches</p>
+                    </div>
                 </div>
             </div>
 
-            <div className="max-w-4xl mx-auto px-4 -mt-8">
+            <div className="max-w-7xl mx-auto px-4">
                 {loading && entries.length === 0 ? (
                     <div className="space-y-4">
                         {[1, 2, 3, 4, 5].map(i => (

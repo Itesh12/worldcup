@@ -20,8 +20,8 @@ export default async function AdminLayout({
 
             {/* Main Content */}
             <main className="flex-1 overflow-y-auto bg-[url('/grid-pattern.svg')] bg-fixed relative">
-                <div className="absolute inset-0 bg-background/90 pointer-events-none" />
-                <div className="relative z-10 p-10 max-w-7xl mx-auto">
+                <div className="absolute inset-0 bg-[#050B14]/90 pointer-events-none" />
+                <div className="relative z-10">
                     {children}
                 </div>
             </main>

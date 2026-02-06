@@ -48,8 +48,10 @@ export default function MatchDetailPage({ params }: { params: Promise<{ id: stri
         if (isManual) setRefreshing(true);
         try {
             // Trigger a background sync for this match specifically to ensure latest batting scores
-            // This is non-blocking for the initial UI fetch
-            fetch(`/api/sync?matchId=${matchId}`).catch(e => console.error("Auto-sync error", e));
+            // This is non-blocking and silent
+            fetch(`/api/sync?matchId=${matchId}`, {
+                headers: { 'x-silent-fetch': 'true' }
+            }).catch(e => console.error("Auto-sync error", e));
 
             const res = await fetch(`/api/matches/${matchId}`);
             const result = await res.json();
@@ -149,39 +151,45 @@ export default function MatchDetailPage({ params }: { params: Promise<{ id: stri
 
     return (
         <div className="min-h-screen bg-[#050810] text-slate-200">
-            {/* Nav Header */}
-            <div className="fixed top-0 left-0 right-0 bg-slate-950/80 backdrop-blur-xl border-b border-slate-800/50 z-50">
-                <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-                    <Link href="/" className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors">
-                        <ArrowLeft className="w-4 h-4" />
-                        <span className="font-bold text-sm tracking-tight uppercase">Back Hub</span>
-                    </Link>
+            {/* Standardized Header */}
+            <header className="fixed top-0 left-0 right-0 z-50 bg-[#050B14]/80 backdrop-blur-xl border-b border-white/5">
+                <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+                    <div className="flex items-center gap-6">
+                        <Link href="/dashboard" className="w-10 h-10 rounded-full bg-slate-900 border border-white/5 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800 transition-colors shadow-lg">
+                            <ArrowLeft className="w-5 h-5" />
+                        </Link>
+                        <div className="flex items-center gap-3">
+                            <Activity className="w-6 h-6 text-indigo-500" />
+                            <h1 className="text-xl font-black text-white tracking-tight">MATCH <span className="text-indigo-500">CENTER</span></h1>
+                        </div>
+                    </div>
+
                     <div className="flex items-center gap-4">
-                        <div className="hidden md:flex flex-col items-end">
-                            <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest">Auto-syncing every 30s</span>
+                        <div className="hidden md:flex flex-col items-end mr-2">
+                            <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest">Auto-sync active</span>
                             {lastUpdated && (
-                                <span className="text-[8px] font-bold text-slate-500">Updated: {lastUpdated.toLocaleTimeString()}</span>
+                                <span className="text-[8px] font-bold text-slate-500">Synced: {lastUpdated.toLocaleTimeString()}</span>
                             )}
                         </div>
                         <button
                             onClick={() => fetchMatchData(true)}
                             disabled={refreshing}
-                            className={`p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white transition-all hover:bg-slate-800 group ${refreshing ? 'cursor-not-allowed' : ''}`}
+                            className={`p-2.5 rounded-xl bg-slate-900 border border-white/5 text-slate-400 hover:text-white transition-all hover:bg-slate-800 group ${refreshing ? 'cursor-not-allowed opacity-50' : ''} shadow-lg`}
                             title="Refresh Match Data"
                         >
                             <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin text-indigo-500' : 'group-hover:rotate-180 transition-transform duration-500'}`} />
                         </button>
-                        <div className="flex items-center gap-2">
-                            <span className={`w-2 h-2 rounded-full ${match.status === 'live' ? 'bg-green-500 animate-ping' : 'bg-slate-700'}`} />
-                            <span className="text-[10px] font-black uppercase tracking-[3px] text-slate-500">{match.status}</span>
+                        <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-slate-900 border border-white/5 shadow-inner">
+                            <span className={`w-1.5 h-1.5 rounded-full ${match.status === 'live' ? 'bg-green-500 animate-pulse' : 'bg-slate-700'}`} />
+                            <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">{match.status}</span>
                         </div>
                     </div>
                 </div>
-            </div>
+            </header>
 
             {/* Hero Section */}
             <div className="pt-24 pb-12 px-4 border-b border-slate-900">
-                <div className="max-w-6xl mx-auto">
+                <div className="max-w-7xl mx-auto">
                     <div className="flex flex-col md:flex-row items-center justify-between gap-12 py-8">
                         {/* Team 1 */}
                         <div className="flex flex-col items-center flex-1 text-center group">
