@@ -781,40 +781,42 @@ function WeeklyReportCard({ weeks, loading }: { weeks: any[], loading: boolean }
 
   return (
     <section className="relative group/report">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
         <div className="flex items-center gap-4">
-          <div className="p-3 bg-amber-500/10 rounded-2xl border border-amber-500/20">
+          <div className="p-3 bg-amber-500/10 rounded-2xl border border-amber-500/20 shrink-0">
             <BarChart3 className="w-6 h-6 text-amber-400" />
           </div>
           <div>
-            <h2 className="text-2xl font-black text-white uppercase tracking-tight">Weekly <span className="text-amber-500">Pulse</span></h2>
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">{currentIndex === 0 ? "Current Week Overview" : "Previous Week Review"}</p>
+            <h2 className="text-xl md:text-2xl font-black text-white uppercase tracking-tight">Weekly <span className="text-amber-500">Pulse</span></h2>
+            <p className="text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-widest leading-none mt-1">{currentIndex === 0 ? "Current Week Overview" : "Previous Week Review"}</p>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <button
-            onClick={handlePrev}
-            disabled={isOldest}
-            className={`p-2 rounded-xl border transition-all ${isOldest ? 'opacity-30 border-white/5 text-slate-600' : 'bg-slate-800 border-white/10 text-white hover:bg-slate-700'}`}
-          >
-            <ChevronLeft className="w-5 h-5" />
-          </button>
-          <div className="px-4 py-2 bg-slate-900/60 border border-white/5 rounded-xl">
-            <span className="text-[10px] font-black text-white uppercase tracking-widest">{currentWeek.label}</span>
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-2 bg-slate-900/60 border border-white/5 rounded-xl p-1">
+            <button
+              onClick={handlePrev}
+              disabled={isOldest}
+              className={`p-2 rounded-lg transition-all ${isOldest ? 'opacity-30 text-slate-600' : 'bg-slate-800 text-white hover:bg-slate-700'}`}
+            >
+              <ChevronLeft className="w-4 h-4 md:w-5 md:h-5" />
+            </button>
+            <div className="px-2 md:px-4">
+              <span className="text-[9px] md:text-[10px] font-black text-white uppercase tracking-widest whitespace-nowrap">{currentWeek.label}</span>
+            </div>
+            <button
+              onClick={handleNext}
+              disabled={isLatest}
+              className={`p-2 rounded-lg transition-all ${isLatest ? 'opacity-30 text-slate-600' : 'bg-slate-800 text-white hover:bg-slate-700'}`}
+            >
+              <ChevronRight className="w-4 h-4 md:w-5 md:h-5" />
+            </button>
           </div>
-          <button
-            onClick={handleNext}
-            disabled={isLatest}
-            className={`p-2 rounded-xl border transition-all ${isLatest ? 'opacity-30 border-white/5 text-slate-600' : 'bg-slate-800 border-white/10 text-white hover:bg-slate-700'}`}
-          >
-            <ChevronRight className="w-5 h-5" />
-          </button>
-          <div className="w-px h-6 bg-white/5 mx-1" />
+          <div className="hidden sm:block w-px h-6 bg-white/5 mx-1" />
           <button
             onClick={handleDownload}
             disabled={downloading}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-50"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-50"
           >
             {downloading ? <RefreshCcw className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />}
             {downloading ? "Exporting" : "Download"}
@@ -830,7 +832,7 @@ function WeeklyReportCard({ weeks, loading }: { weeks: any[], loading: boolean }
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 1.05, y: -10 }}
           transition={{ duration: 0.4, ease: "easeOut" }}
-          className="relative overflow-hidden rounded-[2.5rem] p-8 md:p-10 bg-slate-900/40 border border-white/5 shadow-2xl backdrop-blur-md"
+          className="relative overflow-hidden rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-10 bg-slate-900/40 border border-white/5 shadow-2xl backdrop-blur-md"
         >
           {/* Ambient background blur */}
           <div className="absolute top-0 right-0 w-96 h-96 bg-amber-500/5 blur-[120px] rounded-full pointer-events-none" />
@@ -842,14 +844,14 @@ function WeeklyReportCard({ weeks, loading }: { weeks: any[], loading: boolean }
               <div className="space-y-6">
                 <div>
                   <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] mb-4">Performance Score</h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="p-4 rounded-2xl bg-white/5 border border-white/5">
+                  <div className="grid grid-cols-2 gap-3 md:gap-4">
+                    <div className="p-3 md:p-4 rounded-2xl bg-white/5 border border-white/5">
                       <p className="text-[8px] font-black text-slate-500 uppercase mb-1">Total Runs</p>
-                      <p className="text-2xl font-black text-white">{currentWeek.stats.runs}</p>
+                      <p className="text-xl md:text-2xl font-black text-white">{currentWeek.stats.runs}</p>
                     </div>
-                    <div className="p-4 rounded-2xl bg-white/5 border border-white/5">
+                    <div className="p-3 md:p-4 rounded-2xl bg-white/5 border border-white/5">
                       <p className="text-[8px] font-black text-slate-500 uppercase mb-1">Average</p>
-                      <p className="text-2xl font-black text-indigo-400">{currentWeek.stats.average}</p>
+                      <p className="text-xl md:text-2xl font-black text-indigo-400">{currentWeek.stats.average}</p>
                     </div>
                   </div>
                 </div>
@@ -874,14 +876,19 @@ function WeeklyReportCard({ weeks, loading }: { weeks: any[], loading: boolean }
                   </div>
                 </div>
 
-                {/* Win Rate Gauge */}
-                <div className="pt-4">
-                  <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] mb-4 flex items-center justify-between">
-                    Win Efficiency
+                {/* Performance Hub (Win Efficiency Redesign) */}
+                <div className="pt-2">
+                  <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] mb-5 flex items-center justify-between">
+                    Performance Hub
                     <Trophy className="w-3 h-3 text-amber-500" />
                   </h3>
-                  <div className="flex items-center justify-center p-4 bg-white/5 rounded-2xl border border-white/5">
-                    <WinRateGauge percentage={parseFloat(currentWeek.stats.wins > 0 ? ((currentWeek.stats.wins / (currentWeek.stats.wins + currentWeek.stats.losses)) * 100).toFixed(0) : "0")} />
+                  <div className="relative group/hub p-6 rounded-[2rem] bg-slate-950/50 border border-white/5 overflow-hidden">
+                    {/* Background Glow */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 via-transparent to-amber-500/5 opacity-0 group-hover/hub:opacity-100 transition-opacity duration-700" />
+
+                    <div className="relative z-10 flex flex-col items-center">
+                      <PerformanceHub percentage={parseFloat(currentWeek.stats.wins > 0 ? ((currentWeek.stats.wins / (currentWeek.stats.wins + currentWeek.stats.losses)) * 100).toFixed(0) : "0")} wins={currentWeek.stats.wins} losses={currentWeek.stats.losses} />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -893,18 +900,18 @@ function WeeklyReportCard({ weeks, loading }: { weeks: any[], loading: boolean }
                 <PieChart className="w-3 h-3 text-amber-500" />
                 Settlement Ledger
               </h3>
-              <div className="space-y-3 max-h-[350px] overflow-y-auto pr-2 custom-scrollbar">
+              <div className="space-y-2 md:space-y-3 max-h-[300px] md:max-h-[350px] overflow-y-auto pr-2 custom-scrollbar">
                 {currentWeek.ledger.length > 0 ? (
                   currentWeek.ledger.map((item: any) => (
-                    <div key={item.userId} className="p-4 bg-white/5 border border-white/5 rounded-2xl hover:bg-white/[0.08] transition-all">
+                    <div key={item.userId} className="p-3 md:p-4 bg-white/5 border border-white/5 rounded-2xl hover:bg-white/[0.08] transition-all">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-[10px] font-black text-slate-400">
+                          <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-slate-800 flex items-center justify-center text-[9px] md:text-[10px] font-black text-slate-400 shrink-0">
                             {item.name[0]}
                           </div>
-                          <span className="text-xs font-bold text-white">{item.name}</span>
+                          <span className="text-[11px] md:text-xs font-bold text-white truncate max-w-[100px]">{item.name}</span>
                         </div>
-                        <span className={`text-xs font-black ${item.amount >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                        <span className={`text-[11px] md:text-xs font-black ${item.amount >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                           {item.amount >= 0 ? `+₹${item.amount}` : `-₹${Math.abs(item.amount)}`}
                         </span>
                       </div>
@@ -924,26 +931,26 @@ function WeeklyReportCard({ weeks, loading }: { weeks: any[], loading: boolean }
                 <Clock className="w-3 h-3 text-purple-500" />
                 Recent Activity
               </h3>
-              <div className="space-y-4">
+              <div className="space-y-3 md:space-y-4">
                 {currentWeek.matches.slice(0, 4).map((m: any, idx: number) => (
                   <motion.div
                     key={idx}
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: idx * 0.1 }}
-                    className="group/item flex items-center gap-4 p-4 bg-slate-950/40 rounded-2xl border border-white/5"
+                    className="group/item flex items-center gap-3 md:gap-4 p-3 md:p-4 bg-slate-950/40 rounded-2xl border border-white/5"
                   >
-                    <div className={`w-2 h-2 rounded-full shrink-0 ${m.outcome === 'win' ? 'bg-emerald-500 shadow-[0_0_8px_#10b981]' : 'bg-rose-500 shadow-[0_0_8px_#f43f5e]'}`} />
+                    <div className={`w-1.5 h-1.5 md:w-2 md:h-2 rounded-full shrink-0 ${m.outcome === 'win' ? 'bg-emerald-500 shadow-[0_0_8px_#10b981]' : 'bg-rose-500 shadow-[0_0_8px_#f43f5e]'}`} />
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-0.5">
-                        <span className="text-[10px] font-black text-white uppercase tracking-tight truncate">{m.venue.split(',')[0]}</span>
-                        <span className={`text-[10px] font-bold ${m.pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                      <div className="flex items-center justify-between mb-0.5 gap-2">
+                        <span className="text-[9px] md:text-[10px] font-black text-white uppercase tracking-tight truncate">{m.venue.split(',')[0]}</span>
+                        <span className={`text-[9px] md:text-[10px] font-bold shrink-0 ${m.pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                           {m.pnl >= 0 ? `+₹${m.pnl}` : `-₹${Math.abs(m.pnl)}`}
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-[8px] font-bold text-slate-600 uppercase">Res: {m.runs} ({m.balls})</span>
-                        <span className="text-[8px] font-bold text-indigo-400 uppercase">{new Date(m.date).toLocaleDateString([], { weekday: 'short' })}</span>
+                        <span className="text-[7px] md:text-[8px] font-bold text-slate-600 uppercase whitespace-nowrap">Res: {m.runs} ({m.balls})</span>
+                        <span className="text-[7px] md:text-[8px] font-bold text-indigo-400 uppercase">{new Date(m.date).toLocaleDateString([], { weekday: 'short' })}</span>
                       </div>
                     </div>
                   </motion.div>
@@ -967,42 +974,76 @@ function WeeklyReportCard({ weeks, loading }: { weeks: any[], loading: boolean }
   );
 }
 
-// --- Win Rate Gauge Component ---
-function WinRateGauge({ percentage }: { percentage: number }) {
-  const radius = 35;
+// --- Premium Performance Hub Component ---
+function PerformanceHub({ percentage, wins, losses }: { percentage: number, wins: number, losses: number }) {
+  const radius = 42;
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference - (percentage / 100) * circumference;
 
+  // Dynamic colors based on performance
+  const getColor = () => {
+    if (percentage >= 80) return { primary: '#10b981', glow: 'rgba(16, 185, 129, 0.3)', label: 'Elite' };
+    if (percentage >= 50) return { primary: '#f59e0b', glow: 'rgba(245, 158, 11, 0.3)', label: 'Pro' };
+    return { primary: '#f43f5e', glow: 'rgba(244, 63, 94, 0.3)', label: 'Growing' };
+  };
+
+  const style = getColor();
+
   return (
-    <div className="relative flex flex-col items-center">
-      <svg className="w-24 h-24 transform -rotate-90">
-        <circle
-          cx="48"
-          cy="48"
-          r={radius}
-          stroke="currentColor"
-          strokeWidth="8"
-          fill="transparent"
-          className="text-slate-800"
+    <div className="flex flex-col items-center gap-6 w-full">
+      <div className="relative flex items-center justify-center">
+        {/* Outer Glow Ring */}
+        <div
+          className="absolute inset-x-[-15%] inset-y-[-15%] rounded-full blur-2xl opacity-20 transition-colors duration-1000"
+          style={{ backgroundColor: style.primary }}
         />
-        <motion.circle
-          cx="48"
-          cy="48"
-          r={radius}
-          stroke="currentColor"
-          strokeWidth="8"
-          fill="transparent"
-          strokeDasharray={circumference}
-          initial={{ strokeDashoffset: circumference }}
-          animate={{ strokeDashoffset }}
-          transition={{ duration: 1, ease: "easeOut" }}
-          className="text-indigo-500"
-          strokeLinecap="round"
-        />
-      </svg>
-      <div className="absolute inset-x-0 top-[35%] text-center">
-        <span className="text-xl font-black text-white">{percentage}%</span>
-        <p className="text-[7px] font-bold text-slate-500 uppercase tracking-widest">Win Rate</p>
+
+        <svg className="w-32 h-32 transform -rotate-90">
+          <defs>
+            <linearGradient id="hubGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor={style.primary} />
+              <stop offset="100%" stopColor={percentage >= 50 ? '#6366f1' : '#fb7185'} />
+            </linearGradient>
+          </defs>
+          <circle
+            cx="64"
+            cy="64"
+            r={radius}
+            stroke="currentColor"
+            strokeWidth="3"
+            fill="transparent"
+            className="text-white/5"
+          />
+          <motion.circle
+            cx="64"
+            cy="64"
+            r={radius}
+            stroke="url(#hubGradient)"
+            strokeWidth="5"
+            fill="transparent"
+            strokeDasharray={circumference}
+            initial={{ strokeDashoffset: circumference }}
+            animate={{ strokeDashoffset }}
+            transition={{ duration: 1.5, ease: "circOut" }}
+            strokeLinecap="round"
+          />
+        </svg>
+
+        <div className="absolute flex flex-col items-center justify-center">
+          <span className="text-2xl font-black text-white leading-none tracking-tight font-sans">{percentage}%</span>
+          <span className="text-[6px] font-black uppercase tracking-[0.4em] mt-2 block h-2 transition-colors duration-500" style={{ color: style.primary }}>{style.label}</span>
+        </div>
+      </div>
+
+      <div className="w-full grid grid-cols-2 gap-px bg-white/5 rounded-2xl overflow-hidden border border-white/5">
+        <div className="flex items-center justify-center gap-2 py-3 bg-slate-950/60">
+          <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+          <span className="text-[8px] font-black text-slate-400">WINS: <span className="text-white ml-1">{wins}</span></span>
+        </div>
+        <div className="flex items-center justify-center gap-2 py-3 bg-slate-950/60">
+          <div className="w-1.5 h-1.5 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]" />
+          <span className="text-[8px] font-black text-slate-400">LOSS: <span className="text-white ml-1">{losses}</span></span>
+        </div>
       </div>
     </div>
   );
