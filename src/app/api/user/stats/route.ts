@@ -14,6 +14,57 @@ export async function GET(req: NextRequest) {
         await connectDB();
         const userId = (session.user as any).id;
 
+        if (req.nextUrl.searchParams.get("detailed") === "true") {
+            // "Detailed" stats for the profile page
+            const detailedStats = await UserMatchStats.find({ userId })
+                .populate({
+                    path: 'matchId',
+                    select: 'startTime teams venue status'
+                })
+                .sort({ updatedAt: -1 }) // Most recent first
+                .lean();
+
+            // Calculate aggregated metrics
+            const totalRuns = detailedStats.reduce((acc, curr) => acc + (curr.totalRuns || 0), 0);
+            const totalBalls = detailedStats.reduce((acc, curr) => acc + (curr.totalBalls || 0), 0);
+            const matchesPlayed = detailedStats.length;
+
+            // Avoid division by zero
+            const strikeRate = totalBalls > 0 ? ((totalRuns / totalBalls) * 100).toFixed(2) : "0.00";
+            const average = matchesPlayed > 0 ? (totalRuns / matchesPlayed).toFixed(2) : "0.00";
+
+            // Format match history for the frontend
+            const matchHistory = detailedStats.map((stat: any) => ({
+                matchId: stat.matchId._id,
+                date: stat.matchId.startTime,
+                opponent: "TBD", // Simplification: client or deeper logic can figure out opponent based on user's team
+                teams: stat.matchId.teams,
+                venue: stat.matchId.venue,
+                runs: stat.totalRuns,
+                balls: stat.totalBalls,
+                strikeRate: stat.totalBalls > 0 ? ((stat.totalRuns / stat.totalBalls) * 100).toFixed(1) : "0.0",
+                outcome: stat.matchId.status
+            }));
+
+            // Find highest score
+            const highestScore = detailedStats.reduce((max, curr) => (curr.totalRuns > max ? curr.totalRuns : max), 0);
+
+
+            return NextResponse.json({
+                overview: {
+                    matches: matchesPlayed,
+                    runs: totalRuns,
+                    balls: totalBalls,
+                    average,
+                    strikeRate,
+                    highestScore
+                },
+                history: matchHistory
+            });
+        }
+
+        // --- Original Dashboard Summary Logic (Preserved) ---
+
         // 1. Get User's Total Stats
         const userStatsAgg = await UserMatchStats.aggregate([
             { $match: { userId: userId } },

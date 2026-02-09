@@ -75,13 +75,7 @@ export default function MatchDetailPage({ params }: { params: Promise<{ id: stri
 
     useEffect(() => {
         fetchMatchData();
-
-        let interval: NodeJS.Timeout;
-        if (data?.match?.status === 'live') {
-            interval = setInterval(() => fetchMatchData(false), 30000);
-        }
-        return () => clearInterval(interval);
-    }, [matchId, data?.match?.status]);
+    }, [matchId]);
 
     // Check for match completion to show winner popup
     useEffect(() => {

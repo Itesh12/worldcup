@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Calendar, MapPin, Search, Trophy, ChevronRight, Clock, Battery, Signal, Wifi, Activity, ArrowRight, TrendingUp, LayoutDashboard, Zap } from "lucide-react";
+import { Calendar, MapPin, Search, Trophy, ChevronRight, Clock, Battery, Signal, Wifi, Activity, ArrowRight, TrendingUp, LayoutDashboard, Zap, RefreshCcw } from "lucide-react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { ProfileDialog } from "@/components/ProfileDialog";
@@ -26,31 +26,32 @@ export default function UserMatchesPage() {
   const [topPlayers, setTopPlayers] = useState<any[]>([]);
   const [statsLoading, setStatsLoading] = useState(true);
 
+  const [refreshing, setRefreshing] = useState(false);
+
   useEffect(() => {
-    handleAutoSync();
-
-    // 30s silent background polling for performance & leaderboard
-    const interval = setInterval(() => {
-      fetchDashboardStats(true);
-    }, 30000);
-
-    return () => clearInterval(interval);
+    // Initial fetch from DB (fast, no scrape)
+    fetchMatches(false);
+    fetchDashboardStats(false);
   }, []);
 
-  const handleAutoSync = async () => {
+  const handleRefresh = async () => {
+    if (refreshing) return;
+    setRefreshing(true);
     try {
-      // Trigger the background sync (loud for initial load)
+      // Trigger the background sync (loud)
       await fetch("/api/matches/sync", {
         method: "POST"
       });
-    } catch (err) {
-      console.error("Auto-sync failed", err);
-    } finally {
-      // Await both so the loader stays visible until data is ready
+
+      // Fetch updated data
       await Promise.all([
-        fetchMatches(false),
+        fetchMatches(true), // passing true forces loading state on match list if needed, or keeps it silent
         fetchDashboardStats(false)
       ]);
+    } catch (err) {
+      console.error("Manual sync failed", err);
+    } finally {
+      setRefreshing(false);
     }
   };
 
@@ -127,8 +128,8 @@ export default function UserMatchesPage() {
 
       {/* Header / Nav */}
       <header className="sticky top-0 z-40 bg-[#050B14]/80 backdrop-blur-xl border-b border-white/5">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2 md:gap-3">
+        <div className="max-w-7xl mx-auto px-4 py-4 grid grid-cols-3 items-center">
+          <div className="flex items-center gap-2 md:gap-3 justify-self-start">
             <Trophy className="w-6 h-6 md:w-8 md:h-8 text-indigo-500" />
             <div>
               <h1 className="text-lg md:text-xl font-black text-white tracking-tight leading-none">WORLD CUP <span className="text-indigo-500">HUB</span></h1>
@@ -136,55 +137,72 @@ export default function UserMatchesPage() {
             </div>
           </div>
 
-          {session?.user ? (
-            <>
-              {(session.user as any).role === "admin" && (
-                <Link
-                  href="/admin"
-                  className="hidden md:flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold uppercase tracking-widest rounded-xl transition-colors border border-white/5 mr-2"
-                >
-                  <LayoutDashboard className="w-4 h-4 text-indigo-400" />
-                  Admin
-                </Link>
-              )}
-
-              <div
-                className="flex items-center gap-4 cursor-pointer group"
-                onClick={() => setIsProfileOpen(true)}
+          <div className="justify-self-center">
+            {session?.user && (session.user as any).role === "admin" && (
+              <Link
+                href="/admin"
+                className="hidden md:flex items-center gap-2 px-6 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold uppercase tracking-widest rounded-xl transition-colors border border-white/5 shadow-lg shadow-black/20"
               >
-                <div className="hidden md:flex flex-col items-end mr-2">
-                  <span className="text-sm font-bold text-white leading-none group-hover:text-indigo-400 transition-colors">{(session.user as any).name}</span>
-                  <span className="text-[10px] text-indigo-400 uppercase font-bold tracking-wider">{(session.user as any).role}</span>
-                </div>
-                <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-indigo-600 to-purple-600 p-[2px] shadow-lg shadow-indigo-500/20 group-hover:shadow-indigo-500/40 transition-all">
-                  <div className="w-full h-full rounded-full bg-[#050B14] flex items-center justify-center overflow-hidden">
-                    {(session.user as any).image ? (
-                      <img src={(session.user as any).image} alt="Profile" className="w-full h-full object-cover" />
-                    ) : (
-                      <span className="font-bold text-white text-sm">{(session.user.name || "U")?.[0]}</span>
-                    )}
+                <LayoutDashboard className="w-4 h-4 text-indigo-400" />
+                Admin
+              </Link>
+            )}
+          </div>
+
+          <div className="flex items-center gap-4 justify-self-end">
+            {session?.user ? (
+              <>
+                <div className="flex items-center gap-4">
+                  {/* Refresh Button */}
+                  <button
+                    onClick={handleRefresh}
+                    disabled={refreshing}
+                    className={`p-2 rounded-full bg-slate-800/50 border border-white/5 text-slate-400 hover:text-white hover:bg-slate-700/50 transition-all ${refreshing ? 'animate-spin text-indigo-500' : ''}`}
+                    title="Refresh Data"
+                  >
+                    <RefreshCcw className="w-4 h-4" />
+                  </button>
+
+                  <div
+                    className="flex items-center gap-4 cursor-pointer group"
+                    onClick={() => setIsProfileOpen(true)}
+                  >
+                    <div className="hidden md:flex flex-col items-end mr-2">
+                      <span className="text-sm font-bold text-white leading-none group-hover:text-indigo-400 transition-colors">{(session.user as any).name}</span>
+                      <span className="text-[10px] text-indigo-400 uppercase font-bold tracking-wider">{(session.user as any).role}</span>
+                    </div>
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-indigo-600 to-purple-600 p-[2px] shadow-lg shadow-indigo-500/20 group-hover:shadow-indigo-500/40 transition-all">
+                      <div className="w-full h-full rounded-full bg-[#050B14] flex items-center justify-center overflow-hidden">
+                        {/* @ts-ignore */}
+                        {(session.user as any).image ? (
+                          <img src={(session.user as any).image} alt="Profile" className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="font-bold text-white text-sm">{(session.user.name || "U")?.[0]}</span>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {isProfileOpen && (
-                <ProfileDialog
-                  isOpen={isProfileOpen}
-                  onClose={() => setIsProfileOpen(false)}
-                  user={{
-                    name: session.user.name,
-                    email: session.user.email,
-                    image: session.user.image,
-                    role: (session.user as any).role
-                  }}
-                />
-              )}
-            </>
-          ) : (
-            <Link href="/login" className="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold rounded-lg transition-colors">
-              Sign In
-            </Link>
-          )}
+                {isProfileOpen && (
+                  <ProfileDialog
+                    isOpen={isProfileOpen}
+                    onClose={() => setIsProfileOpen(false)}
+                    user={{
+                      name: session.user.name,
+                      email: session.user.email,
+                      image: session.user.image,
+                      role: (session.user as any).role
+                    }}
+                  />
+                )}
+              </>
+            ) : (
+              <Link href="/login" className="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold rounded-lg transition-colors">
+                Sign In
+              </Link>
+            )}
+          </div>
         </div>
       </header>
 
