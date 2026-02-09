@@ -59,6 +59,72 @@ export async function GET(req: NextRequest) {
             // Find highest score
             const highestScore = detailedStats.reduce((max, curr) => (curr.totalRuns > max ? curr.totalRuns : max), 0);
 
+            // --- Net Worth Breakdown Logic for Detailed View ---
+            const matchIds = detailedStats.map(s => s.matchId._id);
+            let netWorth = 0;
+            const ledger: Record<string, { userId: string, name: string, amount: number, matches: any[] }> = {};
+
+            if (matchIds.length > 0) {
+                // Find winners
+                const winners = await UserMatchStats.aggregate([
+                    { $match: { matchId: { $in: matchIds } } },
+                    { $sort: { totalRuns: -1, totalBalls: 1 } },
+                    {
+                        $group: {
+                            _id: "$matchId",
+                            winnerId: { $first: "$userId" }
+                        }
+                    }
+                ]);
+
+                // Get all participants with names
+                const participants = await UserBattingAssignment.find({ matchId: { $in: matchIds } })
+                    .populate('userId', 'name')
+                    .lean();
+
+                const winnersMap = new Map(winners.map(w => [String(w._id), String(w.winnerId)]));
+
+                // Group participants by match
+                const matchParticipants: Record<string, any[]> = {};
+                participants.forEach(p => {
+                    const mid = String(p.matchId);
+                    if (!matchParticipants[mid]) matchParticipants[mid] = [];
+                    matchParticipants[mid].push(p.userId);
+                });
+
+                for (const stat of detailedStats) {
+                    const mid = String(stat.matchId._id);
+                    const winnerId = winnersMap.get(mid);
+                    const players = matchParticipants[mid] || [];
+                    const numParticipants = players.length;
+
+                    if (!winnerId || numParticipants <= 1) continue;
+
+                    if (winnerId === userIdStr) {
+                        // User Won: Gains 50 from ALL other players
+                        const gain = (numParticipants - 1) * 50;
+                        netWorth += gain;
+
+                        players.forEach(p => {
+                            const pid = String(p._id);
+                            if (pid === userIdStr) return;
+                            if (!ledger[pid]) ledger[pid] = { userId: pid, name: p.name, amount: 0, matches: [] };
+                            ledger[pid].amount += 50;
+                            ledger[pid].matches.push({ matchId: mid, amount: 50, type: 'gain', date: stat.matchId.startTime });
+                        });
+                    } else {
+                        // User Lost: Owes 50 to the winner
+                        netWorth -= 50;
+                        const winner = players.find(p => String(p._id) === winnerId);
+                        if (winner) {
+                            const pid = String(winner._id);
+                            if (!ledger[pid]) ledger[pid] = { userId: pid, name: winner.name, amount: 0, matches: [] };
+                            ledger[pid].amount -= 50;
+                            ledger[pid].matches.push({ matchId: mid, amount: -50, type: 'loss', date: stat.matchId.startTime });
+                        }
+                    }
+                }
+            }
 
             return NextResponse.json({
                 overview: {
@@ -67,8 +133,10 @@ export async function GET(req: NextRequest) {
                     balls: totalBalls,
                     average,
                     strikeRate,
-                    highestScore
+                    highestScore,
+                    netWorth
                 },
+                ledger: Object.values(ledger).sort((a, b) => b.amount - a.amount),
                 history: matchHistory
             });
         }

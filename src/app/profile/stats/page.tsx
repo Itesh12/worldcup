@@ -13,7 +13,19 @@ interface DetailedStats {
         average: string;
         strikeRate: string;
         highestScore: number;
+        netWorth: number;
     };
+    ledger: {
+        userId: string;
+        name: string;
+        amount: number;
+        matches: {
+            matchId: string;
+            amount: number;
+            type: 'gain' | 'loss';
+            date: string;
+        }[];
+    }[];
     history: {
         matchId: string;
         date: string;
@@ -110,9 +122,11 @@ export default function ProfileStatsPage() {
                         highlight
                     />
                     <StatCard
-                        label="Strike Rate"
-                        value={stats.overview.strikeRate}
-                        icon={<Zap className="w-4 h-4 text-orange-500" />}
+                        label="Net Worth"
+                        value={`₹${stats.overview.netWorth}`}
+                        icon={<Zap className="w-4 h-4 text-amber-400" />}
+                        isCurrency
+                        trend={stats.overview.netWorth >= 0 ? 'up' : 'down'}
                     />
                     <StatCard
                         label="Highest"
@@ -122,16 +136,75 @@ export default function ProfileStatsPage() {
                 </div>
 
                 {/* Detailed Stats Row 2 */}
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                     <div className="p-5 bg-slate-900/40 rounded-2xl border border-white/5">
                         <p className="text-slate-500 text-xs font-bold uppercase mb-1">Batting Average</p>
                         <p className="text-3xl font-black text-white">{stats.overview.average}</p>
                     </div>
                     <div className="p-5 bg-slate-900/40 rounded-2xl border border-white/5">
+                        <p className="text-slate-500 text-xs font-bold uppercase mb-1">Strike Rate</p>
+                        <p className="text-3xl font-black text-white">{stats.overview.strikeRate}</p>
+                    </div>
+                    <div className="p-5 bg-slate-900/40 rounded-2xl border border-white/5 col-span-2 md:col-span-1">
                         <p className="text-slate-500 text-xs font-bold uppercase mb-1">Balls Faced</p>
                         <p className="text-3xl font-black text-white">{stats.overview.balls}</p>
                     </div>
                 </div>
+
+                {/* Financial Breakdown Section */}
+                <section className="space-y-4">
+                    <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                        <Zap className="w-5 h-5 text-amber-500" />
+                        Net Worth Breakdown
+                    </h3>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {stats.ledger.length > 0 ? (
+                            stats.ledger.map((item) => (
+                                <div key={item.userId} className="p-5 bg-slate-900/40 border border-white/5 rounded-2xl">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center font-bold text-slate-300">
+                                                {item.name[0]}
+                                            </div>
+                                            <div>
+                                                <p className="font-bold text-white">{item.name}</p>
+                                                <p className="text-[10px] text-slate-500 uppercase font-extrabold tracking-widest">
+                                                    {item.matches.length} {item.matches.length === 1 ? 'Match' : 'Matches'}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className={`text-xl font-black ${item.amount >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                                                {item.amount >= 0 ? `+₹${item.amount}` : `-₹${Math.abs(item.amount)}`}
+                                            </p>
+                                            <p className="text-[9px] text-slate-500 font-bold uppercase">
+                                                {item.amount >= 0 ? 'To Collect' : 'To Pay'}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-2 max-h-32 overflow-y-auto pr-2 custom-scrollbar">
+                                        {item.matches.map((m, idx) => (
+                                            <div key={idx} className="flex items-center justify-between py-2 border-t border-white/5">
+                                                <span className="text-[10px] text-slate-400">
+                                                    {new Date(m.date).toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                                                </span>
+                                                <span className={`text-[10px] font-bold ${m.type === 'gain' ? 'text-emerald-500/80' : 'text-rose-500/80'}`}>
+                                                    {m.type === 'gain' ? '+' : '-'}₹{Math.abs(m.amount)}
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            ))
+                        ) : (
+                            <div className="col-span-full py-8 text-center bg-slate-900/40 rounded-2xl border border-white/5 opacity-50">
+                                <p className="text-slate-400 text-sm">No financial data available yet.</p>
+                            </div>
+                        )}
+                    </div>
+                </section>
 
                 {/* Match History */}
                 <section>
@@ -201,11 +274,15 @@ export default function ProfileStatsPage() {
     );
 }
 
-function StatCard({ label, value, icon, highlight = false }: { label: string, value: string | number, icon: any, highlight?: boolean }) {
+function StatCard({ label, value, icon, highlight = false, isCurrency = false, trend }: { label: string, value: string | number, icon: any, highlight?: boolean, isCurrency?: boolean, trend?: 'up' | 'down' }) {
+    const valueColor = isCurrency
+        ? (trend === 'up' ? 'text-emerald-400' : 'text-rose-400')
+        : (highlight ? 'text-indigo-400' : 'text-white');
+
     return (
         <div className={`p-4 rounded-2xl border backdrop-blur-sm transition-all ${highlight
-                ? 'bg-indigo-600/10 border-indigo-500/30'
-                : 'bg-slate-900/40 border-white/5 hover:bg-slate-800/60'
+            ? 'bg-indigo-600/10 border-indigo-500/30'
+            : 'bg-slate-900/40 border-white/5 hover:bg-slate-800/60'
             }`}>
             <div className="flex items-center gap-2 mb-2">
                 {icon}
@@ -213,7 +290,7 @@ function StatCard({ label, value, icon, highlight = false }: { label: string, va
                     {label}
                 </span>
             </div>
-            <p className={`text-2xl md:text-3xl font-black ${highlight ? 'text-indigo-400' : 'text-white'}`}>
+            <p className={`text-2xl md:text-3xl font-black ${valueColor}`}>
                 {value}
             </p>
         </div>
