@@ -3,6 +3,9 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import connectDB from "@/lib/db";
 import UserMatchStats from "@/models/UserMatchStats";
+import UserBattingAssignment from "@/models/UserBattingAssignment";
+import Match from "@/models/Match"; // Ensure Match model is registered
+import User from "@/models/User";   // Ensure User model is registered
 import mongoose from "mongoose";
 
 export async function GET(req: NextRequest) {
@@ -14,6 +17,11 @@ export async function GET(req: NextRequest) {
 
         await connectDB();
         const userIdStr = (session.user as any).id;
+
+        if (!userIdStr || !mongoose.Types.ObjectId.isValid(userIdStr)) {
+            return NextResponse.json({ error: "Invalid User ID" }, { status: 400 });
+        }
+
         const userId = new mongoose.Types.ObjectId(userIdStr);
 
         if (req.nextUrl.searchParams.get("detailed") === "true") {
@@ -100,10 +108,65 @@ export async function GET(req: NextRequest) {
 
         const rank = (globalRankAgg[0]?.usersAbove || 0) + 1;
 
+        // 3. Calculate Net Worth
+        // Logic: For each match played, if won: +(Opponents)*50, if lost: -50
+        const userStatsDocs = await UserMatchStats.find({ userId }).select('matchId').lean();
+        const participatedMatchIds = userStatsDocs.map(s => s.matchId);
+
+        let netWorth = 0;
+
+        if (participatedMatchIds.length > 0) {
+            // Find winners for all these matches in one go
+            const winners = await UserMatchStats.aggregate([
+                { $match: { matchId: { $in: participatedMatchIds } } },
+                { $sort: { totalRuns: -1, totalBalls: 1 } },
+                {
+                    $group: {
+                        _id: "$matchId",
+                        winnerId: { $first: "$userId" }
+                    }
+                }
+            ]);
+
+            // Get participant counts for all matches in one go
+            const counts = await UserBattingAssignment.aggregate([
+                { $match: { matchId: { $in: participatedMatchIds } } },
+                {
+                    $group: {
+                        _id: "$matchId",
+                        users: { $addToSet: "$userId" }
+                    }
+                },
+                {
+                    $project: {
+                        count: { $size: "$users" }
+                    }
+                }
+            ]);
+
+            const winnersMap = new Map(winners.map(w => [String(w._id), String(w.winnerId)]));
+            const countsMap = new Map(counts.map(c => [String(c._id), Number(c.count)]));
+
+            for (const mId of participatedMatchIds) {
+                const midStr = String(mId);
+                const winnerId = winnersMap.get(midStr);
+                const numParticipants = countsMap.get(midStr) || 0;
+
+                if (!winnerId || numParticipants <= 1) continue;
+
+                if (winnerId === userIdStr) {
+                    netWorth += (numParticipants - 1) * 50;
+                } else {
+                    netWorth -= 50;
+                }
+            }
+        }
+
         return NextResponse.json({
             totalRuns: userStats.totalRuns,
             totalBalls: userStats.totalBalls,
-            rank: rank
+            rank: rank,
+            netWorth: netWorth
         });
 
     } catch (error: any) {
