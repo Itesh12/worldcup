@@ -18,20 +18,35 @@ if (!cached) {
 }
 
 async function connectDB() {
-    if (cached.conn) {
+    if (cached.conn && mongoose.connection.readyState === 1) {
         return cached.conn;
     }
 
     if (!cached.promise) {
         const opts = {
             bufferCommands: false,
+            serverSelectionTimeoutMS: 5000,
+            connectTimeoutMS: 10000,
         };
 
-        cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {
-            return mongoose;
+        console.log("MongoDB: Attempting new connection...");
+        cached.promise = mongoose.connect(MONGODB_URI, opts).then((m) => {
+            console.log("MongoDB: Connected successfully");
+            return m;
+        }).catch((err) => {
+            console.error("MongoDB: Connection error:", err.message);
+            cached.promise = null; // Reset promise on failure
+            throw err;
         });
     }
-    cached.conn = await cached.promise;
+
+    try {
+        cached.conn = await cached.promise;
+    } catch (e) {
+        cached.promise = null; // Force reset if await fails
+        throw e;
+    }
+
     return cached.conn;
 }
 
