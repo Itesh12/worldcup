@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Users, Trophy, Activity, TrendingUp, ShieldCheck, Clock, CheckCircle, Ticket, Medal, Flame, ArrowLeft, Trash2, AlertTriangle, X } from "lucide-react";
+import { Users, Trophy, Activity, TrendingUp, ShieldCheck, Clock, CheckCircle, Ticket, Medal, Flame, ArrowLeft, Trash2, AlertTriangle, X, FileText, ArrowUpRight } from "lucide-react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 
@@ -265,6 +265,39 @@ export default function AdminDashboardPage() {
                             </div>
                         </div>
                     </div>
+                </div>
+
+                {/* NEW: Admin Weekly Reports Access */}
+                <div className="relative group">
+                    <Link href="/admin/reports" className="block p-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-500 rounded-[2.5rem] transition-all duration-500 hover:scale-[1.01] hover:shadow-[0_0_30px_rgba(99,102,241,0.2)]">
+                        <div className="relative overflow-hidden rounded-[2.4rem] p-10 bg-slate-950 flex flex-col md:flex-row items-center justify-between gap-8">
+                            {/* Animated Background */}
+                            <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 via-transparent to-purple-500/10 opacity-50 group-hover:opacity-80 transition-opacity" />
+                            <div className="absolute -top-20 -left-20 w-64 h-64 bg-indigo-500/10 blur-[100px] rounded-full" />
+                            <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-purple-500/10 blur-[100px] rounded-full" />
+
+                            <div className="relative z-10 flex items-center gap-6">
+                                <div className="w-20 h-20 rounded-3xl bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20 shadow-lg shadow-indigo-500/5 group-hover:bg-indigo-500/20 group-hover:border-indigo-500/30 transition-all duration-500">
+                                    <FileText className="w-10 h-10 text-indigo-400" />
+                                </div>
+                                <div className="space-y-2">
+                                    <h2 className="text-3xl md:text-5xl font-black text-white tracking-tighter leading-none italic uppercase">
+                                        Weekly Intelligence <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400 pr-4">Hub</span>
+                                    </h2>
+                                    <p className="text-slate-400 font-bold uppercase tracking-[0.2em] text-[10px] md:text-xs">
+                                        Monitor player performance &middot; verify settlements &middot; generate master reports
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="relative z-10">
+                                <div className="flex items-center gap-3 px-8 py-4 rounded-2xl bg-white/5 border border-white/10 group-hover:bg-indigo-500 group-hover:border-indigo-400 transition-all duration-500 shadow-xl group-hover:shadow-indigo-500/30">
+                                    <span className="text-sm font-black text-white uppercase tracking-widest">Enter Hub</span>
+                                    <ArrowUpRight className="w-5 h-5 text-white animate-bounce-subtle" />
+                                </div>
+                            </div>
+                        </div>
+                    </Link>
                 </div>
 
                 {/* Row 2: Game Measurements */}
