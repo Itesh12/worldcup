@@ -1,8 +1,11 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
-import { Calendar, MapPin, Search, Trophy, ChevronRight, Clock, Battery, Signal, Wifi, Activity, ArrowRight, TrendingUp, LayoutDashboard, Zap, RefreshCcw, PartyPopper } from "lucide-react";
+import React, { useEffect, useState, useRef } from "react";
+import { Calendar, MapPin, Search, Trophy, ChevronRight, Clock, Battery, Signal, Wifi, Activity, ArrowRight, TrendingUp, LayoutDashboard, Zap, RefreshCcw, PartyPopper, ChevronLeft, BarChart3, PieChart, Info, Download } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { toPng } from "html-to-image";
+import jsPDF from "jspdf";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { ProfileDialog } from "@/components/ProfileDialog";
@@ -24,7 +27,9 @@ export default function UserMatchesPage() {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [userStats, setUserStats] = useState<{ totalRuns: number; rank: number; netWorth: number } | null>(null);
   const [topPlayers, setTopPlayers] = useState<any[]>([]);
+  const [weeklyReports, setWeeklyReports] = useState<any[]>([]);
   const [statsLoading, setStatsLoading] = useState(true);
+  const [weeklyLoading, setWeeklyLoading] = useState(true);
 
   const [refreshing, setRefreshing] = useState(false);
 
@@ -32,6 +37,7 @@ export default function UserMatchesPage() {
     // Initial fetch from DB (fast, no scrape)
     fetchMatches(false);
     fetchDashboardStats(false);
+    fetchWeeklyReports();
   }, []);
 
   const handleRefresh = async () => {
@@ -77,6 +83,19 @@ export default function UserMatchesPage() {
       console.error("Failed to fetch dashboard stats", err);
     } finally {
       if (!silent) setStatsLoading(false);
+    }
+  };
+
+  const fetchWeeklyReports = async () => {
+    try {
+      setWeeklyLoading(true);
+      const res = await fetch("/api/user/weekly-report");
+      const data = await res.json();
+      if (res.ok) setWeeklyReports(data.weeks);
+    } catch (err) {
+      console.error("Failed to fetch weekly reports", err);
+    } finally {
+      setWeeklyLoading(false);
     }
   };
 
@@ -265,6 +284,11 @@ export default function UserMatchesPage() {
               </div>
             </div>
           </section>
+        )}
+
+        {/* 1.5 WEEKLY REPORT CARD (New Feature) */}
+        {session && (
+          <WeeklyReportCard weeks={weeklyReports} loading={weeklyLoading} />
         )}
 
         {/* 2. CENTER: Matchday Action */}
@@ -694,3 +718,377 @@ function EmptyState({ message }: { message: string }) {
     </div>
   );
 }
+
+// --- Weekly Report Card Component ---
+
+function WeeklyReportCard({ weeks, loading }: { weeks: any[], loading: boolean }) {
+  const { data: session } = useSession();
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const reportRef = useRef<HTMLDivElement>(null);
+  const fullReportRef = useRef<HTMLDivElement>(null);
+  const [downloading, setDownloading] = useState(false);
+
+  if (loading) {
+    return (
+      <div className="w-full h-[400px] bg-slate-900/20 rounded-[2rem] border border-white/5 animate-pulse flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+          <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Compiling Weekly Insight...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (!weeks || weeks.length === 0) return null;
+
+  const currentWeek = weeks[currentIndex];
+  if (!currentWeek) return null;
+
+  const isLatest = currentIndex === 0;
+  const isOldest = currentIndex === weeks.length - 1;
+
+  const handlePrev = () => {
+    if (!isOldest) setCurrentIndex(prev => prev + 1);
+  };
+  const handleNext = () => {
+    if (!isLatest) setCurrentIndex(prev => prev - 1);
+  };
+
+  const handleDownload = async () => {
+    if (!fullReportRef.current) return;
+    try {
+      setDownloading(true);
+      await new Promise(resolve => setTimeout(resolve, 800));
+      const dataUrl = await toPng(fullReportRef.current, {
+        cacheBust: true,
+        backgroundColor: '#050B14',
+        width: 1200,
+        height: 1600,
+      });
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (1600 * pdfWidth) / 1200;
+      pdf.addImage(dataUrl, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      pdf.save(`WorldCupHub_Report_${currentWeek.label.replace(/\s+/g, '_')}.pdf`);
+    } catch (err) {
+      console.error("PDF Export failed", err);
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+  const maxRuns = Math.max(...currentWeek.matches.map((m: any) => m.runs), 1);
+
+  return (
+    <section className="relative group/report">
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-4">
+          <div className="p-3 bg-amber-500/10 rounded-2xl border border-amber-500/20">
+            <BarChart3 className="w-6 h-6 text-amber-400" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-black text-white uppercase tracking-tight">Weekly <span className="text-amber-500">Pulse</span></h2>
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">{currentIndex === 0 ? "Current Week Overview" : "Previous Week Review"}</p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handlePrev}
+            disabled={isOldest}
+            className={`p-2 rounded-xl border transition-all ${isOldest ? 'opacity-30 border-white/5 text-slate-600' : 'bg-slate-800 border-white/10 text-white hover:bg-slate-700'}`}
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+          <div className="px-4 py-2 bg-slate-900/60 border border-white/5 rounded-xl">
+            <span className="text-[10px] font-black text-white uppercase tracking-widest">{currentWeek.label}</span>
+          </div>
+          <button
+            onClick={handleNext}
+            disabled={isLatest}
+            className={`p-2 rounded-xl border transition-all ${isLatest ? 'opacity-30 border-white/5 text-slate-600' : 'bg-slate-800 border-white/10 text-white hover:bg-slate-700'}`}
+          >
+            <ChevronRight className="w-5 h-5" />
+          </button>
+          <div className="w-px h-6 bg-white/5 mx-1" />
+          <button
+            onClick={handleDownload}
+            disabled={downloading}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-50"
+          >
+            {downloading ? <RefreshCcw className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />}
+            {downloading ? "Exporting" : "Download"}
+          </button>
+        </div>
+      </div>
+
+      <AnimatePresence mode="wait">
+        <motion.div
+          ref={reportRef}
+          key={currentWeek.key}
+          initial={{ opacity: 0, scale: 0.95, y: 10 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 1.05, y: -10 }}
+          transition={{ duration: 0.4, ease: "easeOut" }}
+          className="relative overflow-hidden rounded-[2.5rem] p-8 md:p-10 bg-slate-900/40 border border-white/5 shadow-2xl backdrop-blur-md"
+        >
+          {/* Ambient background blur */}
+          <div className="absolute top-0 right-0 w-96 h-96 bg-amber-500/5 blur-[120px] rounded-full pointer-events-none" />
+          <div className="absolute bottom-0 left-0 w-96 h-96 bg-indigo-500/5 blur-[120px] rounded-full pointer-events-none" />
+
+          <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-10">
+            {/* Left: Summary & Charts */}
+            <div className="lg:col-span-4 space-y-8">
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] mb-4">Performance Score</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="p-4 rounded-2xl bg-white/5 border border-white/5">
+                      <p className="text-[8px] font-black text-slate-500 uppercase mb-1">Total Runs</p>
+                      <p className="text-2xl font-black text-white">{currentWeek.stats.runs}</p>
+                    </div>
+                    <div className="p-4 rounded-2xl bg-white/5 border border-white/5">
+                      <p className="text-[8px] font-black text-slate-500 uppercase mb-1">Average</p>
+                      <p className="text-2xl font-black text-indigo-400">{currentWeek.stats.average}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] mb-4">Financial Flow</h3>
+                  <div className="p-6 rounded-2xl bg-gradient-to-br from-slate-950 to-slate-900 border border-white/5 shadow-inner">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-bold text-slate-500">Net Weekly P&L</span>
+                      <span className={`text-xl font-black ${currentWeek.stats.netWorth >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                        {currentWeek.stats.netWorth >= 0 ? `+₹${currentWeek.stats.netWorth}` : `-₹${Math.abs(currentWeek.stats.netWorth)}`}
+                      </span>
+                    </div>
+                    <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: "100%" }}
+                        transition={{ duration: 1, delay: 0.5 }}
+                        className={`h-full ${currentWeek.stats.netWorth >= 0 ? 'bg-emerald-500 shadow-[0_0_10px_#10b981]' : 'bg-rose-500 shadow-[0_0_10px_#f43f5e]'}`}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Win Rate Gauge */}
+                <div className="pt-4">
+                  <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] mb-4 flex items-center justify-between">
+                    Win Efficiency
+                    <Trophy className="w-3 h-3 text-amber-500" />
+                  </h3>
+                  <div className="flex items-center justify-center p-4 bg-white/5 rounded-2xl border border-white/5">
+                    <WinRateGauge percentage={parseFloat(currentWeek.stats.wins > 0 ? ((currentWeek.stats.wins / (currentWeek.stats.wins + currentWeek.stats.losses)) * 100).toFixed(0) : "0")} />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Middle: Ledger Breakdown */}
+            <div className="lg:col-span-4 space-y-6">
+              <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] mb-4 flex items-center gap-2">
+                <PieChart className="w-3 h-3 text-amber-500" />
+                Settlement Ledger
+              </h3>
+              <div className="space-y-3 max-h-[350px] overflow-y-auto pr-2 custom-scrollbar">
+                {currentWeek.ledger.length > 0 ? (
+                  currentWeek.ledger.map((item: any) => (
+                    <div key={item.userId} className="p-4 bg-white/5 border border-white/5 rounded-2xl hover:bg-white/[0.08] transition-all">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-[10px] font-black text-slate-400">
+                            {item.name[0]}
+                          </div>
+                          <span className="text-xs font-bold text-white">{item.name}</span>
+                        </div>
+                        <span className={`text-xs font-black ${item.amount >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                          {item.amount >= 0 ? `+₹${item.amount}` : `-₹${Math.abs(item.amount)}`}
+                        </span>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="py-20 text-center opacity-30">
+                    <span className="text-[8px] font-black uppercase tracking-widest">No Transactions This Week</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Right: Match Feed */}
+            <div className="lg:col-span-4 space-y-6">
+              <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] mb-4 flex items-center gap-2">
+                <Clock className="w-3 h-3 text-purple-500" />
+                Recent Activity
+              </h3>
+              <div className="space-y-4">
+                {currentWeek.matches.slice(0, 4).map((m: any, idx: number) => (
+                  <motion.div
+                    key={idx}
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: idx * 0.1 }}
+                    className="group/item flex items-center gap-4 p-4 bg-slate-950/40 rounded-2xl border border-white/5"
+                  >
+                    <div className={`w-2 h-2 rounded-full shrink-0 ${m.outcome === 'win' ? 'bg-emerald-500 shadow-[0_0_8px_#10b981]' : 'bg-rose-500 shadow-[0_0_8px_#f43f5e]'}`} />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-0.5">
+                        <span className="text-[10px] font-black text-white uppercase tracking-tight truncate">{m.venue.split(',')[0]}</span>
+                        <span className={`text-[10px] font-bold ${m.pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                          {m.pnl >= 0 ? `+₹${m.pnl}` : `-₹${Math.abs(m.pnl)}`}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[8px] font-bold text-slate-600 uppercase">Res: {m.runs} ({m.balls})</span>
+                        <span className="text-[8px] font-bold text-indigo-400 uppercase">{new Date(m.date).toLocaleDateString([], { weekday: 'short' })}</span>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+
+              <Link href="/profile/stats" className="flex items-center justify-center gap-2 w-full py-3 mt-4 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition-all text-[9px] font-black text-slate-400 hover:text-white uppercase tracking-widest">
+                View Full Analytics
+                <ArrowRight className="w-3 h-3" />
+              </Link>
+            </div>
+          </div>
+        </motion.div>
+      </AnimatePresence>
+
+      {/* Hidden Full Template for PDF Export */}
+      <div className="fixed left-[-9999px] top-0 pointer-events-none">
+        <WeeklyReportTemplate ref={fullReportRef} week={currentWeek} userName={session?.user?.name || "Player"} />
+      </div>
+    </section>
+  );
+}
+
+// --- Win Rate Gauge Component ---
+function WinRateGauge({ percentage }: { percentage: number }) {
+  const radius = 35;
+  const circumference = 2 * Math.PI * radius;
+  const strokeDashoffset = circumference - (percentage / 100) * circumference;
+
+  return (
+    <div className="relative flex flex-col items-center">
+      <svg className="w-24 h-24 transform -rotate-90">
+        <circle
+          cx="48"
+          cy="48"
+          r={radius}
+          stroke="currentColor"
+          strokeWidth="8"
+          fill="transparent"
+          className="text-slate-800"
+        />
+        <motion.circle
+          cx="48"
+          cy="48"
+          r={radius}
+          stroke="currentColor"
+          strokeWidth="8"
+          fill="transparent"
+          strokeDasharray={circumference}
+          initial={{ strokeDashoffset: circumference }}
+          animate={{ strokeDashoffset }}
+          transition={{ duration: 1, ease: "easeOut" }}
+          className="text-indigo-500"
+          strokeLinecap="round"
+        />
+      </svg>
+      <div className="absolute inset-x-0 top-[35%] text-center">
+        <span className="text-xl font-black text-white">{percentage}%</span>
+        <p className="text-[7px] font-bold text-slate-500 uppercase tracking-widest">Win Rate</p>
+      </div>
+    </div>
+  );
+}
+
+// --- Full Page Report Template for PDF ---
+const WeeklyReportTemplate = React.forwardRef<HTMLDivElement, { week: any, userName: string }>(({ week, userName }, ref) => {
+  return (
+    <div ref={ref} className="w-[1200px] p-20 bg-[#050B14] text-white space-y-12 font-sans">
+      <div className="flex items-center justify-between border-b border-white/10 pb-10">
+        <div>
+          <h1 className="text-5xl font-black tracking-tighter uppercase mb-2">WorldCupHub <span className="text-amber-500">Report</span></h1>
+          <p className="text-xl font-bold text-slate-500 uppercase tracking-widest">Weekly Performance Insight • {week.label}</p>
+        </div>
+        <div className="text-right">
+          <p className="text-2xl font-black text-indigo-400 uppercase">{userName}</p>
+          <p className="text-sm font-bold text-slate-600 uppercase">Pro Stats Analysis</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-3 gap-8">
+        <div className="bg-slate-900/40 border border-white/5 p-8 rounded-[2rem]">
+          <p className="text-sm font-black text-slate-500 uppercase mb-2">Weekly Batting</p>
+          <div className="flex items-baseline gap-2">
+            <span className="text-6xl font-black">{week.stats.runs}</span>
+            <span className="text-xl font-bold text-slate-600">Runs</span>
+          </div>
+          <p className="text-sm text-slate-400 mt-4 font-bold uppercase tracking-wider">Avg: {week.stats.average} • SR: {week.stats.strikeRate}</p>
+        </div>
+        <div className="bg-slate-900/40 border border-white/5 p-8 rounded-[2rem]">
+          <p className="text-sm font-black text-slate-500 uppercase mb-2">Financial Flow</p>
+          <div className="flex items-baseline gap-2">
+            <span className={`text-6xl font-black ${week.stats.netWorth >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+              {week.stats.netWorth >= 0 ? `+₹${week.stats.netWorth}` : `-₹${Math.abs(week.stats.netWorth)}`}
+            </span>
+          </div>
+          <p className="text-sm text-slate-400 mt-4 font-bold uppercase tracking-wider">{week.stats.netWorth >= 0 ? 'Profit' : 'Loss'} generated this week</p>
+        </div>
+        <div className="bg-slate-900/40 border border-white/5 p-8 rounded-[2rem]">
+          <p className="text-sm font-black text-slate-500 uppercase mb-2">Success Rate</p>
+          <div className="flex items-baseline gap-2">
+            <span className="text-6xl font-black">{week.stats.wins}</span>
+            <span className="text-xl font-bold text-slate-600">Wins</span>
+          </div>
+          <p className="text-sm text-slate-400 mt-4 font-bold uppercase tracking-wider">Out of {week.stats.wins + week.stats.losses} money matches</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-12">
+        <section>
+          <h2 className="text-2xl font-black uppercase tracking-widest text-slate-500 mb-6">Settlement Ledger</h2>
+          <div className="space-y-4">
+            {week.ledger.map((item: any) => (
+              <div key={item.userId} className="p-6 bg-white/5 rounded-3xl flex items-center justify-between">
+                <span className="text-xl font-bold">{item.name}</span>
+                <span className={`text-2xl font-black ${item.amount >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                  {item.amount >= 0 ? `+₹${item.amount}` : `-₹${Math.abs(item.amount)}`}
+                </span>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section>
+          <h2 className="text-2xl font-black uppercase tracking-widest text-slate-500 mb-6">Match Feed</h2>
+          <div className="space-y-4">
+            {week.matches.map((m: any, i: number) => (
+              <div key={i} className="p-6 bg-slate-900/60 rounded-3xl border border-white/5">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-lg font-black uppercase">{m.venue.split(',')[0]}</span>
+                  <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase ${m.outcome === 'win' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'}`}>{m.outcome}</span>
+                </div>
+                <div className="flex justify-between text-sm font-bold text-slate-500 uppercase tracking-widest">
+                  <span>{m.runs} Runs ({m.balls} Balls)</span>
+                  <span>{new Date(m.date).toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      </div>
+
+      <div className="pt-20 border-t border-white/10 text-center opacity-30">
+        <p className="text-[12px] font-black uppercase tracking-[0.5em]">Auto-Generated by WorldCupHub Intelligence System</p>
+      </div>
+    </div>
+  );
+});
+WeeklyReportTemplate.displayName = "WeeklyReportTemplate";
