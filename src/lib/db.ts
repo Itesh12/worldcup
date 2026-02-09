@@ -25,16 +25,22 @@ async function connectDB() {
     if (!cached.promise) {
         const opts = {
             bufferCommands: false,
-            serverSelectionTimeoutMS: 5000,
-            connectTimeoutMS: 10000,
+            serverSelectionTimeoutMS: 15000, // Increased from 5000
+            connectTimeoutMS: 20000,       // Increased from 10000
+            heartbeatFrequencyMS: 10000,
         };
 
         console.log("MongoDB: Attempting new connection...");
         cached.promise = mongoose.connect(MONGODB_URI, opts).then((m) => {
-            console.log("MongoDB: Connected successfully");
+            console.log("MongoDB: Connected successfully to", m.connection.host);
             return m;
         }).catch((err) => {
-            console.error("MongoDB: Connection error:", err.message);
+            console.error("MongoDB: Connection error details:");
+            console.error("- Message:", err.message);
+            console.error("- Code:", err.code);
+            if (err.message.includes('getaddrinfo')) {
+                console.error("- Suggestion: Check DNS settings or MongoDB Atlas IP Whitelist.");
+            }
             cached.promise = null; // Reset promise on failure
             throw err;
         });

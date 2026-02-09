@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import connectDB from "@/lib/db";
 import UserMatchStats from "@/models/UserMatchStats";
+import mongoose from "mongoose";
 
 export async function GET(req: NextRequest) {
     try {
@@ -12,7 +13,8 @@ export async function GET(req: NextRequest) {
         }
 
         await connectDB();
-        const userId = (session.user as any).id;
+        const userIdStr = (session.user as any).id;
+        const userId = new mongoose.Types.ObjectId(userIdStr);
 
         if (req.nextUrl.searchParams.get("detailed") === "true") {
             // "Detailed" stats for the profile page

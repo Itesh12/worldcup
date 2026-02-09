@@ -8,12 +8,19 @@ export async function GET(req: NextRequest) {
     try {
         await connectDB();
 
-        // 1. Find recent finished matches (limit 5)
-        const recentMatches = await Match.find({
+        const { searchParams } = new URL(req.url);
+        const limit = parseInt(searchParams.get("limit") || "5");
+
+        // 1. Find recent finished matches
+        let query = Match.find({
             status: { $in: ['finished', 'completed', 'result', 'settled'] }
-        })
-            .sort({ startTime: -1 })
-            .limit(5);
+        }).sort({ startTime: -1 });
+
+        if (limit > 0) {
+            query = query.limit(limit);
+        }
+
+        const recentMatches = await query;
 
         const winnersData = [];
 

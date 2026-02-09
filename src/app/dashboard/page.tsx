@@ -429,14 +429,23 @@ function WinnersSection() {
 
   return (
     <section className="mt-12 md:mt-20 pb-20 animate-in fade-in slide-in-from-bottom-8 duration-700">
-      <div className="flex items-center gap-4 mb-8">
-        <div className="p-3 bg-indigo-500/10 rounded-2xl border border-indigo-500/20">
-          <PartyPopper className="w-6 h-6 text-indigo-400" />
+      <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center gap-4">
+          <div className="p-3 bg-indigo-500/10 rounded-2xl border border-indigo-500/20">
+            <PartyPopper className="w-6 h-6 text-indigo-400" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-black text-white uppercase tracking-tight">Hall of <span className="text-indigo-500">Fame</span></h2>
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Recent Match Champions</p>
+          </div>
         </div>
-        <div>
-          <h2 className="text-2xl font-black text-white uppercase tracking-tight">Hall of <span className="text-indigo-500">Fame</span></h2>
-          <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Recent Match Champions</p>
-        </div>
+        <Link
+          href="/hall-of-fame"
+          className="px-6 py-2 bg-slate-800 hover:bg-slate-700 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all border border-white/5 flex items-center gap-2"
+        >
+          View All
+          <ChevronRight className="w-4 h-4 text-indigo-400" />
+        </Link>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
