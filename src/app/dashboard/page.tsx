@@ -208,199 +208,209 @@ export default function UserMatchesPage() {
 
       <main className="max-w-7xl mx-auto px-4 pt-8 space-y-12">
 
-        {/* HERO: Today's / Live Matches */}
-        {heroMatches.length > 0 && (
-          <section className="animate-in fade-in slide-in-from-bottom-5 duration-700">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
-              <h2 className="text-xl md:text-2xl font-black text-white flex items-center gap-3">
-                <span className="w-1.5 h-6 md:w-2 md:h-8 bg-indigo-500 rounded-full" />
-                Matchday Action
-                <span className="px-2 py-0.5 rounded bg-red-500/10 text-red-500 text-[9px] md:text-[10px] font-bold uppercase border border-red-500/20 animate-pulse">
-                  Live Updates
-                </span>
-              </h2>
-              <div className="flex gap-2 items-center">
-                <span className="text-[10px] md:text-xs text-slate-500 font-medium whitespace-nowrap">Scroll for more</span>
-                <ArrowRight className="w-3 h-3 md:w-4 md:h-4 text-slate-500" />
-              </div>
-            </div>
+          {/* 1. TOP BAR: User Performance Summary (New Placement) */}
+          {session && (
+            <section className="animate-in fade-in slide-in-from-top-4 duration-700">
+              <div className="relative overflow-hidden rounded-[2rem] p-6 md:p-8 bg-gradient-to-r from-indigo-900/40 via-slate-900/40 to-indigo-900/40 border border-white/5 shadow-2xl backdrop-blur-sm">
+                <div className="absolute top-0 right-0 w-64 h-full bg-indigo-500/5 blur-[80px] rounded-full pointer-events-none" />
 
-            {/* Horizontal Scroll Snap Container */}
-            <div className="flex overflow-x-auto snap-x snap-mandatory gap-6 pb-6 -mx-4 px-4 scrollbar-hide">
-              {heroMatches.map((match) => (
-                <div key={match._id} className="snap-center shrink-0 w-full md:w-[600px]">
-                  <HeroMatchCard match={match} />
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-          <div className="lg:col-span-2">
-            {/* Tabs */}
-            <div className="flex items-center gap-4 md:gap-8 mb-8 border-b border-white/10 pb-1 overflow-x-auto scrollbar-hide">
-              <button
-                onClick={() => setActiveTab('upcoming')}
-                className={`pb-3 text-[10px] md:text-sm font-bold uppercase tracking-widest transition-all relative whitespace-nowrap ${activeTab === 'upcoming' ? 'text-white' : 'text-slate-500 hover:text-slate-300'}`}
-              >
-                Upcoming Fixtures
-                {activeTab === 'upcoming' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-indigo-500 rounded-full shadow-[0_0_10px_rgba(99,102,241,0.5)]" />}
-              </button>
-              <button
-                onClick={() => setActiveTab('finished')}
-                className={`pb-3 text-[10px] md:text-sm font-bold uppercase tracking-widest transition-all relative whitespace-nowrap ${activeTab === 'finished' ? 'text-white' : 'text-slate-500 hover:text-slate-300'}`}
-              >
-                Past Results
-                {activeTab === 'finished' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-indigo-500 rounded-full shadow-[0_0_10px_rgba(99,102,241,0.5)]" />}
-              </button>
-            </div>
-
-            {/* Content - 2 Column Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-              {activeTab === 'upcoming' ? (
-                upcomingMatches.length > 0 ? (
-                  upcomingMatches.map(match => <StandardMatchCard key={match._id} match={match} />)
-                ) : (
-                  <div className="md:col-span-2">
-                    <EmptyState message="No upcoming matches scheduled." />
+                <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
+                  <div className="flex flex-col items-center md:items-start text-center md:text-left">
+                    <h3 className="text-xl font-black text-white mb-1 uppercase tracking-tight">Your Performance</h3>
+                    <p className="text-indigo-400 text-[10px] font-bold uppercase tracking-widest opacity-70">Total Batting stats across all tournaments</p>
                   </div>
-                )
-              ) : (
-                finishedMatches.length > 0 ? (
-                  finishedMatches.map(match => <StandardMatchCard key={match._id} match={match} />)
-                ) : (
-                  <div className="md:col-span-2">
-                    <EmptyState message="No completed matches yet." />
-                  </div>
-                )
-              )}
-            </div>
 
-            {/* View All Button */}
-            <Link
-              href="/matches"
-              className="group flex items-center justify-center gap-2 w-full py-4 rounded-2xl bg-slate-900/40 border border-white/5 hover:bg-slate-800/60 hover:border-indigo-500/30 transition-all text-sm font-bold text-slate-400 hover:text-white uppercase tracking-widest"
-            >
-              <Calendar className="w-4 h-4 text-indigo-500 group-hover:scale-110 transition-transform" />
-              {activeTab === 'upcoming' ? "View Full Schedule" : "View All Results"}
-              <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
-            </Link>
-          </div>
-
-          {/* Sidebar */}
-          <aside className="space-y-6">
-            {/* User Stats Card */}
-            <div className="relative overflow-hidden rounded-3xl p-6 md:p-8 bg-gradient-to-br from-indigo-900 via-indigo-950 to-slate-950 border border-white/10 shadow-2xl">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/20 blur-[60px] rounded-full pointer-events-none" />
-
-              <h3 className="text-lg md:text-xl font-bold text-white mb-1">Your Performance</h3>
-              <p className="text-indigo-200 text-[10px] md:text-xs mb-6 opacity-70">Batting stats across all leagues</p>
-
-              {session ? (
-                <>
-                  <div className="grid grid-cols-2 gap-3 mb-6">
-                    <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-3 md:p-4 border border-white/5">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Activity className="w-3 h-3 md:w-4 md:h-4 text-indigo-400" />
-                        <span className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase">Runs</span>
+                  <div className="flex items-center gap-6 md:gap-12">
+                    <div className="flex flex-col items-center">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Activity className="w-3 h-3 text-indigo-400" />
+                        <span className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Total Runs</span>
                       </div>
-                      <span className="text-xl md:text-2xl font-black text-white">
+                      <span className="text-3xl md:text-4xl font-black text-white">
                         {statsLoading ? "---" : (userStats?.totalRuns ?? 0)}
                       </span>
                     </div>
-                    <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-3 md:p-4 border border-white/5">
-                      <div className="flex items-center gap-2 mb-2">
-                        <TrendingUp className="w-3 h-3 md:w-4 md:h-4 text-purple-400" />
-                        <span className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase">Rank</span>
+
+                    <div className="w-px h-12 bg-white/5 hidden md:block" />
+
+                    <div className="flex flex-col items-center">
+                      <div className="flex items-center gap-2 mb-1">
+                        <TrendingUp className="w-3 h-3 text-purple-400" />
+                        <span className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Global Rank</span>
                       </div>
-                      <span className="text-xl md:text-2xl font-black text-white">
+                      <span className="text-3xl md:text-4xl font-black text-white">
                         {statsLoading ? "#--" : `#${userStats?.rank ?? "--"}`}
                       </span>
                     </div>
                   </div>
 
-                  <Link href="/profile/stats" className="block w-full py-3 bg-white/10 hover:bg-white/20 border border-white/10 rounded-xl text-xs font-bold text-white text-center uppercase tracking-widest transition-all">
-                    View Detailed Analysis
-                  </Link>
-                </>
-              ) : (
-                <div className="py-6 text-center">
-                  <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-white/5">
-                    <Zap className="w-6 h-6 text-indigo-500" />
-                  </div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 leading-relaxed">Login to view your total runs and global ranking</p>
-                  <Link href="/login" className="inline-block px-6 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-black uppercase tracking-widest rounded-lg transition-all">
-                    Sign In
+                  <Link
+                    href="/profile/stats"
+                    className="px-8 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-[10px] font-black text-white uppercase tracking-[0.2em] transition-all hover:scale-105 active:scale-95"
+                  >
+                    View Analysis
                   </Link>
                 </div>
-              )}
-            </div>
+              </div>
+            </section>
+          )}
 
-            {/* Mini Leaderboard */}
-            <div className="rounded-3xl p-6 bg-slate-900/50 border border-white/5">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-sm font-bold text-white uppercase tracking-wider">Top Players</h3>
-                {session && <Link href="/leaderboard" className="text-xs text-indigo-400 hover:text-indigo-300">View All</Link>}
+          {/* 2. CENTER: Matchday Action */}
+          {heroMatches.length > 0 && (
+            <section className="animate-in fade-in slide-in-from-bottom-5 duration-700">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
+                <h2 className="text-xl md:text-2xl font-black text-white flex items-center gap-3 uppercase tracking-tight">
+                  <span className="w-1.5 h-6 md:w-2 md:h-8 bg-indigo-500 rounded-full" />
+                  Live <span className="text-indigo-500">Arena</span>
+                  <span className="px-2 py-0.5 rounded bg-red-500/10 text-red-500 text-[8px] font-black uppercase border border-red-500/20 animate-pulse tracking-widest">
+                    Live
+                  </span>
+                </h2>
+                <div className="flex gap-2 items-center">
+                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Swipe for more</span>
+                  <ArrowRight className="w-3 h-3 text-slate-500" />
+                </div>
               </div>
 
-              {session ? (
-                <div className="space-y-3">
-                  {statsLoading ? (
-                    [1, 2, 3].map(i => (
-                      <div key={i} className="flex items-center gap-4 p-3 rounded-xl bg-slate-950/50 border border-white/5">
-                        <div className="w-6 h-6 flex items-center justify-center rounded-full bg-slate-800 text-slate-600 text-[10px]">
-                          {i}
-                        </div>
-                        <div className="flex-1">
-                          <div className="h-2 w-20 bg-slate-800 rounded-full animate-pulse" />
-                        </div>
-                        <span className="text-xs font-bold text-slate-800">---</span>
-                      </div>
-                    ))
-                  ) : topPlayers.length > 0 ? (
-                    topPlayers.map((player, idx) => (
-                      <div key={player.userId._id} className="flex items-center gap-4 p-3 rounded-xl bg-slate-950/50 border border-white/5 hover:border-indigo-500/30 transition-colors">
-                        <div className={`w-6 h-6 flex items-center justify-center rounded-full text-[10px] font-bold ${idx === 0 ? 'bg-yellow-500 text-black shadow-lg shadow-yellow-500/50' :
-                          idx === 1 ? 'bg-slate-300 text-black' :
-                            'bg-orange-700 text-white'
-                          }`}>
-                          {idx + 1}
-                        </div>
-                        <div className="w-6 h-6 rounded-full overflow-hidden bg-slate-800">
-                          {player.userId.image ? (
-                            <img src={player.userId.image} alt="" className="w-full h-full object-cover" />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center text-[8px] font-bold text-slate-500">
-                              {player.userId.name?.[0]}
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex-1">
-                          <span className="text-xs font-bold text-white truncate block w-24">{player.userId.name}</span>
-                        </div>
-                        <span className="text-xs font-black text-indigo-400">{player.totalRuns}</span>
-                      </div>
-                    ))
+              <div className="flex overflow-x-auto snap-x snap-mandatory gap-6 pb-6 -mx-4 px-4 scrollbar-hide">
+                {heroMatches.map((match) => (
+                  <div key={match._id} className="snap-center shrink-0 w-full md:w-[600px]">
+                    <HeroMatchCard match={match} />
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+            <div className="lg:col-span-8">
+              {/* Tabs */}
+              <div className="flex items-center gap-8 mb-8 border-b border-white/5 pb-1 overflow-x-auto scrollbar-hide">
+                <button
+                  onClick={() => setActiveTab('upcoming')}
+                  className={`pb-3 text-[10px] font-black uppercase tracking-[0.2em] transition-all relative whitespace-nowrap ${activeTab === 'upcoming' ? 'text-white' : 'text-slate-500 hover:text-slate-400'}`}
+                >
+                  Upcoming
+                  {activeTab === 'upcoming' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-indigo-500 rounded-full shadow-[0_0_10px_rgba(99,102,241,0.5)]" />}
+                </button>
+                <button
+                  onClick={() => setActiveTab('finished')}
+                  className={`pb-3 text-[10px] font-black uppercase tracking-[0.2em] transition-all relative whitespace-nowrap ${activeTab === 'finished' ? 'text-white' : 'text-slate-500 hover:text-slate-400'}`}
+                >
+                  Past Results
+                  {activeTab === 'finished' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-indigo-500 rounded-full shadow-[0_0_10px_rgba(99,102,241,0.5)]" />}
+                </button>
+              </div>
+
+              {/* Content - 2 Column Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                {activeTab === 'upcoming' ? (
+                  upcomingMatches.length > 0 ? (
+                    upcomingMatches.map(match => <StandardMatchCard key={match._id} match={match} />)
                   ) : (
-                    <div className="text-center py-4 text-xs text-slate-600 font-bold uppercase tracking-widest">
-                      No data yet
+                    <div className="md:col-span-2">
+                      <EmptyState message="No upcoming matches scheduled." />
                     </div>
-                  )}
-                </div>
-              ) : (
-                <div className="py-8 text-center bg-slate-950/50 rounded-2xl border border-white/5">
-                  <Trophy className="w-8 h-8 text-slate-700 mx-auto mb-3" />
-                  <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest leading-loose px-4">The global leaderboard is high stakes. Log in to see who's dominating the arena.</p>
+                  )
+                ) : (
+                  finishedMatches.length > 0 ? (
+                    finishedMatches.map(match => <StandardMatchCard key={match._id} match={match} />)
+                  ) : (
+                    <div className="md:col-span-2">
+                      <EmptyState message="No completed matches yet." />
+                    </div>
+                  )
+                )}
+              </div>
+
+              {/* View All Button */}
+              <Link
+                href="/matches"
+                className="group flex items-center justify-center gap-3 w-full py-5 rounded-3xl bg-slate-900/40 border border-white/5 hover:bg-slate-800/60 hover:border-indigo-500/30 transition-all text-xs font-black text-slate-400 hover:text-white uppercase tracking-[0.2em]"
+              >
+                <Calendar className="w-4 h-4 text-indigo-500" />
+                {activeTab === 'upcoming' ? "Tournament Schedule" : "All Match Results"}
+                <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+              </Link>
+            </div>
+
+            {/* Sidebar */}
+            <aside className="lg:col-span-4 space-y-8">
+              {!session && (
+                <div className="relative overflow-hidden rounded-[2rem] p-8 bg-slate-950 border border-white/5 shadow-2xl text-center">
+                  <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-transparent pointer-events-none" />
+                  <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-white/5">
+                    <Zap className="w-8 h-8 text-indigo-500" />
+                  </div>
+                  <h3 className="text-lg font-black text-white uppercase tracking-tight mb-2">Track Your Stats</h3>
+                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-8 leading-relaxed px-4">Login to view your total runs and global ranking among world class players.</p>
+                  <Link href="/login" className="block w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-xl transition-all shadow-lg shadow-indigo-500/20">
+                    Join the Arena
+                  </Link>
                 </div>
               )}
-            </div>
-          </aside>
-        </div>
 
-        {/* Match Winners Section */}
-        <WinnersSection />
-      </main>
+              {/* Mini Leaderboard */}
+              <div className="rounded-[2rem] p-6 md:p-8 bg-slate-900/40 border border-white/5 shadow-xl backdrop-blur-sm">
+                <div className="flex items-center justify-between mb-8">
+                  <div className="flex items-center gap-3">
+                    <Trophy className="w-5 h-5 text-indigo-500" />
+                    <h3 className="text-sm font-black text-white uppercase tracking-[0.2em]">Top Scorchers</h3>
+                  </div>
+                  {session && (
+                    <Link href="/leaderboard" className="text-[10px] font-black text-indigo-400 hover:text-indigo-300 uppercase tracking-widest flex items-center gap-1 group">
+                      View All
+                      <ChevronRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+                    </Link>
+                  )}
+                </div>
+
+                {session ? (
+                  <div className="space-y-4">
+                    {statsLoading ? (
+                      [1, 2, 3].map(i => (
+                        <div key={i} className="flex items-center gap-4 p-4 rounded-2xl bg-slate-950/30 border border-white/5">
+                          <div className="h-2 w-24 bg-slate-800 rounded-full animate-pulse" />
+                        </div>
+                      ))
+                    ) : topPlayers.length > 0 ? (
+                      topPlayers.map((player, idx) => (
+                        <div key={player.userId._id} className="flex items-center gap-4 p-4 rounded-2xl bg-slate-950/50 border border-white/5 hover:border-indigo-500/30 transition-all hover:bg-slate-950/80 group">
+                          <div className={`w-8 h-8 flex items-center justify-center rounded-xl text-[10px] font-black ${idx === 0 ? 'bg-yellow-500 text-black shadow-lg shadow-yellow-500/30' :
+                            idx === 1 ? 'bg-slate-300 text-black' :
+                              idx === 2 ? 'bg-orange-700 text-white' : 'bg-slate-800 text-slate-500'
+                            }`}>
+                            {idx + 1}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <span className="text-xs font-black text-white truncate block group-hover:text-indigo-400 transition-colors uppercase tracking-tight">{player.userId.name}</span>
+                            <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Active Player</span>
+                          </div>
+                          <div className="text-right">
+                            <span className="text-sm font-black text-indigo-400 block tracking-tight">{player.totalRuns}</span>
+                            <span className="text-[8px] font-bold text-slate-600 uppercase">Runs</span>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-center py-8 text-[10px] text-slate-600 font-black uppercase tracking-[0.3em]">
+                        Awaiting Data
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="py-10 text-center bg-slate-950/30 rounded-2xl border border-white/5">
+                    <Trophy className="w-10 h-10 text-slate-800 mx-auto mb-4" />
+                    <p className="text-[9px] font-bold text-slate-600 uppercase tracking-widest leading-loose px-6 italic">The global leaderboard is reserved for participating players.</p>
+                  </div>
+                )}
+              </div>
+            </aside>
+          </div>
+
+          {/* Match Winners Section */}
+          <WinnersSection />
+        </main>
     </div>
   );
 }
