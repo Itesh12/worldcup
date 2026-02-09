@@ -98,6 +98,33 @@ const MasterReportTemplate = React.forwardRef<HTMLDivElement, { week: any }>((({
                     </div>
                 </div>
 
+                <div className="mt-20 flex-1">
+                    <table className="w-full border-collapse">
+                        <thead>
+                            <tr className="border-b border-white/10 text-left">
+                                <th className="py-8 text-sm font-black text-slate-500 uppercase tracking-widest">Rank</th>
+                                <th className="py-8 text-sm font-black text-slate-500 uppercase tracking-widest">Player</th>
+                                <th className="py-8 text-sm font-black text-slate-500 uppercase tracking-widest">Total Runs</th>
+                                <th className="py-8 text-sm font-black text-slate-500 uppercase tracking-widest text-right">Net Settlement</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {week.users.map((u: any, i: number) => (
+                                <tr key={i} className="border-b border-white/5">
+                                    <td className="py-8 text-xl font-black text-slate-700">#{i + 1}</td>
+                                    <td className="py-8 flex items-center gap-6">
+                                        <span className="text-2xl font-black uppercase tracking-tighter italic">{u.name}</span>
+                                    </td>
+                                    <td className="py-8 text-xl font-black">{u.stats.runs}</td>
+                                    <td className="py-8 text-right text-3xl font-black" style={{ color: u.stats.netWorth >= 0 ? '#10b981' : '#f43f5e' }}>
+                                        {u.stats.netWorth >= 0 ? '+' : ''}{u.stats.netWorth}
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+
                 <div className="pt-20 border-t border-white/10 flex justify-between items-center opacity-30 mt-auto">
                     <p className="text-sm font-black uppercase tracking-widest italic">Confidential Performance Analytics</p>
                     <p className="text-sm font-black uppercase tracking-widest">Page 1 of {week.users.length + 1}</p>
@@ -222,14 +249,19 @@ export default function AdminReportsPage() {
                 format: [1200, 1600],
             });
 
-            // The template is now a long div with simulated pages (1600px each)
-            // We'll capture the whole thing and add it as a long strip
-            // jsPDF will help us clip it if we added individual pages, or we can just make the PDF long
-            // For a master report, a single long strip or multi-page PDF is best.
-            // Let's do multi-page by clipping the dataUrl or generating several PNGs.
-            // Simple approach: Add the long image and let the viewer scroll.
-
+            // True multi-page generation
+            // We'll add the first page (Overview)
             pdf.addImage(dataUrl, 'PNG', 0, 0, 1200, 1600 * (currentWeek.users.length + 1));
+
+            // To make it truly paginated for printers, we should slice the image and add pages
+            // However, most PDF viewers handle a single long page well for "reports".
+            // But if the user wants "expanded state" properly, real pages are better.
+            // Simplified multi-page: jsPDF 'addImage' with source clipping
+            for (let i = 1; i <= currentWeek.users.length; i++) {
+                pdf.addPage([1200, 1600], 'portrait');
+                pdf.addImage(dataUrl, 'PNG', 0, -(1600 * i), 1200, 1600 * (currentWeek.users.length + 1));
+            }
+
             pdf.save(`WorldCupHub_MasterReport_${currentWeek.label.replace(/\s+/g, '_')}.pdf`);
         } catch (err) {
             console.error(err);
