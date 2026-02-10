@@ -48,8 +48,8 @@ export default function MatchDetailPage({ params }: { params: Promise<{ id: stri
         if (isManual) setRefreshing(true);
         try {
             // Trigger a background sync for this match specifically to ensure latest batting scores
-            // This is non-blocking and silent
-            fetch(`/api/sync?matchId=${matchId}`, {
+            // Await this to ensure we display fresh data after reload
+            await fetch(`/api/sync?matchId=${matchId}`, {
                 headers: { 'x-silent-fetch': 'true' }
             }).catch(e => console.error("Auto-sync error", e));
 

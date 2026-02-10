@@ -33,12 +33,8 @@ export default function UserMatchesPage() {
 
   const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    // Initial fetch from DB (fast, no scrape)
-    fetchMatches(false);
-    fetchDashboardStats(false);
-    fetchWeeklyReports();
-  }, []);
+  // Move useEffect after handleRefresh definition to use it
+
 
   const handleRefresh = async () => {
     if (refreshing) return;
@@ -52,7 +48,8 @@ export default function UserMatchesPage() {
       // Fetch updated data
       await Promise.all([
         fetchMatches(true), // passing true forces loading state on match list if needed, or keeps it silent
-        fetchDashboardStats(false)
+        fetchDashboardStats(false),
+        fetchWeeklyReports()
       ]);
     } catch (err) {
       console.error("Manual sync failed", err);
@@ -60,6 +57,11 @@ export default function UserMatchesPage() {
       setRefreshing(false);
     }
   };
+
+  useEffect(() => {
+    // Initial fetch with sync
+    handleRefresh();
+  }, []);
 
   const fetchDashboardStats = async (silent = false) => {
     try {
