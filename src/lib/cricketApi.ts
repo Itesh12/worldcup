@@ -7,6 +7,7 @@ export interface LivePlayerData {
     sixes: number;
     isOut: boolean;
     position: number; // Actual batting order position
+    inningsNumber?: number;
 }
 
 export interface LiveMatchData {
@@ -39,7 +40,8 @@ export const getLiveMatchData = async (externalMatchId: string): Promise<LiveMat
                 fours: b.fours,
                 sixes: b.sixes,
                 isOut: !!b.outStatus && b.outStatus.toLowerCase() !== 'not out' && b.outStatus !== 'batting',
-                position: b.position
+                position: b.position,
+                inningsNumber: (b as any).inningsNumber
             }))
         };
     } catch (error) {

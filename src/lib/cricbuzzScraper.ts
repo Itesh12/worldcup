@@ -92,7 +92,34 @@ export interface MatchSquads {
     };
 }
 
-const USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+const USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
+
+const fetchWithRetry = async (url: string, options: RequestInit = {}, retries = 3): Promise<Response> => {
+    try {
+        const headers = {
+            'User-Agent': USER_AGENT,
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.9',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'Connection': 'keep-alive',
+            'Cache-Control': 'no-cache',
+            ...options.headers
+        };
+
+        const response = await fetch(url, { ...options, headers });
+        if (!response.ok && response.status >= 500) {
+            throw new Error(`Status ${response.status}`);
+        }
+        return response;
+    } catch (error: any) {
+        if (retries > 0 && (error.cause?.code === 'ECONNRESET' || error.message.includes('fetch failed'))) {
+            console.warn(`Fetch failed for ${url}, retrying (${retries} left)...`);
+            await new Promise(r => setTimeout(r, 2000 * (4 - retries)));
+            return fetchWithRetry(url, options, retries - 1);
+        }
+        throw error;
+    }
+};
 
 export const getCricbuzzMatches = async (): Promise<ScrapedMatch[]> => {
     const seriesIds = ['11515', '11253']; // 11515: Warm-ups, 11253: Main Tournament
@@ -104,34 +131,20 @@ export const getCricbuzzMatches = async (): Promise<ScrapedMatch[]> => {
 
     for (const seriesId of seriesIds) {
         try {
-            // Use specific slug URL to ensure we get the full Next.js hydration data
-            // Generic URL often fails to load the full schedule
             const slug = seriesSlugMap[seriesId];
             const seriesUrl = `https://www.cricbuzz.com/cricket-series/${seriesId}/${slug}/matches`;
             console.log(`Scraping series ${seriesId}: ${seriesUrl}`);
-            const response = await fetch(seriesUrl, {
-                headers: { 'User-Agent': USER_AGENT },
+            const response = await fetchWithRetry(seriesUrl, {
                 cache: 'no-store'
             });
             const html = await response.text();
 
-            // Strategy: Split by "matchInfo": to find valid match blocks
-            // The JSON structure is typically: {"match":{"matchInfo":{...},"team1":{...},"team2":{...}}}
-            // By splitting on matchInfo, we can look at the start of each chunk for ID/SeriesID
-            // and look forward for teams/status.
-
-            // Note: split consumes "matchInfo": so chunk starts with {
             const chunks = html.split(/\\?"matchInfo\\?":/);
-            // console.log(`Debug: Series ${seriesId} - Split into ${chunks.length} potential matches`);
 
-            // Skip first chunk
             for (let i = 1; i < chunks.length; i++) {
                 const chunk = chunks[i];
-
-                // Limit the search window to avoid false positives from far-away text
                 const searchWindow = chunk.substring(0, 3000);
 
-                // Extract basics from the immediate matchInfo block
                 const idMatch = searchWindow.match(/\\?"matchId\\?":\s*(\d+)/);
                 const seriesIdMatch = searchWindow.match(/\\?"seriesId\\?":\s*(\d+)/);
 
@@ -141,42 +154,32 @@ export const getCricbuzzMatches = async (): Promise<ScrapedMatch[]> => {
                 if (!id || chunkSeriesId !== seriesId) continue;
                 if (allMatches.find(m => m.id === id)) continue;
 
-                // Extract Start Date
-                // JSON often has "startDate":"1770874200000" (string) or "startDate":1770874200000 (number)
-                const numericDateMatch = searchWindow.match(/\\?"startDate\\?":\s*(\d+)(?!")/); // Look for unquoted number
-                const stringDateMatch = searchWindow.match(/\\?"startDate\\?":\s*\\?"([^"]+)\\?"/); // Look for quoted string
+                const numericDateMatch = searchWindow.match(/\\?"startDate\\?":\s*(\d+)(?!")/);
+                const stringDateMatch = searchWindow.match(/\\?"startDate\\?":\s*\\?"([^"]+)\\?"/);
 
                 let startDate = new Date();
                 if (numericDateMatch) {
                     startDate = new Date(parseInt(numericDateMatch[1]));
                 } else if (stringDateMatch) {
-                    // Strip backslashes that might be captured due to escaped quotes (e.g. \"123\")
                     const dateVal = stringDateMatch[1].replace(/\\/g, '');
-                    // Check if it's a numeric string timestamp
                     if (/^\d+$/.test(dateVal)) {
                         startDate = new Date(parseInt(dateVal));
                     } else {
-                        // Attempt to parse text date (e.g. "Mon, Feb 02")
                         startDate = new Date(dateVal);
                     }
                 }
 
-                // Extract Match Description
                 const descMatch = searchWindow.match(/\\?"matchDesc\\?":\s*\\?"([^"]+)\\?"/);
                 const matchDesc = descMatch ? descMatch[1] : '';
 
-                // Extract Teams
-                // Look for team1 and team2 blocks subsequent to matchInfo
                 const team1Match = searchWindow.match(/\\?"team1\\?":\s*\{.*?\\?"teamName\\?":\s*\\?"([^"]+)\\?"/);
                 const team2Match = searchWindow.match(/\\?"team2\\?":\s*\{.*?\\?"teamName\\?":\s*\\?"([^"]+)\\?"/);
                 const team1 = team1Match ? team1Match[1].replace(/\\/g, '') : 'TBC';
                 const team2 = team2Match ? team2Match[1].replace(/\\/g, '') : 'TBC';
 
-                // Extract Status
                 const statusMatch = searchWindow.match(/\\?"status\\?":\s*\\?"([^"]+)\\?"/);
                 const statusText = statusMatch ? statusMatch[1] : '';
 
-                // Determine internal status
                 const isFinished = statusText.toLowerCase().includes('won') ||
                     statusText.toLowerCase().includes('result') ||
                     statusText.toLowerCase().includes('tied') ||
@@ -185,15 +188,15 @@ export const getCricbuzzMatches = async (): Promise<ScrapedMatch[]> => {
 
                 const isLive = statusText.toLowerCase().includes('live') ||
                     statusText.toLowerCase().includes('progress') ||
-                    statusText.toLowerCase().includes('opt ') || // Matches "opt to bowl"
+                    statusText.toLowerCase().includes('opt ') ||
                     statusText.toLowerCase().includes('toss') ||
                     statusText.toLowerCase().includes('trail by') ||
                     statusText.toLowerCase().includes('lead by') ||
                     statusText.toLowerCase().includes('need') ||
-                    statusText.toLowerCase().includes('break') || // Matches "innings break"
+                    statusText.toLowerCase().includes('break') ||
                     statusText.toLowerCase().includes('delayed') ||
-                    /\d+\/\d+/.test(statusText) || // Matches "123/4"
-                    /\d+\s*ov\)/i.test(statusText); // Matches "12.4 Ov)"
+                    /\d+\/\d+/.test(statusText) ||
+                    /\d+\s*ov\)/i.test(statusText);
 
                 const status: ScrapedMatch['status'] = isFinished ? 'finished' : (isLive ? 'live' : 'upcoming');
                 const title = `${team1} vs ${team2}, ${matchDesc}`;
@@ -220,9 +223,7 @@ export const getCricbuzzMatches = async (): Promise<ScrapedMatch[]> => {
 
 export const getCricbuzzMatchInfo = async (matchId: string): Promise<MatchInfo | null> => {
     try {
-        const response = await fetch(`https://www.cricbuzz.com/cricket-match-facts/${matchId}/match`, {
-            headers: { 'User-Agent': USER_AGENT }
-        });
+        const response = await fetchWithRetry(`https://www.cricbuzz.com/cricket-match-facts/${matchId}/match`);
         const html = await response.text();
         const $ = cheerio.load(html);
         const info: Partial<MatchInfo> = {};
@@ -258,25 +259,20 @@ export const getCricbuzzMatchInfo = async (matchId: string): Promise<MatchInfo |
 
 export const getCricbuzzFullScorecard = async (matchId: string): Promise<FullScorecard | null> => {
     try {
-        const response = await fetch(`https://www.cricbuzz.com/live-cricket-scorecard/${matchId}/match`, {
-            headers: { 'User-Agent': USER_AGENT },
+        const response = await fetchWithRetry(`https://www.cricbuzz.com/live-cricket-scorecard/${matchId}/match`, {
             cache: 'no-store'
         });
         const html = await response.text();
         const $ = cheerio.load(html);
         const innings: any[] = [];
 
-        // ID-based container detection for modern Cricbuzz static HTML
         $('div[id^="scard-team-"]').each((_, container) => {
             const $container = $(container);
             const id = $container.attr('id') || '';
 
-            // Find the header for this innings (usually preceding sibling or matching ID)
             const headerId = id.replace('scard-', '');
             const $header = $(`#${headerId}`).length ? $(`#${headerId}`) : $container.prev();
 
-            // Extract team name prioritizing the long name (hidden tb:block)
-            // Use attribute contains selector to avoid escaping issues with colons
             const $headerLongName = $header.find('[class*="tb:block"]').first();
             const $headerShortName = $header.find('[class*="tb:hidden"]').first();
 
@@ -286,7 +282,6 @@ export const getCricbuzzFullScorecard = async (matchId: string): Promise<FullSco
             } else if ($headerShortName.length) {
                 teamNameRaw = $headerShortName.text().trim();
             } else {
-                // Fallback: take the whole text but try to split if it looks like duplicates
                 const fullText = $header.text().trim();
                 teamNameRaw = fullText.split(/[\d-]/)[0].trim();
             }
@@ -301,7 +296,6 @@ export const getCricbuzzFullScorecard = async (matchId: string): Promise<FullSco
             const bowling: BowlingEntry[] = [];
             const fow: string[] = [];
 
-            // Batting
             $container.find('.scorecard-bat-grid, .cb-scrd-itms').each((_, row) => {
                 const $row = $(row);
                 const nameEl = $row.find('a[href*="/profiles/"]');
@@ -325,7 +319,6 @@ export const getCricbuzzFullScorecard = async (matchId: string): Promise<FullSco
                 }
             });
 
-            // Bowling
             $container.find('.scorecard-bowl-grid').each((_, row) => {
                 const $row = $(row);
                 const nameEl = $row.find('a[href*="/profiles/"]');
@@ -347,7 +340,6 @@ export const getCricbuzzFullScorecard = async (matchId: string): Promise<FullSco
                 }
             });
 
-            // Fall of Wickets
             $container.find('.scorecard-fow-grid').each((_, row) => {
                 const text = $(row).text().trim();
                 const lowerText = text.toLowerCase();
@@ -359,11 +351,9 @@ export const getCricbuzzFullScorecard = async (matchId: string): Promise<FullSco
             innings.push({ name: teamName, score, batting, bowling, fow });
         });
 
-        // Deduplicate innings by team name (Cricbuzz sometimes repeats innings containers)
         const uniqueInningsMap = new Map();
         innings.forEach(inn => {
             const existing = uniqueInningsMap.get(inn.name);
-            // If multiple blocks exist for the same team, keep the one with more batting data
             if (!existing || inn.batting.length > existing.batting.length) {
                 uniqueInningsMap.set(inn.name, inn);
             }
@@ -380,11 +370,9 @@ export const getCricbuzzFullScorecard = async (matchId: string): Promise<FullSco
     }
 };
 
-export const getCricbuzzMatchSquads = async (matchId: string, retryCount = 0): Promise<MatchSquads | null> => {
+export const getCricbuzzMatchSquads = async (matchId: string): Promise<MatchSquads | null> => {
     try {
-        const response = await fetch(`https://www.cricbuzz.com/cricket-match-squads/${matchId}/match`, {
-            headers: { 'User-Agent': USER_AGENT }
-        });
+        const response = await fetchWithRetry(`https://www.cricbuzz.com/cricket-match-squads/${matchId}/match`);
         const html = await response.text();
         const $ = cheerio.load(html);
 
@@ -397,10 +385,8 @@ export const getCricbuzzMatchSquads = async (matchId: string, retryCount = 0): P
         const team1Name = teamNames[0]?.trim() || "Team 1";
         const team2Name = teamNames[1]?.trim() || "Team 2";
 
-        let teamIdx = 0;
         let section: 'playing' | 'bench' | null = null;
 
-        // More flexible traversal for mobile/desktop layouts
         $('*').each((_, el) => {
             const $el = $(el);
             const text = $el.text().trim();
@@ -416,10 +402,6 @@ export const getCricbuzzMatchSquads = async (matchId: string, retryCount = 0): P
             }
 
             if ($el.is('a') && $el.attr('href')?.includes('/profiles/')) {
-                // If we are in a section, find which team this player belongs to
-                // Typically they are in a flex container where one team is on the left (w-1/2) and one is on the right
-                // Or they are just in columns.
-
                 const id = $el.attr('href')?.split('/')[2] || '';
                 const fullLinkText = $el.text().trim();
                 const nameText = $el.find('span').first().text().trim() || fullLinkText.split('\n')[0];
@@ -435,8 +417,6 @@ export const getCricbuzzMatchSquads = async (matchId: string, retryCount = 0): P
                     isWK: fullLinkText.toLowerCase().includes('(wk)') || roleText.toLowerCase().includes('wk')
                 };
 
-                // Determine team based on column (mobile layout uses one column, desktop uses two)
-                // If it's desktop (w-1/2), we check the parent's position
                 const isSecondCol = $el.parent().hasClass('w-1/2') && $el.parent().prev().hasClass('w-1/2');
                 const pIdx = isSecondCol ? 2 : 1;
 
@@ -456,8 +436,6 @@ export const getCricbuzzMatchSquads = async (matchId: string, retryCount = 0): P
             }
         });
 
-        // Heuristic: If Bench is empty and Playing XI has > 11 players, move excess to Bench
-        // This handles cases where Cricbuzz puts the entire squad under "Playing XI" header
         const enforceBenchSplit = (playing: SquadPlayer[], bench: SquadPlayer[]) => {
             if (bench.length === 0 && playing.length > 11) {
                 const excess = playing.splice(11);
@@ -473,11 +451,6 @@ export const getCricbuzzMatchSquads = async (matchId: string, retryCount = 0): P
             team2: { name: team2Name, playingXI: team2, bench: team2Bench }
         };
     } catch (error) {
-        if ((error as any).code === 'ECONNRESET' && retryCount < 3) {
-            console.warn(`ECONNRESET for Match ${matchId}, retrying (${retryCount + 1})...`);
-            await new Promise(r => setTimeout(r, 1000 * (retryCount + 1)));
-            return getCricbuzzMatchSquads(matchId, retryCount + 1);
-        }
         console.error("Cricbuzz Scraper Error (Squads):", error);
         return null;
     }
@@ -488,16 +461,13 @@ export const getCricbuzzScorecard = async (matchId: string) => {
         const full = await getCricbuzzFullScorecard(matchId);
         if (!full) return null;
 
-        // Determine active innings (typically the one with batting activity but not "out" or the last one)
-        // If team 2 has batting data, they are likely the active ones (unless match finished)
         const team2Batting = full.team2.batting.length > 0;
-        const activeInnings = team2Batting ? full.team2 : full.team1;
-        const inningsNumber = team2Batting ? 2 : 1;
+        const currentInnings = team2Batting ? 2 : 1;
 
-        return {
-            status: 'live', // Simplified
-            innings: inningsNumber,
-            batsmen: activeInnings.batting.map((b, idx) => ({
+        const allBatsmen = [];
+
+        if (full.team1.batting.length > 0) {
+            allBatsmen.push(...full.team1.batting.map((b, idx) => ({
                 id: b.id,
                 name: b.name,
                 runs: b.runs,
@@ -505,8 +475,29 @@ export const getCricbuzzScorecard = async (matchId: string) => {
                 fours: b.fours,
                 sixes: b.sixes,
                 outStatus: b.outStatus,
-                position: idx + 1 // We use 1-based index as position
-            }))
+                position: idx + 1,
+                inningsNumber: 1
+            })));
+        }
+
+        if (full.team2.batting.length > 0) {
+            allBatsmen.push(...full.team2.batting.map((b, idx) => ({
+                id: b.id,
+                name: b.name,
+                runs: b.runs,
+                balls: b.balls,
+                fours: b.fours,
+                sixes: b.sixes,
+                outStatus: b.outStatus,
+                position: idx + 1,
+                inningsNumber: 2
+            })));
+        }
+
+        return {
+            status: 'live',
+            innings: currentInnings,
+            batsmen: allBatsmen
         };
     } catch (error) {
         console.error("getCricbuzzScorecard Error:", error);
