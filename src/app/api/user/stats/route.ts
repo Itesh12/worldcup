@@ -43,26 +43,11 @@ export async function GET(req: NextRequest) {
             const strikeRate = totalBalls > 0 ? ((totalRuns / totalBalls) * 100).toFixed(2) : "0.00";
             const average = matchesPlayed > 0 ? (totalRuns / matchesPlayed).toFixed(2) : "0.00";
 
-            // Format match history for the frontend
-            const matchHistory = detailedStats.map((stat: any) => ({
-                matchId: stat.matchId._id,
-                date: stat.matchId.startTime,
-                opponent: "TBD", // Simplification: client or deeper logic can figure out opponent based on user's team
-                teams: stat.matchId.teams,
-                venue: stat.matchId.venue,
-                runs: stat.totalRuns,
-                balls: stat.totalBalls,
-                strikeRate: stat.totalBalls > 0 ? ((stat.totalRuns / stat.totalBalls) * 100).toFixed(1) : "0.0",
-                outcome: stat.matchId.status
-            }));
-
-            // Find highest score
-            const highestScore = detailedStats.reduce((max, curr) => (curr.totalRuns > max ? curr.totalRuns : max), 0);
-
-            // --- Net Worth Breakdown Logic for Detailed View ---
+            // --- Net Worth Breakdown & Match Outcome Logic ---
             const matchIds = detailedStats.map(s => s.matchId._id);
             let netWorth = 0;
             const ledger: Record<string, { userId: string, name: string, amount: number, matches: any[] }> = {};
+            const matchOutcomes: Record<string, { pnl: number, outcome: 'win' | 'loss' | 'played' }> = {};
 
             if (matchIds.length > 0) {
                 // Find winners
@@ -98,33 +83,65 @@ export async function GET(req: NextRequest) {
                     const players = matchParticipants[mid] || [];
                     const numParticipants = players.length;
 
-                    if (!winnerId || numParticipants <= 1) continue;
+                    let pnl = 0;
+                    let outcome: 'win' | 'loss' | 'played' = 'played';
 
-                    if (winnerId === userIdStr) {
-                        // User Won: Gains 50 from ALL other players
-                        const gain = (numParticipants - 1) * 50;
-                        netWorth += gain;
+                    if (winnerId && numParticipants > 1) {
+                        if (winnerId === userIdStr) {
+                            // User Won
+                            const gain = (numParticipants - 1) * 50;
+                            netWorth += gain;
+                            pnl = gain;
+                            outcome = 'win';
 
-                        players.forEach(p => {
-                            const pid = String(p._id);
-                            if (pid === userIdStr) return;
-                            if (!ledger[pid]) ledger[pid] = { userId: pid, name: p.name, amount: 0, matches: [] };
-                            ledger[pid].amount += 50;
-                            ledger[pid].matches.push({ matchId: mid, amount: 50, type: 'gain', date: stat.matchId.startTime });
-                        });
-                    } else {
-                        // User Lost: Owes 50 to the winner
-                        netWorth -= 50;
-                        const winner = players.find(p => String(p._id) === winnerId);
-                        if (winner) {
-                            const pid = String(winner._id);
-                            if (!ledger[pid]) ledger[pid] = { userId: pid, name: winner.name, amount: 0, matches: [] };
-                            ledger[pid].amount -= 50;
-                            ledger[pid].matches.push({ matchId: mid, amount: -50, type: 'loss', date: stat.matchId.startTime });
+                            players.forEach(p => {
+                                const pid = String(p._id);
+                                if (pid === userIdStr) return;
+                                if (!ledger[pid]) ledger[pid] = { userId: pid, name: p.name, amount: 0, matches: [] };
+                                ledger[pid].amount += 50;
+                                ledger[pid].matches.push({ matchId: mid, amount: 50, type: 'gain', date: stat.matchId.startTime });
+                            });
+                        } else {
+                            // User Lost
+                            netWorth -= 50;
+                            pnl = -50;
+                            outcome = 'loss';
+
+                            const winner = players.find(p => String(p._id) === winnerId);
+                            if (winner) {
+                                const pid = String(winner._id);
+                                if (!ledger[pid]) ledger[pid] = { userId: pid, name: winner.name, amount: 0, matches: [] };
+                                ledger[pid].amount -= 50;
+                                ledger[pid].matches.push({ matchId: mid, amount: -50, type: 'loss', date: stat.matchId.startTime });
+                            }
                         }
                     }
+
+                    matchOutcomes[mid] = { pnl, outcome };
                 }
             }
+
+            // Format match history for the frontend
+            const matchHistory = detailedStats.map((stat: any) => {
+                const mid = String(stat.matchId._id);
+                const outcomeData = matchOutcomes[mid] || { pnl: 0, outcome: 'played' };
+
+                return {
+                    matchId: stat.matchId._id,
+                    date: stat.matchId.startTime,
+                    opponent: "TBD",
+                    teams: stat.matchId.teams,
+                    venue: stat.matchId.venue,
+                    runs: stat.totalRuns,
+                    balls: stat.totalBalls,
+                    strikeRate: stat.totalBalls > 0 ? ((stat.totalRuns / stat.totalBalls) * 100).toFixed(1) : "0.0",
+                    outcome: outcomeData.outcome,
+                    pnl: outcomeData.pnl
+                };
+            });
+
+            // Find highest score
+            const highestScore = detailedStats.reduce((max, curr) => (curr.totalRuns > max ? curr.totalRuns : max), 0);
 
             return NextResponse.json({
                 overview: {

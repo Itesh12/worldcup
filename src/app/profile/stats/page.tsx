@@ -35,7 +35,8 @@ interface DetailedStats {
         runs: number;
         balls: number;
         strikeRate: string;
-        outcome: string;
+        outcome: 'win' | 'loss' | 'played';
+        pnl: number;
     }[];
 }
 
@@ -222,10 +223,25 @@ export default function ProfileStatsPage() {
                                             <span className="text-xs font-bold text-slate-500">
                                                 {new Date(match.date).toLocaleDateString([], { month: 'short', day: 'numeric' })}
                                             </span>
-                                            <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded ${match.runs >= 30 ? 'bg-green-500/10 text-green-500' : 'bg-slate-800 text-slate-500'
-                                                }`}>
-                                                {match.runs >= 30 ? 'Great Knock' : 'Played'}
-                                            </span>
+
+                                            {/* Outcome Badge */}
+                                            {match.outcome === 'win' && (
+                                                <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-500 flex items-center gap-1">
+                                                    <TrendingUp className="w-3 h-3" />
+                                                    Won (+₹{match.pnl})
+                                                </span>
+                                            )}
+                                            {match.outcome === 'loss' && (
+                                                <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-rose-500/10 text-rose-500 flex items-center gap-1">
+                                                    <TrendingUp className="w-3 h-3 rotate-180" />
+                                                    Lost (₹{Math.abs(match.pnl)})
+                                                </span>
+                                            )}
+                                            {match.outcome === 'played' && (
+                                                <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded ${match.runs >= 30 ? 'bg-indigo-500/10 text-indigo-500' : 'bg-slate-800 text-slate-500'}`}>
+                                                    {match.runs >= 30 ? 'Great Knock' : 'Played'}
+                                                </span>
+                                            )}
                                         </div>
                                         <div className="flex items-center gap-1 text-slate-500">
                                             <MapPin className="w-3 h-3" />

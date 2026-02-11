@@ -2,9 +2,8 @@ import mongoose from 'mongoose';
 
 const MONGODB_URI = process.env.MONGODB_URI!;
 
-if (!MONGODB_URI) {
-    throw new Error('Please define the MONGODB_URI environment variable inside .env.local');
-}
+// MONGODB_URI check moved inside connectDB to allow pre-configuration
+
 
 /**
  * Global is used here to maintain a cached connection across hot reloads
@@ -18,7 +17,10 @@ if (!cached) {
 }
 
 async function connectDB() {
-    if (cached.conn && mongoose.connection.readyState === 1) {
+    if (!process.env.MONGODB_URI) {
+        throw new Error('Please define the MONGODB_URI environment variable inside .env.local');
+    }
+    if (cached.conn) {
         return cached.conn;
     }
 
@@ -31,7 +33,7 @@ async function connectDB() {
         };
 
         console.log("MongoDB: Attempting new connection...");
-        cached.promise = mongoose.connect(MONGODB_URI, opts).then((m) => {
+        cached.promise = mongoose.connect(process.env.MONGODB_URI!, opts).then((m) => {
             console.log("MongoDB: Connected successfully to", m.connection.host);
             return m;
         }).catch((err) => {
