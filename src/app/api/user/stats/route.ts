@@ -52,7 +52,12 @@ export async function GET(req: NextRequest) {
             if (matchIds.length > 0) {
                 // Find winners
                 const winners = await UserMatchStats.aggregate([
-                    { $match: { matchId: { $in: matchIds } } },
+                    {
+                        $match: {
+                            matchId: { $in: matchIds },
+                            totalRuns: { $gt: 0 }
+                        }
+                    },
                     { $sort: { totalRuns: -1, totalBalls: 1 } },
                     {
                         $group: {
@@ -203,7 +208,12 @@ export async function GET(req: NextRequest) {
         if (participatedMatchIds.length > 0) {
             // Find winners for all these matches in one go
             const winners = await UserMatchStats.aggregate([
-                { $match: { matchId: { $in: participatedMatchIds } } },
+                {
+                    $match: {
+                        matchId: { $in: participatedMatchIds },
+                        totalRuns: { $gt: 0 }
+                    }
+                },
                 { $sort: { totalRuns: -1, totalBalls: 1 } },
                 {
                     $group: {

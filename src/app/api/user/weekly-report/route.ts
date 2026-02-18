@@ -63,7 +63,12 @@ export async function GET(req: NextRequest) {
 
         // 2. Fetch winners for these matches
         const winners = await UserMatchStats.aggregate([
-            { $match: { matchId: { $in: matchIds } } },
+            {
+                $match: {
+                    matchId: { $in: matchIds },
+                    totalRuns: { $gt: 0 }
+                }
+            },
             { $sort: { totalRuns: -1, totalBalls: 1 } },
             {
                 $group: {

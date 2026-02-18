@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, use } from "react";
-import { ArrowLeft, User, Target, Zap, Info, Calendar, MapPin, Users, Activity, Trophy, X, Star, PartyPopper, RefreshCw } from "lucide-react";
+import { ArrowLeft, User, Target, Zap, Info, Calendar, MapPin, Users, Activity, Trophy, X, Star, PartyPopper, RefreshCw, Ban, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 
@@ -31,6 +31,7 @@ export default function MatchDetailPage({ params }: { params: Promise<{ id: stri
     const [refreshing, setRefreshing] = useState(false);
     const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
     const [showWinnerPopup, setShowWinnerPopup] = useState(false);
+    const [showAbandonedPopup, setShowAbandonedPopup] = useState(false);
     const [winnerData, setWinnerData] = useState<any>(null);
     const [hasShownPopup, setHasShownPopup] = useState(false);
 
@@ -83,8 +84,13 @@ export default function MatchDetailPage({ params }: { params: Promise<{ id: stri
         const isFinished = status === 'finished' || status === 'completed' || status === 'result' || status === 'settled';
 
         if (isFinished && leaderboard.length > 0 && !hasShownPopup) {
-            setWinnerData(leaderboard[0]); // Rank 1
-            setShowWinnerPopup(true);
+            const topScore = leaderboard[0].totalRuns;
+            if (topScore > 0) {
+                setWinnerData(leaderboard[0]); // Rank 1
+                setShowWinnerPopup(true);
+            } else {
+                setShowAbandonedPopup(true);
+            }
             setHasShownPopup(true);
         }
     }, [data?.match?.status, leaderboard, hasShownPopup]);
@@ -175,7 +181,11 @@ export default function MatchDetailPage({ params }: { params: Promise<{ id: stri
                         </button>
                         <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-slate-900 border border-white/5 shadow-inner">
                             <span className={`w-1.5 h-1.5 rounded-full ${match.status === 'live' ? 'bg-green-500 animate-pulse' : 'bg-slate-700'}`} />
-                            <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">{match.status}</span>
+                            <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">
+                                {(leaderboard.length > 0 && leaderboard[0].totalRuns === 0 && (match.status === 'finished' || match.status === 'completed' || match.status === 'result' || match.status === 'settled'))
+                                    ? "CANCELLED / FORFEITED"
+                                    : match.status}
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -505,6 +515,50 @@ export default function MatchDetailPage({ params }: { params: Promise<{ id: stri
                         </div>
                     </div>
                 )}
+
+            {/* Abandoned / Cancelled Popup */}
+            {
+                showAbandonedPopup && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-500">
+                        <div className="relative w-full max-w-lg bg-[#0A0F1C] border border-white/10 rounded-[3rem] p-10 overflow-hidden shadow-[0_0_100px_rgba(239,68,68,0.1)]">
+                            {/* Background Effects */}
+                            <div className="absolute -top-24 -left-24 w-64 h-64 bg-red-600/10 blur-[80px] rounded-full" />
+                            <div className="absolute -bottom-24 -right-24 w-64 h-64 bg-orange-600/10 blur-[80px] rounded-full" />
+
+                            <button
+                                onClick={() => setShowAbandonedPopup(false)}
+                                className="absolute top-6 right-6 p-2 rounded-full bg-white/5 hover:bg-white/10 border border-white/5 text-slate-400 hover:text-white transition-all z-10"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+
+                            <div className="relative z-10 flex flex-col items-center text-center">
+                                <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-red-900/40 via-slate-800 to-slate-900 p-[3px] shadow-[0_0_40px_rgba(239,68,68,0.1)] mb-8">
+                                    <div className="w-full h-full rounded-full bg-[#050B14] flex items-center justify-center">
+                                        <Ban className="w-12 h-12 text-red-500" />
+                                    </div>
+                                </div>
+
+                                <h2 className="text-2xl md:text-4xl font-black text-white tracking-tight uppercase mb-2">Match Cancelled</h2>
+                                <p className="text-red-500 font-bold uppercase tracking-[0.2em] md:tracking-[0.3em] text-[10px] md:text-xs mb-8">Abandoned / Forfeited</p>
+
+                                <div className="p-8 bg-white/5 rounded-[2rem] border border-white/5 mb-10 w-full">
+                                    <p className="text-slate-400 font-medium leading-relaxed">
+                                        This match has been marked as cancelled or forfeited. No winners have been declared, and player statistics for this match have been neutralized.
+                                    </p>
+                                </div>
+
+                                <button
+                                    onClick={() => setShowAbandonedPopup(false)}
+                                    className="w-full py-5 bg-slate-800 hover:bg-slate-700 text-white rounded-2xl font-black uppercase tracking-[0.2em] text-xs transition-all flex items-center justify-center gap-3"
+                                >
+                                    Dismiss Notice
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
         </div>
     );
 }

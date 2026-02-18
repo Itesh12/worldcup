@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
                 .populate('userId', 'name image')
                 .lean() as any;
 
-            if (winnerStats && winnerStats.userId) {
+            if (winnerStats && winnerStats.userId && winnerStats.totalRuns > 0) {
                 winnersData.push({
                     match: {
                         _id: match._id,
