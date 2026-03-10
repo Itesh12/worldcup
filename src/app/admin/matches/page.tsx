@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { RefreshCcw, Calendar, MapPin, Activity, Swords, Zap, ChevronRight, Globe, Lock, Clock, CheckCircle, ArrowLeft } from "lucide-react";
+import { RefreshCcw, Calendar, MapPin, Activity, Swords, Zap, ChevronRight, Globe, Lock, Clock, CheckCircle, ArrowLeft, Settings, DollarSign, Percent, X, AlertCircle } from "lucide-react";
 import Link from "next/link";
+import { AdminContextSwitcher } from "@/components/admin/AdminContextSwitcher";
 
 interface Match {
     _id: string;
@@ -11,6 +12,8 @@ interface Match {
     status: string;
     startTime: string;
     venue: string;
+    entryFee?: number;
+    commissionPercentage?: number;
 }
 
 type TabType = 'today' | 'upcoming' | 'past';
@@ -20,14 +23,20 @@ export default function AdminMatchesPage() {
     const [loading, setLoading] = useState(true);
     const [syncing, setSyncing] = useState(false);
     const [activeTab, setActiveTab] = useState<TabType>('today');
+    const [selectedTournament, setSelectedTournament] = useState<string | null>(null);
+    const [selectedMatchPricing, setSelectedMatchPricing] = useState<Match | null>(null);
+    const [tempEntryFee, setTempEntryFee] = useState<string>("");
+    const [tempCommission, setTempCommission] = useState<string>("");
+    const [updating, setUpdating] = useState(false);
 
     useEffect(() => {
-        fetchMatches();
-    }, []);
+        if (selectedTournament) fetchMatches(selectedTournament);
+    }, [selectedTournament]);
 
-    const fetchMatches = async () => {
+    const fetchMatches = async (tournamentId: string) => {
+        setLoading(true);
         try {
-            const res = await fetch("/api/admin/matches");
+            const res = await fetch(`/api/admin/matches?tournamentId=${tournamentId}`);
             const data = await res.json();
             if (res.ok) setMatches(data);
         } catch (err) {
@@ -41,13 +50,37 @@ export default function AdminMatchesPage() {
         setSyncing(true);
         try {
             const res = await fetch("/api/admin/matches", { method: "POST" });
-            if (res.ok) {
-                await fetchMatches();
+            if (res.ok && selectedTournament) {
+                await fetchMatches(selectedTournament);
             }
         } catch (err) {
             console.error("Failed to sync matches", err);
         } finally {
             setSyncing(false);
+        }
+    };
+
+    const handleUpdatePricing = async () => {
+        if (!selectedMatchPricing) return;
+        setUpdating(true);
+        try {
+            const res = await fetch("/api/admin/matches", {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    matchId: selectedMatchPricing._id,
+                    entryFee: tempEntryFee === "" ? undefined : Number(tempEntryFee),
+                    commissionPercentage: tempCommission === "" ? undefined : Number(tempCommission)
+                })
+            });
+            if (res.ok) {
+                if (selectedTournament) await fetchMatches(selectedTournament);
+                setSelectedMatchPricing(null);
+            }
+        } catch (err) {
+            console.error("Failed to update pricing", err);
+        } finally {
+            setUpdating(false);
         }
     };
 
@@ -88,17 +121,21 @@ export default function AdminMatchesPage() {
                             <Swords className="w-5 h-5 md:w-6 md:h-6 text-indigo-500" />
                             <h1 className="text-lg md:text-xl font-black text-white tracking-tight uppercase">Match <span className="text-indigo-500">Management</span></h1>
                         </div>
+                        <div className="hidden md:block h-6 w-px bg-white/10 mx-2" />
+                        <AdminContextSwitcher onSelect={(id) => setSelectedTournament(id)} />
                     </div>
 
-                    <button
-                        onClick={handleSync}
-                        disabled={syncing}
-                        className="group relative flex items-center gap-2 md:gap-3 px-4 md:px-6 py-2.5 md:py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-black transition-all shadow-xl shadow-indigo-600/20 hover:shadow-indigo-600/40 disabled:opacity-50 active:scale-95 overflow-hidden"
-                    >
-                        <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]" />
-                        <RefreshCcw className={`w-3.5 h-3.5 md:w-4 md:h-4 ${syncing ? "animate-spin" : ""}`} />
-                        <span className="uppercase tracking-widest text-[9px] md:text-[10px]">{syncing ? "Sync..." : "Global Sync"}</span>
-                    </button>
+                    <div className="flex items-center gap-3">
+                        <button
+                            onClick={handleSync}
+                            disabled={syncing}
+                            className="group relative flex items-center gap-2 md:gap-3 px-4 md:px-6 py-2.5 md:py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-black transition-all shadow-xl shadow-indigo-600/20 hover:shadow-indigo-600/40 disabled:opacity-50 active:scale-95 overflow-hidden"
+                        >
+                            <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]" />
+                            <RefreshCcw className={`w-3.5 h-3.5 md:w-4 md:h-4 ${syncing ? "animate-spin" : ""}`} />
+                            <span className="uppercase tracking-widest text-[9px] md:text-[10px]">{syncing ? "Sync..." : "Global Sync"}</span>
+                        </button>
+                    </div>
                 </div>
             </header>
 
@@ -215,14 +252,25 @@ export default function AdminMatchesPage() {
                                         </div>
                                     </div>
                                 </div>
-
-                                <div className="relative z-10">
+ 
+                                <div className="flex gap-4 relative z-10 px-1">
+                                    <button
+                                        onClick={() => {
+                                            setSelectedMatchPricing(match);
+                                            setTempEntryFee(match.entryFee?.toString() || "");
+                                            setTempCommission(match.commissionPercentage?.toString() || "");
+                                        }}
+                                        className="flex-1 flex items-center justify-center gap-2 py-4 bg-white/5 hover:bg-slate-800 text-slate-300 rounded-[18px] md:rounded-[20px] text-[10px] md:text-xs font-black transition-all duration-300 border border-white/10 uppercase tracking-widest"
+                                    >
+                                        <Settings className="w-3.5 h-3.5" />
+                                        Pricing
+                                    </button>
                                     <Link
                                         href={`/admin/matches/${match._id}/slots`}
-                                        className="group/btn flex items-center justify-center gap-2 w-full py-4 bg-white/5 hover:bg-indigo-600 text-white rounded-[18px] md:rounded-[20px] text-[10px] md:text-xs font-black transition-all duration-300 border border-white/10 hover:border-indigo-400 uppercase tracking-widest"
+                                        className="flex-[2] flex items-center justify-center gap-2 py-4 bg-indigo-600/10 hover:bg-indigo-600 text-white rounded-[18px] md:rounded-[20px] text-[10px] md:text-xs font-black transition-all duration-300 border border-indigo-500/20 hover:border-indigo-400 uppercase tracking-widest text-center"
                                     >
-                                        Manage Slots & Assignments
-                                        <ChevronRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
+                                        Manage Slots
+                                        <ChevronRight className="w-4 h-4" />
                                     </Link>
                                 </div>
                             </div>
@@ -230,6 +278,78 @@ export default function AdminMatchesPage() {
                     </div>
                 )}
             </div>
+
+            {/* Pricing Override Modal */}
+            {selectedMatchPricing && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={() => setSelectedMatchPricing(null)} />
+                    <div className="relative w-full max-w-lg bg-[#0f172a] border border-white/10 rounded-[2.5rem] p-8 md:p-10 shadow-3xl overflow-hidden animate-in fade-in zoom-in duration-300">
+                        {/* Modal Header */}
+                        <div className="flex items-center justify-between mb-8">
+                            <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20">
+                                    <DollarSign className="w-6 h-6 text-indigo-400" />
+                                </div>
+                                <h2 className="text-2xl font-black text-white uppercase tracking-tight italic">Pricing <span className="text-indigo-400">Override</span></h2>
+                            </div>
+                            <button onClick={() => setSelectedMatchPricing(null)} className="p-2 rounded-full bg-white/5 hover:bg-white/10 text-slate-400">
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        <div className="space-y-6">
+                            <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
+                                <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1">Target Match</p>
+                                <p className="text-white font-bold">{selectedMatchPricing.teams[0].shortName} vs {selectedMatchPricing.teams[1].shortName}</p>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Entry Fee (₹)</label>
+                                    <div className="relative">
+                                        <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-600" />
+                                        <input
+                                            type="number"
+                                            value={tempEntryFee}
+                                            onChange={(e) => setTempEntryFee(e.target.value)}
+                                            placeholder="Default"
+                                            className="w-full bg-slate-900 border border-white/10 rounded-2xl pl-11 pr-4 py-4 text-white font-bold focus:border-indigo-500 transition-all outline-none"
+                                        />
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Commission (%)</label>
+                                    <div className="relative">
+                                        <Percent className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-600" />
+                                        <input
+                                            type="number"
+                                            value={tempCommission}
+                                            onChange={(e) => setTempCommission(e.target.value)}
+                                            placeholder="Default"
+                                            className="w-full bg-slate-900 border border-white/10 rounded-2xl pl-11 pr-4 py-4 text-white font-bold focus:border-indigo-500 transition-all outline-none"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="flex items-start gap-3 p-4 rounded-2xl bg-indigo-500/5 border border-indigo-500/10 text-indigo-300">
+                                <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+                                <p className="text-[10px] font-medium leading-relaxed">
+                                    Overrides left blank will automatically fallback to the tournament-level defaults. Overrides are locked once a match starts to ensure fairness.
+                                </p>
+                            </div>
+
+                            <button
+                                onClick={handleUpdatePricing}
+                                disabled={updating}
+                                className="w-full py-5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-black uppercase tracking-widest transition-all shadow-xl shadow-indigo-600/20 flex items-center justify-center gap-3 disabled:opacity-50"
+                            >
+                                {updating ? "Applying Overrides..." : "Apply Match Overrides"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

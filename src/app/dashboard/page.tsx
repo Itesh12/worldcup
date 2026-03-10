@@ -9,6 +9,7 @@ import jsPDF from "jspdf";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { ProfileDialog } from "@/components/ProfileDialog";
+import { UserContextSwitcher } from "@/components/UserContextSwitcher";
 
 interface Match {
   _id: string;
@@ -32,12 +33,11 @@ export default function UserMatchesPage() {
   const [weeklyLoading, setWeeklyLoading] = useState(true);
 
   const [refreshing, setRefreshing] = useState(false);
-
-  // Move useEffect after handleRefresh definition to use it
+  const [tournamentId, setTournamentId] = useState<string | null>(null);
 
 
   const handleRefresh = async () => {
-    if (refreshing) return;
+    if (refreshing || !tournamentId) return;
     setRefreshing(true);
     try {
       // Trigger the background sync (loud)
@@ -60,8 +60,10 @@ export default function UserMatchesPage() {
 
   useEffect(() => {
     // Initial fetch with sync
-    handleRefresh();
-  }, []);
+    if (tournamentId) {
+        handleRefresh();
+    }
+  }, [tournamentId]);
 
   const fetchDashboardStats = async (silent = false) => {
     try {
@@ -71,8 +73,8 @@ export default function UserMatchesPage() {
       if (silent) headers['x-silent-fetch'] = 'true';
 
       const [statsRes, leaderboardRes] = await Promise.all([
-        fetch("/api/user/stats", { headers }),
-        fetch("/api/leaderboard?limit=3", { headers })
+        fetch(`/api/user/stats?tournamentId=${tournamentId}`, { headers }),
+        fetch(`/api/leaderboard?limit=3&tournamentId=${tournamentId}`, { headers })
       ]);
 
       if (statsRes.ok) {
@@ -107,7 +109,7 @@ export default function UserMatchesPage() {
       const headers: any = {};
       if (silent) headers['x-silent-fetch'] = 'true';
 
-      const res = await fetch("/api/matches", { headers });
+      const res = await fetch(`/api/matches?tournamentId=${tournamentId}`, { headers });
       const data = await res.json();
       if (res.ok) setMatches(data);
     } catch (err) {
@@ -152,13 +154,17 @@ export default function UserMatchesPage() {
         <div className="max-w-7xl mx-auto px-4 py-4 grid grid-cols-3 items-center">
           <div className="flex items-center gap-2 md:gap-3 justify-self-start">
             <Trophy className="w-6 h-6 md:w-8 md:h-8 text-indigo-500" />
-            <div>
+            <div className="hidden sm:block">
               <h1 className="text-lg md:text-xl font-black text-white tracking-tight leading-none">WORLD CUP <span className="text-indigo-500">HUB</span></h1>
               <p className="text-[9px] md:text-[10px] text-slate-500 font-bold uppercase tracking-widest hidden sm:block">Official Player Portal</p>
             </div>
+            <div className="sm:hidden block ml-2">
+                <UserContextSwitcher onSelect={setTournamentId} />
+            </div>
           </div>
 
-          <div className="justify-self-center">
+          <div className="justify-self-center hidden sm:flex items-center gap-4">
+              <UserContextSwitcher onSelect={setTournamentId} />
             {session?.user && (session.user as any).role === "admin" && (
               <Link
                 href="/admin"

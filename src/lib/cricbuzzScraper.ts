@@ -121,20 +121,13 @@ const fetchWithRetry = async (url: string, options: RequestInit = {}, retries = 
     }
 };
 
-export const getCricbuzzMatches = async (): Promise<ScrapedMatch[]> => {
-    const seriesIds = ['11515', '11253']; // 11515: Warm-ups, 11253: Main Tournament
-    const seriesSlugMap: Record<string, string> = {
-        '11515': 'icc-mens-t20-world-cup-warm-up-matches-2026',
-        '11253': 'icc-mens-t20-world-cup-2026'
-    };
+export const getCricbuzzMatches = async (seriesId: string, slug: string): Promise<ScrapedMatch[]> => {
     const allMatches: ScrapedMatch[] = [];
 
-    for (const seriesId of seriesIds) {
-        try {
-            const slug = seriesSlugMap[seriesId];
-            const seriesUrl = `https://www.cricbuzz.com/cricket-series/${seriesId}/${slug}/matches`;
-            console.log(`Scraping series ${seriesId}: ${seriesUrl}`);
-            const response = await fetchWithRetry(seriesUrl, {
+    try {
+        const seriesUrl = `https://www.cricbuzz.com/cricket-series/${seriesId}/${slug}/matches`;
+        console.log(`Scraping series ${seriesId}: ${seriesUrl}`);
+        const response = await fetchWithRetry(seriesUrl, {
                 cache: 'no-store'
             });
             const html = await response.text();
@@ -207,18 +200,46 @@ export const getCricbuzzMatches = async (): Promise<ScrapedMatch[]> => {
                     team1,
                     team2,
                     status,
-                    venue: seriesId === '11515' ? 'ICC Men\'s T20 World Cup Warm-up' : 'ICC Men\'s T20 World Cup 2026',
+                    venue: slug.split('-').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' '),
                     startTime: startDate
                 });
             }
 
-        } catch (error) {
-            console.error(`Cricbuzz Series Scraper Error for ${seriesId}:`, error);
-        }
+    } catch (error) {
+        console.error(`Cricbuzz Series Scraper Error for ${seriesId}:`, error);
     }
 
     console.log(`Cricbuzz Series Scraper - Total Count: ${allMatches.length}`);
     return allMatches;
+};
+
+export const getAvailableSeries = async (): Promise<{id: string, name: string, slug: string}[]> => {
+    try {
+        const response = await fetchWithRetry('https://www.cricbuzz.com/cricket-series');
+        const html = await response.text();
+        const $ = cheerio.load(html);
+        const series: {id: string, name: string, slug: string}[] = [];
+
+        $('a[href^="/cricket-series/"]').each((_, el) => {
+            const href = $(el).attr('href') || '';
+            const parts = href.split('/');
+            // /cricket-series/11253/icc-mens-t20-world-cup-2026
+            if (parts.length >= 4) {
+                const id = parts[2];
+                const slug = parts[3];
+                const name = $(el).text().trim();
+                
+                // Filter out some junk if necessary, but keep it simple
+                if (id && slug && name && !series.find(s => s.id === id) && !name.includes('Schedule') && !name.includes('Archives')) {
+                    series.push({ id, name, slug });
+                }
+            }
+        });
+        return series;
+    } catch (error) {
+        console.error("Error fetching available series:", error);
+        return [];
+    }
 };
 
 export const getCricbuzzMatchInfo = async (matchId: string): Promise<MatchInfo | null> => {

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Trophy, Medal, Award, TrendingUp, Search, ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { UserContextSwitcher } from "@/components/UserContextSwitcher";
 
 interface LeaderboardEntry {
     _id: string;
@@ -17,11 +18,15 @@ interface LeaderboardEntry {
 export default function LeaderboardPage() {
     const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
     const [loading, setLoading] = useState(true);
+    const [tournamentId, setTournamentId] = useState<string | null>(null);
 
     useEffect(() => {
         const fetchLeaderboard = async () => {
             try {
-                const res = await fetch("/api/leaderboard");
+                const url = tournamentId 
+                    ? `/api/leaderboard?tournamentId=${tournamentId}`
+                    : `/api/leaderboard`;
+                const res = await fetch(url);
                 const data = await res.json();
                 if (res.ok) setEntries(data);
             } catch (err) {
@@ -33,20 +38,25 @@ export default function LeaderboardPage() {
         fetchLeaderboard();
         const interval = setInterval(fetchLeaderboard, 15000); // Refresh every 15s
         return () => clearInterval(interval);
-    }, []);
+    }, [tournamentId]);
 
     return (
         <div className="min-h-screen bg-slate-950 pb-20 pt-24">
             {/* Standardized Header */}
             <header className="fixed top-0 left-0 right-0 z-50 bg-[#050B14]/80 backdrop-blur-xl border-b border-white/5">
-                <div className="max-w-7xl mx-auto px-4 py-4 flex items-center gap-6">
-                    <Link href="/dashboard" className="w-10 h-10 rounded-full bg-slate-900 border border-white/5 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800 transition-colors shadow-lg">
-                        <ArrowLeft className="w-5 h-5" />
-                    </Link>
-                    <div className="flex items-center gap-3">
-                        <Trophy className="w-6 h-6 text-indigo-500" />
-                        <h1 className="text-xl font-black text-white tracking-tight">GLOBAL <span className="text-indigo-500">LEADERBOARD</span></h1>
+                <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+                    <div className="flex items-center gap-6">
+                        <Link href="/dashboard" className="w-10 h-10 rounded-full bg-slate-900 border border-white/5 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800 transition-colors shadow-lg">
+                            <ArrowLeft className="w-5 h-5" />
+                        </Link>
+                        <div className="flex items-center gap-3">
+                            <Trophy className="w-6 h-6 text-indigo-500" />
+                            <h1 className="text-xl font-black text-white tracking-tight italic uppercase">
+                                {tournamentId ? "League" : "Global"} <span className="text-indigo-500">{tournamentId ? "Standings" : "Leaderboard"}</span>
+                            </h1>
+                        </div>
                     </div>
+                    <UserContextSwitcher onSelect={setTournamentId} />
                 </div>
             </header>
 
@@ -58,8 +68,12 @@ export default function LeaderboardPage() {
                         <div className="w-20 h-20 rounded-3xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center mx-auto mb-6 shadow-glow">
                             <Trophy className="w-10 h-10 text-indigo-500" />
                         </div>
-                        <h2 className="text-3xl font-black text-white tracking-tighter mb-2 italic uppercase">The Elite Hall of Fame</h2>
-                        <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">Top performing users across all World Cup matches</p>
+                        <h2 className="text-3xl font-black text-white tracking-tighter mb-2 italic uppercase">
+                            {tournamentId ? "The League Race" : "The Hall of Fame"}
+                        </h2>
+                        <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">
+                            {tournamentId ? "Live standings for the current selected league" : "Top performing users of all-time across all leagues"}
+                        </p>
                     </div>
                 </div>
             </div>

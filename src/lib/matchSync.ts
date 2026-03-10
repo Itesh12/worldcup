@@ -1,13 +1,21 @@
 import connectDB from "@/lib/db";
 import Match from "@/models/Match";
+import Tournament from "@/models/Tournament";
 import { getCricbuzzMatches } from "@/lib/cricbuzzScraper";
 
 export async function performMatchSync() {
     try {
         await connectDB();
 
-        console.log("Match Sync Utility - Seeking matches from Cricbuzz Scraper");
-        const scrapedMatches = await getCricbuzzMatches();
+        // Find active tournament
+        const activeTournament = await Tournament.findOne({ isActive: true });
+        if (!activeTournament) {
+            console.log("Match Sync Utility - No active tournament found.");
+            return { success: false, count: 0, message: "No active tournament found" };
+        }
+
+        console.log(`Match Sync Utility - Seeking matches from Cricbuzz Scraper for ${activeTournament.name}`);
+        const scrapedMatches = await getCricbuzzMatches(activeTournament.cricbuzzSeriesId, activeTournament.cricbuzzSlug);
 
         if (scrapedMatches.length === 0) {
             console.log("Match Sync Utility - Scraper found 0 matches.");
@@ -22,6 +30,7 @@ export async function performMatchSync() {
                 : new Date();
 
             return {
+                tournamentId: activeTournament._id,
                 externalMatchId: m.id,
                 teams: [
                     { name: m.team1, shortName: m.team1.substring(0, 3).toUpperCase() },

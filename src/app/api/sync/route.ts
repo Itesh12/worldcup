@@ -5,6 +5,7 @@ import BattingResolution from "@/models/BattingResolution";
 import SlotScore from "@/models/SlotScore";
 import UserMatchStats from "@/models/UserMatchStats";
 import UserBattingAssignment from "@/models/UserBattingAssignment";
+import Tournament from "@/models/Tournament";
 import { getLiveMatchData } from "@/lib/cricketApi";
 
 export async function GET(req: NextRequest) {
@@ -170,7 +171,23 @@ export async function GET(req: NextRequest) {
 
             // 5. Update match status if finished (simulated)
             if (liveData.status === 'finished') {
-                await Match.findByIdAndUpdate(match._id, { status: 'finished' });
+                // Fetch tournament for commission info
+                const tournament = await Tournament.findById(match.tournamentId).lean() as any;
+                if (tournament) {
+                    const numParticipants = await UserBattingAssignment.countDocuments({ matchId: match._id });
+                    const currentEntryFee = match.entryFee || tournament.entryFee || 50;
+                    const currentCommissionPct = match.commissionPercentage ?? tournament.commissionPercentage ?? 0;
+                    
+                    const totalPool = numParticipants * currentEntryFee;
+                    const adminCommissionEarned = totalPool * (currentCommissionPct / 100);
+                    
+                    await Match.findByIdAndUpdate(match._id, { 
+                        status: 'finished',
+                        adminCommissionEarned
+                    });
+                } else {
+                    await Match.findByIdAndUpdate(match._id, { status: 'finished' });
+                }
             }
         }
 

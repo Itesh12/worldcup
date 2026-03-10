@@ -6,6 +6,7 @@ import UserMatchStats from "@/models/UserMatchStats";
 import UserBattingAssignment from "@/models/UserBattingAssignment";
 import Match from "@/models/Match"; // Ensure Match model is registered
 import User from "@/models/User";   // Ensure User model is registered
+import Tournament from "@/models/Tournament";
 import mongoose from "mongoose";
 
 export async function GET(req: NextRequest) {
@@ -23,13 +24,28 @@ export async function GET(req: NextRequest) {
         }
 
         const userId = new mongoose.Types.ObjectId(userIdStr);
+        const tournamentIdStr = req.nextUrl.searchParams.get('tournamentId');
+
+        if (!tournamentIdStr || !mongoose.Types.ObjectId.isValid(tournamentIdStr)) {
+            return NextResponse.json({ error: "Invalid or missing Tournament ID" }, { status: 400 });
+        }
+
+        const tournamentId = new mongoose.Types.ObjectId(tournamentIdStr);
+        const tournament = await Tournament.findById(tournamentId).lean() as any;
+        
+        if (!tournament) {
+            return NextResponse.json({ error: "Tournament not found" }, { status: 404 });
+        }
+
+        const ENTRY_FEE = tournament.entryFee || 50;
+        const COMMISSION_PCT = tournament.commissionPercentage || 0;
 
         if (req.nextUrl.searchParams.get("detailed") === "true") {
             // "Detailed" stats for the profile page
-            const detailedStats = await UserMatchStats.find({ userId })
+            const detailedStats = await UserMatchStats.find({ userId, tournamentId })
                 .populate({
                     path: 'matchId',
-                    select: 'startTime teams venue status'
+                    select: 'startTime teams venue status entryFee commissionPercentage'
                 })
                 .sort({ updatedAt: -1 }) // Most recent first
                 .lean();
@@ -91,10 +107,17 @@ export async function GET(req: NextRequest) {
                     let pnl = 0;
                     let outcome: 'win' | 'loss' | 'played' = 'played';
 
+                    const currentEntryFee = stat.matchId.entryFee || ENTRY_FEE;
+                    const currentCommissionPct = stat.matchId.commissionPercentage ?? COMMISSION_PCT;
+
                     if (winnerId && numParticipants > 1) {
+                        const totalPool = numParticipants * currentEntryFee;
+                        const adminCommission = totalPool * (currentCommissionPct / 100);
+                        const winnerPrize = totalPool - adminCommission;
+
                         if (winnerId === userIdStr) {
                             // User Won
-                            const gain = (numParticipants - 1) * 50;
+                            const gain = winnerPrize - currentEntryFee; // Profit after their own entry fee
                             netWorth += gain;
                             pnl = gain;
                             outcome = 'win';
@@ -103,21 +126,24 @@ export async function GET(req: NextRequest) {
                                 const pid = String(p._id);
                                 if (pid === userIdStr) return;
                                 if (!ledger[pid]) ledger[pid] = { userId: pid, name: p.name, amount: 0, matches: [] };
-                                ledger[pid].amount += 50;
-                                ledger[pid].matches.push({ matchId: mid, amount: 50, type: 'gain', date: stat.matchId.startTime });
+                                // Ledger records how much this person 'cost' you or 'paid' you
+                                // In a commission model, they paid their ENTRY_FEE, but you got slightly less than the sum
+                                // We'll keep the ledger simple: they paid the ENTRY_FEE.
+                                ledger[pid].amount += currentEntryFee;
+                                ledger[pid].matches.push({ matchId: mid, amount: currentEntryFee, type: 'gain', date: stat.matchId.startTime });
                             });
                         } else {
                             // User Lost
-                            netWorth -= 50;
-                            pnl = -50;
+                            netWorth -= currentEntryFee;
+                            pnl = -currentEntryFee;
                             outcome = 'loss';
 
                             const winner = players.find(p => String(p._id) === winnerId);
                             if (winner) {
                                 const pid = String(winner._id);
-                                if (!ledger[pid]) ledger[pid] = { userId: pid, name: winner.name, amount: 0, matches: [] };
-                                ledger[pid].amount -= 50;
-                                ledger[pid].matches.push({ matchId: mid, amount: -50, type: 'loss', date: stat.matchId.startTime });
+                                if (!ledger[pid]) ledger[pid] = { userId: pid, name: (winner as any).name, amount: 0, matches: [] };
+                                ledger[pid].amount -= currentEntryFee;
+                                ledger[pid].matches.push({ matchId: mid, amount: currentEntryFee, type: 'loss', date: stat.matchId.startTime });
                             }
                         }
                     }
@@ -167,7 +193,7 @@ export async function GET(req: NextRequest) {
 
         // 1. Get User's Total Stats
         const userStatsAgg = await UserMatchStats.aggregate([
-            { $match: { userId: userId } },
+            { $match: { userId: userId, tournamentId: tournamentId } },
             {
                 $group: {
                     _id: "$userId",
@@ -182,6 +208,7 @@ export async function GET(req: NextRequest) {
         // 2. Calculate Global Rank
         // We aggregate runs per user and see how many users have more runs than the current user
         const globalRankAgg = await UserMatchStats.aggregate([
+            { $match: { tournamentId: tournamentId } },
             {
                 $group: {
                     _id: "$userId",
@@ -200,7 +227,7 @@ export async function GET(req: NextRequest) {
 
         // 3. Calculate Net Worth
         // Logic: For each match played, if won: +(Opponents)*50, if lost: -50
-        const userStatsDocs = await UserMatchStats.find({ userId }).select('matchId').lean();
+        const userStatsDocs = await UserMatchStats.find({ userId, tournamentId }).select('matchId').lean();
         const participatedMatchIds = userStatsDocs.map(s => s.matchId);
 
         let netWorth = 0;
@@ -250,9 +277,12 @@ export async function GET(req: NextRequest) {
                 if (!winnerId || numParticipants <= 1) continue;
 
                 if (winnerId === userIdStr) {
-                    netWorth += (numParticipants - 1) * 50;
+                    const totalPool = numParticipants * ENTRY_FEE;
+                    const adminCommission = totalPool * (COMMISSION_PCT / 100);
+                    const winnerPrize = totalPool - adminCommission;
+                    netWorth += (winnerPrize - ENTRY_FEE);
                 } else {
-                    netWorth -= 50;
+                    netWorth -= ENTRY_FEE;
                 }
             }
         }

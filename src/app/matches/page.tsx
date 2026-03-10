@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { ArrowLeft, Calendar, Trophy, ChevronRight, Clock, Activity, Search, MapPin } from "lucide-react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
+import { UserContextSwitcher } from "@/components/UserContextSwitcher";
 
 interface Match {
     _id: string;
@@ -20,11 +21,13 @@ export default function AllMatchesPage() {
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<'upcoming' | 'finished'>('upcoming');
     const [searchQuery, setSearchQuery] = useState("");
+    const [tournamentId, setTournamentId] = useState<string | null>(null);
 
     const fetchMatches = async () => {
+        if (!tournamentId) return;
         try {
             setLoading(true);
-            const res = await fetch("/api/matches");
+            const res = await fetch(`/api/matches?tournamentId=${tournamentId}`);
             const data = await res.json();
             if (res.ok) setMatches(data);
         } catch (err) {
@@ -36,7 +39,7 @@ export default function AllMatchesPage() {
 
     useEffect(() => {
         fetchMatches();
-    }, []);
+    }, [tournamentId]);
 
     const today = new Date().toDateString();
 
@@ -65,14 +68,17 @@ export default function AllMatchesPage() {
 
             {/* Header */}
             <header className="sticky top-0 z-40 bg-[#050B14]/80 backdrop-blur-xl border-b border-white/5">
-                <div className="max-w-7xl mx-auto px-4 py-4 flex items-center gap-6">
-                    <Link href="/dashboard" className="w-10 h-10 rounded-full bg-slate-900 border border-white/5 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800 transition-colors">
-                        <ArrowLeft className="w-5 h-5" />
-                    </Link>
-                    <div className="flex items-center gap-3">
-                        <Trophy className="w-6 h-6 text-indigo-500" />
-                        <h1 className="text-xl font-black text-white tracking-tight">FULL <span className="text-indigo-500">SCHEDULE</span></h1>
+                <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+                    <div className="flex items-center gap-6">
+                        <Link href="/dashboard" className="w-10 h-10 rounded-full bg-slate-900 border border-white/5 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800 transition-colors">
+                            <ArrowLeft className="w-5 h-5" />
+                        </Link>
+                        <div className="flex items-center gap-3">
+                            <Trophy className="w-6 h-6 text-indigo-500" />
+                            <h1 className="text-xl font-black text-white tracking-tight">FULL <span className="text-indigo-500">SCHEDULE</span></h1>
+                        </div>
                     </div>
+                    <UserContextSwitcher onSelect={setTournamentId} />
                 </div>
             </header>
 

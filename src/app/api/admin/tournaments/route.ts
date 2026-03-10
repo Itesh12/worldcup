@@ -1,28 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import connectDB from "@/lib/db";
-import Match from "@/models/Match";
+import Tournament from "@/models/Tournament";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../auth/[...nextauth]/route";
-import { performMatchSync } from "@/lib/matchSync";
-
-export async function POST(req: NextRequest) {
-    try {
-        const session = await getServerSession(authOptions);
-        if (!session || (session.user as any).role !== 'admin') {
-            return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-        }
-
-        const result = await performMatchSync();
-
-        return NextResponse.json({ 
-            message: "Matches synced successfully", 
-            count: result.count 
-        });
-    } catch (error: any) {
-        console.error("Match Sync Error:", error);
-        return NextResponse.json({ message: error.message }, { status: 500 });
-    }
-}
 
 export async function GET(req: NextRequest) {
     try {
@@ -31,17 +11,37 @@ export async function GET(req: NextRequest) {
             return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
         }
 
-        const { searchParams } = new URL(req.url);
-        const tournamentId = searchParams.get('tournamentId');
+        await connectDB();
+        const tournaments = await Tournament.find().sort({ createdAt: -1 });
 
-        if (!tournamentId) {
-            return NextResponse.json({ message: "tournamentId is required" }, { status: 400 });
+        return NextResponse.json(tournaments);
+    } catch (error: any) {
+        return NextResponse.json({ message: error.message }, { status: 500 });
+    }
+}
+
+export async function POST(req: NextRequest) {
+    try {
+        const session = await getServerSession(authOptions);
+        if (!session || (session.user as any).role !== 'admin') {
+            return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
         }
 
-        await connectDB();
-        const matches = await Match.find({ tournamentId }).sort({ startTime: -1 });
+        const body = await req.json();
+        const { name, cricbuzzSeriesId, cricbuzzSlug, isActive, commissionPercentage, entryFee } = body;
 
-        return NextResponse.json(matches);
+        await connectDB();
+
+        if (isActive) {
+            // Unset active from all others if making this one active
+            await Tournament.updateMany({}, { $set: { isActive: false } });
+        }
+
+        const tournament = await Tournament.create({
+            name, cricbuzzSeriesId, cricbuzzSlug, isActive, commissionPercentage, entryFee
+        });
+
+        return NextResponse.json(tournament, { status: 201 });
     } catch (error: any) {
         return NextResponse.json({ message: error.message }, { status: 500 });
     }
@@ -55,24 +55,21 @@ export async function PUT(req: NextRequest) {
         }
 
         const body = await req.json();
-        const { matchId, entryFee, commissionPercentage } = body;
+        const { id, isActive } = body;
 
-        if (!matchId) {
-            return NextResponse.json({ message: "matchId is required" }, { status: 400 });
+        if (!id) {
+            return NextResponse.json({ message: "ID required" }, { status: 400 });
         }
 
         await connectDB();
-        const updatedMatch = await Match.findByIdAndUpdate(
-            matchId,
-            { entryFee, commissionPercentage },
-            { new: true }
-        );
 
-        if (!updatedMatch) {
-            return NextResponse.json({ message: "Match not found" }, { status: 404 });
+        if (isActive) {
+            await Tournament.updateMany({}, { $set: { isActive: false } });
         }
 
-        return NextResponse.json(updatedMatch);
+        const tournament = await Tournament.findByIdAndUpdate(id, { isActive }, { new: true });
+
+        return NextResponse.json(tournament);
     } catch (error: any) {
         return NextResponse.json({ message: error.message }, { status: 500 });
     }

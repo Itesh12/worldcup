@@ -18,6 +18,7 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
         { name: "Matches", href: "/admin/matches", icon: Swords },
         { name: "Users", href: "/admin/users", icon: Users },
         { name: "Global Leaderboard", href: "/admin/leaderboard", icon: Trophy },
+        { name: "Leagues", href: "/admin/tournaments", icon: Trophy },
     ];
 
     const SidebarContent = (

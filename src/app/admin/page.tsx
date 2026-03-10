@@ -22,6 +22,9 @@ interface AnalyticsData {
         totalAssignments: number;
         activeAssignments: number;
     };
+    revenue: {
+        total: number;
+    };
     performance: {
         totalRuns: number;
         topPlayers: {
@@ -262,6 +265,26 @@ export default function AdminDashboardPage() {
                             <div className="flex flex-col">
                                 <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Completed</span>
                                 <span className="text-sm font-bold text-slate-400">{data.matches.finished}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* NEW: Total Revenue / Commission */}
+                    <div className="relative overflow-hidden rounded-[32px] p-8 bg-gradient-to-br from-emerald-950/20 via-slate-950 to-slate-950 border border-emerald-500/20 shadow-2xl group transition-all duration-500 hover:scale-[1.02] hover:border-emerald-500/40">
+                        <div className="absolute inset-0 bg-gradient-to-tr from-emerald-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <div className="absolute -top-10 -right-10 w-40 h-40 bg-emerald-500/20 blur-[80px] rounded-full pointer-events-none" />
+                        <div className="absolute top-6 right-8 opacity-10 group-hover:opacity-30 group-hover:scale-110 transition-all duration-500">
+                            <TrendingUp className="w-16 h-16 text-emerald-400" />
+                        </div>
+                        <div className="relative z-10">
+                            <p className="text-xs font-black text-emerald-400 uppercase tracking-[0.2em] mb-3">Platform Revenue</p>
+                            <h2 className="text-5xl font-black text-white tracking-tighter">₹{data.revenue?.total.toLocaleString() ?? 0}</h2>
+                        </div>
+                        <div className="relative z-10 mt-6">
+                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+                                <span className="text-[10px] font-black text-emerald-400 uppercase tracking-wider">
+                                    Commission Earned
+                                </span>
                             </div>
                         </div>
                     </div>

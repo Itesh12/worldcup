@@ -25,9 +25,15 @@ export async function GET() {
 
         // [2] Match Stats
         const totalMatches = await Match.countDocuments();
-        const liveMatches = await Match.countDocuments({ status: "live" });
+        const currentMatch = await Match.countDocuments({ status: "live" });
         const upcomingMatches = await Match.countDocuments({ status: "upcoming" });
         const finishedMatches = await Match.countDocuments({ status: { $in: ["finished", "completed"] } });
+
+        // [2.5] Revenue Stats
+        const revenueAgg = await Match.aggregate([
+            { $group: { _id: null, total: { $sum: "$adminCommissionEarned" } } }
+        ]);
+        const totalRevenue = revenueAgg[0]?.total || 0;
 
         // [3] Engagement Stats (Slots)
         const totalAssignments = await UserBattingAssignment.countDocuments();
@@ -75,9 +81,12 @@ export async function GET() {
             },
             matches: {
                 total: totalMatches,
-                live: liveMatches,
+                live: currentMatch,
                 upcoming: upcomingMatches,
                 finished: finishedMatches
+            },
+            revenue: {
+                total: totalRevenue
             },
             engagement: {
                 totalAssignments,

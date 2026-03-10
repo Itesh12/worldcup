@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 
 const SlotScoreSchema = new mongoose.Schema({
+    tournamentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Tournament' },
     matchId: { type: mongoose.Schema.Types.ObjectId, ref: 'Match', required: true },
     inningsNumber: { type: Number, enum: [1, 2], required: true },
     position: { type: Number, required: true },
@@ -11,6 +12,6 @@ const SlotScoreSchema = new mongoose.Schema({
     isOut: { type: Boolean, default: false },
 }, { timestamps: true });
 
-SlotScoreSchema.index({ matchId: 1, inningsNumber: 1, position: 1 }, { unique: true });
+SlotScoreSchema.index({ tournamentId: 1, matchId: 1, inningsNumber: 1, position: 1 }, { unique: true });
 
 export default mongoose.models.SlotScore || mongoose.model('SlotScore', SlotScoreSchema);
