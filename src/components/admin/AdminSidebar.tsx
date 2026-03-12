@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, Trophy, LogOut, ArrowLeft, Swords, X } from "lucide-react";
+import { LayoutDashboard, Users, Trophy, LogOut, ArrowLeft, Swords, X, IndianRupee } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface AdminSidebarProps {
@@ -19,6 +19,7 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
         { name: "Users", href: "/admin/users", icon: Users },
         { name: "Global Leaderboard", href: "/admin/leaderboard", icon: Trophy },
         { name: "Leagues", href: "/admin/tournaments", icon: Trophy },
+        { name: "Payouts", href: "/admin/withdrawals", icon: IndianRupee },
     ];
 
     const SidebarContent = (

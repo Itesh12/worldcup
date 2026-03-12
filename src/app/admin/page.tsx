@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Users, Trophy, Activity, TrendingUp, ShieldCheck, Clock, CheckCircle, Ticket, Medal, Flame, ArrowLeft, Trash2, AlertTriangle, X, FileText, ArrowUpRight } from "lucide-react";
+import { Users, Trophy, Activity, TrendingUp, ShieldCheck, Clock, CheckCircle, Ticket, Medal, Flame, ArrowLeft, Trash2, AlertTriangle, X, FileText, ArrowUpRight, IndianRupee } from "lucide-react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 
@@ -316,6 +316,39 @@ export default function AdminDashboardPage() {
                             <div className="relative z-10">
                                 <div className="flex items-center gap-3 px-8 py-4 rounded-2xl bg-white/5 border border-white/10 group-hover:bg-indigo-500 group-hover:border-indigo-400 transition-all duration-500 shadow-xl group-hover:shadow-indigo-500/30">
                                     <span className="text-sm font-black text-white uppercase tracking-widest">Enter Hub</span>
+                                    <ArrowUpRight className="w-5 h-5 text-white animate-bounce-subtle" />
+                                </div>
+                            </div>
+                        </div>
+                    </Link>
+                </div>
+
+                {/* NEW: Withdrawal Requests Access */}
+                <div className="relative group">
+                    <Link href="/admin/withdrawals" className="block p-1 bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 rounded-[2.5rem] transition-all duration-500 hover:scale-[1.01] hover:shadow-[0_0_30px_rgba(245,158,11,0.2)]">
+                        <div className="relative overflow-hidden rounded-[2.4rem] p-10 bg-slate-950 flex flex-col md:flex-row items-center justify-between gap-8">
+                            {/* Animated Background */}
+                            <div className="absolute inset-0 bg-gradient-to-br from-amber-500/10 via-transparent to-orange-500/10 opacity-50 group-hover:opacity-80 transition-opacity" />
+                            <div className="absolute -top-20 -left-20 w-64 h-64 bg-amber-500/10 blur-[100px] rounded-full" />
+                            <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-orange-500/10 blur-[100px] rounded-full" />
+
+                            <div className="relative z-10 flex items-center gap-6">
+                                <div className="w-20 h-20 rounded-3xl bg-amber-500/10 flex items-center justify-center border border-amber-500/20 shadow-lg shadow-amber-500/5 group-hover:bg-amber-500/20 group-hover:border-amber-500/30 transition-all duration-500">
+                                    <IndianRupee className="w-10 h-10 text-amber-500" />
+                                </div>
+                                <div className="space-y-2">
+                                    <h2 className="text-3xl md:text-5xl font-black text-white tracking-tighter leading-none italic uppercase">
+                                        Payout <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-400 pr-4">Management</span>
+                                    </h2>
+                                    <p className="text-slate-400 font-bold uppercase tracking-[0.2em] text-[10px] md:text-xs">
+                                        Process withdrawal requests &middot; verify bank details &middot; manage settlements
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="relative z-10">
+                                <div className="flex items-center gap-3 px-8 py-4 rounded-2xl bg-white/5 border border-white/10 group-hover:bg-amber-600 group-hover:border-amber-500 transition-all duration-500 shadow-xl group-hover:shadow-amber-500/30">
+                                    <span className="text-sm font-black text-white uppercase tracking-widest">Process Payouts</span>
                                     <ArrowUpRight className="w-5 h-5 text-white animate-bounce-subtle" />
                                 </div>
                             </div>

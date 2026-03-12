@@ -25,24 +25,25 @@ export async function GET(req: NextRequest) {
 
         const userId = new mongoose.Types.ObjectId(userIdStr);
         const tournamentIdStr = req.nextUrl.searchParams.get('tournamentId');
+        let tournamentId: mongoose.Types.ObjectId | null = null;
+        let ENTRY_FEE = 50;
+        let COMMISSION_PCT = 0;
 
-        if (!tournamentIdStr || !mongoose.Types.ObjectId.isValid(tournamentIdStr)) {
-            return NextResponse.json({ error: "Invalid or missing Tournament ID" }, { status: 400 });
+        if (tournamentIdStr && mongoose.Types.ObjectId.isValid(tournamentIdStr)) {
+            tournamentId = new mongoose.Types.ObjectId(tournamentIdStr);
+            const tournament = await Tournament.findById(tournamentId).lean() as any;
+            if (tournament) {
+                ENTRY_FEE = tournament.entryFee || 50;
+                COMMISSION_PCT = tournament.commissionPercentage || 0;
+            }
         }
-
-        const tournamentId = new mongoose.Types.ObjectId(tournamentIdStr);
-        const tournament = await Tournament.findById(tournamentId).lean() as any;
-        
-        if (!tournament) {
-            return NextResponse.json({ error: "Tournament not found" }, { status: 404 });
-        }
-
-        const ENTRY_FEE = tournament.entryFee || 50;
-        const COMMISSION_PCT = tournament.commissionPercentage || 0;
 
         if (req.nextUrl.searchParams.get("detailed") === "true") {
             // "Detailed" stats for the profile page
-            const detailedStats = await UserMatchStats.find({ userId, tournamentId })
+            const query: any = { userId };
+            if (tournamentId) query.tournamentId = tournamentId;
+
+            const detailedStats = await UserMatchStats.find(query)
                 .populate({
                     path: 'matchId',
                     select: 'startTime teams venue status entryFee commissionPercentage'

@@ -8,8 +8,13 @@ import { toPng } from "html-to-image";
 import jsPDF from "jspdf";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
-import { ProfileDialog } from "@/components/ProfileDialog";
 import { UserContextSwitcher } from "@/components/UserContextSwitcher";
+import { WalletCard } from "@/components/WalletCard";
+import { AddFundsDialog } from "@/components/AddFundsDialog";
+import { WithdrawDialog } from "@/components/WithdrawDialog";
+import { TransactionList } from "@/components/TransactionList";
+import { toast, Toaster } from "react-hot-toast";
+import { useRouter } from "next/navigation";
 
 interface Match {
   _id: string;
@@ -22,15 +27,19 @@ interface Match {
 
 export default function UserMatchesPage() {
   const { data: session } = useSession();
+  const router = useRouter();
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'upcoming' | 'finished'>('upcoming');
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
+  const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
   const [userStats, setUserStats] = useState<{ totalRuns: number; rank: number; netWorth: number } | null>(null);
   const [topPlayers, setTopPlayers] = useState<any[]>([]);
   const [weeklyReports, setWeeklyReports] = useState<any[]>([]);
   const [statsLoading, setStatsLoading] = useState(true);
   const [weeklyLoading, setWeeklyLoading] = useState(true);
+  const [walletData, setWalletData] = useState<{ balance: number; transactions: any[] } | null>(null);
+  const [walletLoading, setWalletLoading] = useState(true);
 
   const [refreshing, setRefreshing] = useState(false);
   const [tournamentId, setTournamentId] = useState<string | null>(null);
@@ -49,7 +58,8 @@ export default function UserMatchesPage() {
       await Promise.all([
         fetchMatches(true), // passing true forces loading state on match list if needed, or keeps it silent
         fetchDashboardStats(false),
-        fetchWeeklyReports()
+        fetchWeeklyReports(),
+        fetchWalletData()
       ]);
     } catch (err) {
       console.error("Manual sync failed", err);
@@ -103,6 +113,37 @@ export default function UserMatchesPage() {
     }
   };
 
+  const fetchWalletData = async () => {
+    try {
+      setWalletLoading(true);
+      const res = await fetch("/api/user/wallet");
+      const data = await res.json();
+      if (res.ok) setWalletData(data);
+    } catch (err) {
+      console.error("Failed to fetch wallet data", err);
+    } finally {
+      setWalletLoading(false);
+    }
+  };
+
+  const handleAddFunds = async (amount: number) => {
+    try {
+      const res = await fetch("/api/user/wallet/add", {
+        method: "POST",
+        body: JSON.stringify({ amount, description: "Wallet Recharge" })
+      });
+      if (res.ok) {
+        toast.success("Funds added successfully!");
+        fetchWalletData();
+      } else {
+        toast.error("Failed to add funds.");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Error adding funds.");
+    }
+  };
+
   const fetchMatches = async (silent = true) => {
     try {
       if (!silent) setLoading(true);
@@ -146,6 +187,7 @@ export default function UserMatchesPage() {
 
   return (
     <div className="min-h-screen bg-[#050B14] pb-20 relative overflow-x-hidden">
+      <Toaster position="top-right" />
       {/* Ambient Backlights */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-indigo-600/10 blur-[120px] rounded-full pointer-events-none" />
 
@@ -192,7 +234,7 @@ export default function UserMatchesPage() {
 
                   <div
                     className="flex items-center gap-4 cursor-pointer group"
-                    onClick={() => setIsProfileOpen(true)}
+                    onClick={() => router.push('/profile')}
                   >
                     <div className="hidden md:flex flex-col items-end mr-2">
                       <span className="text-sm font-bold text-white leading-none group-hover:text-indigo-400 transition-colors">{(session.user as any).name}</span>
@@ -211,18 +253,18 @@ export default function UserMatchesPage() {
                   </div>
                 </div>
 
-                {isProfileOpen && (
-                  <ProfileDialog
-                    isOpen={isProfileOpen}
-                    onClose={() => setIsProfileOpen(false)}
-                    user={{
-                      name: session.user.name,
-                      email: session.user.email,
-                      image: session.user.image,
-                      role: (session.user as any).role
-                    }}
-                  />
-                )}
+                <AddFundsDialog 
+                  isOpen={isWalletModalOpen} 
+                  onClose={() => setIsWalletModalOpen(false)} 
+                  onAdd={handleAddFunds} 
+                />
+
+                <WithdrawDialog 
+                  isOpen={isWithdrawModalOpen} 
+                  onClose={() => setIsWithdrawModalOpen(false)} 
+                  onSuccess={fetchWalletData} 
+                  balance={walletData?.balance || 0} 
+                />
               </>
             ) : (
               <Link href="/login" className="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold rounded-lg transition-colors">
@@ -380,6 +422,23 @@ export default function UserMatchesPage() {
 
           {/* Sidebar */}
           <aside className="lg:col-span-4 space-y-8">
+            {session && (
+              <div className="space-y-8">
+                <WalletCard 
+                  balance={walletData?.balance || 0} 
+                  loading={walletLoading}
+                  onAddFunds={() => setIsWalletModalOpen(true)}
+                  onWithdraw={() => setIsWithdrawModalOpen(true)}
+                />
+                <div className="rounded-[2rem] p-6 md:p-8 bg-slate-900/40 border border-white/5 shadow-xl backdrop-blur-sm">
+                  <div className="flex items-center justify-between mb-8">
+                    <h3 className="text-sm font-black text-white uppercase tracking-[0.2em]">Activity History</h3>
+                  </div>
+                  <TransactionList transactions={walletData?.transactions || []} loading={walletLoading} />
+                </div>
+              </div>
+            )}
+
             {!session && (
               <div className="relative overflow-hidden rounded-[2rem] p-8 bg-slate-950 border border-white/5 shadow-2xl text-center">
                 <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-transparent pointer-events-none" />

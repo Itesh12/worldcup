@@ -4,6 +4,7 @@ import "./globals.css";
 import { AuthProvider } from "@/components/AuthProvider";
 import { LoadingProvider } from "@/components/LoadingContext";
 import GlobalLoader from "@/components/GlobalLoader";
+import Script from "next/script";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -23,6 +24,7 @@ export default function RootLayout({
         <LoadingProvider>
           <AuthProvider>
             <GlobalLoader />
+            <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="beforeInteractive" />
             {children}
           </AuthProvider>
         </LoadingProvider>
