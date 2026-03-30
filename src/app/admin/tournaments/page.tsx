@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CheckCircle, Circle, Plus, Trophy, Activity, Globe, Search, RefreshCw, ChevronDown } from "lucide-react";
+import { CheckCircle, Circle, Plus, Trophy, Activity, Globe, Search, RefreshCw, ChevronDown, AlertTriangle } from "lucide-react";
 
 interface Tournament {
     _id: string;
@@ -19,6 +19,8 @@ export default function AdminTournamentsPage() {
     const [loading, setLoading] = useState(true);
     const [showNewForm, setShowNewForm] = useState(false);
     const [isMigrating, setIsMigrating] = useState(false);
+    const [showMigrateConfirm, setShowMigrateConfirm] = useState(false);
+    const [migrationStatus, setMigrationStatus] = useState<{type: 'success' | 'error', message: string} | null>(null);
     
     // Form state
     const [name, setName] = useState("");
@@ -32,6 +34,7 @@ export default function AdminTournamentsPage() {
     const [availableSeries, setAvailableSeries] = useState<{id: string, name: string, slug: string}[]>([]);
     const [fetchingSeries, setFetchingSeries] = useState(false);
     const [selectedSeriesId, setSelectedSeriesId] = useState("");
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
     useEffect(() => {
         fetchTournaments();
@@ -68,14 +71,18 @@ export default function AdminTournamentsPage() {
         }
     }, [showNewForm]);
 
-    const handleSeriesSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        const id = e.target.value;
+    const handleSeriesSelect = (id: string) => {
         setSelectedSeriesId(id);
+        setIsDropdownOpen(false);
         const series = availableSeries.find(s => s.id === id);
         if (series) {
             setName(series.name);
             setSeriesId(series.id);
             setSlug(series.slug);
+        } else {
+            setName("");
+            setSeriesId("");
+            setSlug("");
         }
     };
 
@@ -109,21 +116,25 @@ export default function AdminTournamentsPage() {
         }
     };
 
-    const handleMigrate = async () => {
-        if (!confirm("Are you sure you want to run the migration to link existing data to the default World Cup tournament?")) return;
+    const handleMigrateClick = () => {
+        setShowMigrateConfirm(true);
+    };
+
+    const executeMigration = async () => {
+        setShowMigrateConfirm(false);
         setIsMigrating(true);
         try {
             const res = await fetch("/api/admin/migrate", { method: "POST" });
             const data = await res.json();
             if (res.ok) {
-                alert("Migration successful: " + JSON.stringify(data.results));
+                setMigrationStatus({ type: 'success', message: "Data migration completed successfully. Unlinked matches have been bound to the default tournament. Results: " + JSON.stringify(data.results) });
                 await fetchTournaments();
             } else {
-                alert("Migration failed: " + data.message);
+                setMigrationStatus({ type: 'error', message: "Migration failed: " + data.message });
             }
         } catch (err) {
             console.error("Migration error", err);
-            alert("Migration failed");
+            setMigrationStatus({ type: 'error', message: "A critical error occurred while attempting to migrate data." });
         } finally {
             setIsMigrating(false);
         }
@@ -148,60 +159,152 @@ export default function AdminTournamentsPage() {
 
     return (
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 relative pb-20">
+            {/* --- CUSTOM MODALS --- */}
+            {showMigrateConfirm && (
+                <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[#050B14]/80 backdrop-blur-md animate-in fade-in duration-300">
+                    <div className="bg-slate-900 border border-amber-500/30 rounded-[32px] p-6 max-w-sm w-full shadow-[0_0_50px_rgba(245,158,11,0.1)] animate-in zoom-in-95 duration-300">
+                        <div className="w-16 h-16 rounded-full bg-amber-500/10 flex items-center justify-center mb-6 mx-auto border border-amber-500/20">
+                            <AlertTriangle className="w-8 h-8 text-amber-500" />
+                        </div>
+                        <h3 className="text-xl font-black text-white text-center mb-3 uppercase tracking-wide">Confirm Migration</h3>
+                        <p className="text-sm font-medium text-slate-400 text-center mb-8 leading-relaxed">
+                            Are you sure you want to rigorously scan the database and link all orphaned match data to the currently active tournament context?
+                        </p>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => setShowMigrateConfirm(false)}
+                                className="flex-1 px-4 py-3.5 rounded-2xl bg-slate-800 hover:bg-slate-700 font-bold text-white text-sm transition-all border border-white/5 uppercase tracking-widest"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={executeMigration}
+                                className="flex-1 px-4 py-3.5 rounded-2xl bg-amber-600 hover:bg-amber-500 font-black text-white text-sm transition-all shadow-lg shadow-amber-600/20 uppercase tracking-widest"
+                            >
+                                Confirm
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {migrationStatus && (
+                <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[#050B14]/80 backdrop-blur-md animate-in fade-in duration-300">
+                    <div className={`bg-slate-900 border rounded-[32px] p-6 max-w-sm w-full animate-in zoom-in-95 duration-300 ${migrationStatus.type === 'success' ? 'border-emerald-500/30 shadow-[0_0_50px_rgba(16,185,129,0.1)]' : 'border-red-500/30 shadow-[0_0_50px_rgba(239,68,68,0.1)]'}`}>
+                        <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-6 mx-auto border ${migrationStatus.type === 'success' ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-red-500/10 border-red-500/20'}`}>
+                            {migrationStatus.type === 'success' ? <CheckCircle className="w-8 h-8 text-emerald-500" /> : <AlertTriangle className="w-8 h-8 text-red-500" />}
+                        </div>
+                        <h3 className="text-xl font-black text-white text-center mb-3 uppercase tracking-wide">{migrationStatus.type === 'success' ? 'Sync Successful' : 'Sync Failed'}</h3>
+                        <div className="text-sm font-medium text-slate-400 text-center mb-8 leading-relaxed max-h-32 overflow-y-auto no-scrollbar">
+                            {migrationStatus.message}
+                        </div>
+                        <button
+                            onClick={() => setMigrationStatus(null)}
+                            className="w-full px-4 py-3.5 rounded-2xl bg-slate-800 hover:bg-slate-700 font-bold text-white text-sm transition-all border border-white/5 uppercase tracking-widest"
+                        >
+                            Dismiss
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Standardized Premium Header */}
             <header className="sticky top-0 z-[60] bg-[#050B14]/80 backdrop-blur-xl border-b border-white/5">
-                <div className="max-w-7xl mx-auto px-4 md:px-6 py-4 flex items-center justify-between font-sans">
-                    <div className="flex items-center gap-3">
-                        <Trophy className="w-5 h-5 md:w-6 md:h-6 text-indigo-500" />
-                        <h1 className="text-lg md:text-xl font-black text-white tracking-tight uppercase">Leagues <span className="text-indigo-500">& Tournaments</span></h1>
+                <div className="max-w-7xl mx-auto px-4 md:px-6 py-4 md:py-6">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div className="flex items-center gap-3 md:gap-4">
+                            <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20 shrink-0">
+                                <Globe className="w-5 h-5 md:w-6 md:h-6 text-indigo-400" />
+                            </div>
+                            <div>
+                                <h1 className="text-xl md:text-3xl font-black text-white tracking-tighter uppercase italic leading-none">
+                                    League <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">& Tournaments</span>
+                                </h1>
+                                <p className="text-[9px] md:text-xs font-bold text-slate-500 uppercase tracking-widest mt-1 hidden xs:block">
+                                    Platform Data Contexts
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 md:gap-3 shrink-0 auto-cols-auto overflow-x-auto no-scrollbar pb-1 -mb-1">
+                            <button 
+                                onClick={handleMigrateClick}
+                                disabled={isMigrating}
+                                className="flex items-center justify-center gap-1.5 md:gap-2 bg-slate-800/80 hover:bg-slate-700 text-white px-3 md:px-5 py-2.5 md:py-3 rounded-xl md:rounded-2xl text-[10px] md:text-xs font-black transition-all border border-slate-700 disabled:opacity-50 uppercase tracking-widest whitespace-nowrap"
+                            >
+                                {isMigrating ? "Syncing..." : "Run Migration"}
+                            </button>
+                            <button 
+                                onClick={() => setShowNewForm(!showNewForm)}
+                                className="flex items-center justify-center gap-1.5 md:gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-4 md:px-6 py-2.5 md:py-3 rounded-xl md:rounded-2xl text-[10px] md:text-xs font-black transition-all shadow-lg shadow-indigo-600/20 uppercase tracking-widest whitespace-nowrap"
+                            >
+                                <Plus className="w-3.5 h-3.5 md:w-4 md:h-4 shrink-0" /> Add <span className="hidden xs:inline">Tournament</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </header>
 
-            <div className="max-w-7xl mx-auto px-6 pt-10 relative z-10">
-                <div className="flex justify-between items-center mb-8">
-                    <p className="text-slate-400 font-medium text-sm md:text-base italic">Manage data contexts like World Cup or IPL.</p>
-                    <div className="flex gap-2">
-                        <button 
-                            onClick={handleMigrate}
-                            disabled={isMigrating}
-                            className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all border border-slate-700 disabled:opacity-50"
-                        >
-                            {isMigrating ? "Migrating..." : "Run Migration"}
-                        </button>
-                        <button 
-                            onClick={() => setShowNewForm(!showNewForm)}
-                            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-lg shadow-indigo-600/20"
-                        >
-                            <Plus className="w-4 h-4" /> Add Tournament
-                        </button>
-                    </div>
-                </div>
+            <main className="max-w-7xl mx-auto px-4 md:px-6 pt-6 md:pt-10 relative z-10 w-full">
+                <p className="text-slate-400 font-medium text-sm md:text-base italic opacity-80 mb-6 md:mb-10 max-w-2xl">
+                    Manage high-level league metadata, entry parameters, and synchronize active data contexts.
+                </p>
 
                 {showNewForm && (
                      <div className="bg-slate-900/40 p-6 rounded-2xl border border-white/5 mb-8 backdrop-blur-xl shadow-xl">
                         <h2 className="text-white font-bold mb-4 uppercase tracking-wider text-sm">New Tournament Details</h2>
                         
-                        <div className="mb-6 p-4 bg-indigo-500/5 border border-indigo-500/10 rounded-xl relative">
+                        <div className="mb-6 p-4 bg-indigo-500/5 border border-indigo-500/10 rounded-xl relative z-20">
                             <label className="block text-indigo-400 text-[10px] font-black uppercase tracking-widest mb-2">Quick Select from Cricbuzz</label>
+                            
+                            {/* CUSTOM DROPDOWN */}
                             <div className="relative">
-                                <select 
-                                    value={selectedSeriesId}
-                                    onChange={handleSeriesSelect}
-                                    className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-indigo-500 focus:outline-none transition-all font-medium text-sm appearance-none cursor-pointer"
+                                {/* Dropdown Trigger */}
+                                <div 
+                                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                                    className={`w-full flex items-center justify-between bg-black/40 border ${isDropdownOpen ? 'border-indigo-500 shadow-[0_0_15px_rgba(99,102,241,0.2)]' : 'border-white/10 hover:border-white/20'} rounded-xl px-4 py-3 text-white transition-all cursor-pointer`}
                                 >
-                                    <option value="" className="bg-slate-900">-- Choose an ongoing series --</option>
-                                    {availableSeries.map(s => (
-                                        <option key={s.id} value={s.id} className="bg-slate-900">{s.name}</option>
-                                    ))}
-                                </select>
-                                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none flex items-center gap-2">
-                                    {fetchingSeries ? (
-                                        <RefreshCw className="w-4 h-4 text-indigo-500 animate-spin" />
-                                    ) : (
-                                        <ChevronDown className="w-4 h-4 text-slate-500" />
-                                    )}
+                                    <span className="font-medium text-sm truncate">
+                                        {selectedSeriesId 
+                                            ? availableSeries.find(s => s.id === selectedSeriesId)?.name || "-- Choose an ongoing series --" 
+                                            : "-- Choose an ongoing series --"}
+                                    </span>
+                                    <div className="pl-2">
+                                        {fetchingSeries ? (
+                                            <RefreshCw className="w-4 h-4 text-indigo-500 animate-spin" />
+                                        ) : (
+                                            <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-300 ${isDropdownOpen ? 'rotate-180' : ''}`} />
+                                        )}
+                                    </div>
                                 </div>
+
+                                {/* Dropdown Menu */}
+                                {isDropdownOpen && (
+                                    <>
+                                        <div className="fixed inset-0 z-10" onClick={() => setIsDropdownOpen(false)} />
+                                        <div className="absolute top-full left-0 right-0 mt-2 z-20 bg-slate-900/95 backdrop-blur-xl border border-indigo-500/20 rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.5)] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                                            <div className="max-h-[240px] overflow-y-auto custom-scrollbar p-1">
+                                                <div 
+                                                    onClick={() => handleSeriesSelect("")}
+                                                    className={`px-4 py-3 rounded-lg text-sm font-medium transition-colors cursor-pointer ${selectedSeriesId === "" ? 'bg-indigo-600/20 text-indigo-300' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}
+                                                >
+                                                    -- Clear Selection --
+                                                </div>
+                                                {availableSeries.map(s => (
+                                                    <div 
+                                                        key={s.id}
+                                                        onClick={() => handleSeriesSelect(s.id)}
+                                                        className={`px-4 py-3 rounded-lg text-sm font-medium transition-colors cursor-pointer ${selectedSeriesId === s.id ? 'bg-indigo-600 text-white' : 'text-slate-300 hover:bg-white/5 hover:text-white'}`}
+                                                    >
+                                                        {s.name}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
                             </div>
+
                             <p className="mt-2 text-[10px] text-slate-500 italic">Select a series to auto-fill the details below. You can still edit them manually.</p>
                         </div>
 
@@ -330,7 +433,7 @@ export default function AdminTournamentsPage() {
                         ))}
                     </div>
                 )}
-            </div>
+            </main>
         </div>
     );
 }
