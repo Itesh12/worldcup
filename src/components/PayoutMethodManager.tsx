@@ -251,50 +251,93 @@ export function PayoutMethodManager() {
             <motion.div
               key={m._id || `method-${idx}-${m.label}`}
               layout
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="p-6 bg-white/5 border border-white/10 rounded-3xl group hover:border-white/20 transition-all flex flex-col justify-between"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className={`relative overflow-hidden p-6 rounded-[2rem] border transition-all duration-500 group flex flex-col justify-between h-full min-h-[200px] ${
+                m.isDefault 
+                ? 'bg-gradient-to-br from-indigo-600/10 via-slate-900/40 to-slate-950 border-indigo-500/30' 
+                : 'bg-slate-900/40 border-white/5 hover:border-white/10'
+              }`}
             >
+              {/* Background Glow for Default */}
+              {m.isDefault && (
+                <div className="absolute -top-12 -right-12 w-32 h-32 bg-indigo-500/10 blur-[50px] rounded-full pointer-events-none" />
+              )}
+
               <div>
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-slate-900 border border-white/10 flex items-center justify-center">
+                <div className="flex items-start justify-between mb-6">
+                  <div className="flex items-center gap-4">
+                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg border ${
+                      m.type === 'upi' 
+                      ? 'bg-indigo-600/20 border-indigo-500/20 text-indigo-400' 
+                      : 'bg-emerald-600/20 border-emerald-500/20 text-emerald-400'
+                    }`}>
                       {m.type === "upi" ? (
-                        <Smartphone className="w-5 h-5 text-indigo-400" />
+                        <Smartphone className="w-6 h-6" />
                       ) : (
-                        <Landmark className="w-5 h-5 text-emerald-400" />
+                        <Landmark className="w-6 h-6" />
                       )}
                     </div>
                     <div>
-                      <h4 className="text-xs font-black text-white uppercase">{m.label}</h4>
-                      <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{m.type}</p>
+                      <h4 className="text-sm font-black text-white uppercase tracking-tight">{m.label}</h4>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <span className={`w-1.5 h-1.5 rounded-full ${m.type === 'upi' ? 'bg-indigo-500' : 'bg-emerald-500'}`} />
+                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{m.type}</p>
+                      </div>
                     </div>
                   </div>
                   <button
                     onClick={() => handleDelete(m._id)}
-                    className="p-2 text-slate-600 hover:text-rose-500 hover:bg-rose-500/10 rounded-lg transition-all"
+                    className="p-2.5 text-slate-500 hover:text-rose-500 hover:bg-rose-500/10 rounded-xl transition-all"
+                    title="Remove method"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
-                <p className="text-xs font-mono text-slate-400 bg-black/30 p-3 rounded-xl border border-white/5 break-all">
-                  {m.details}
-                </p>
+
+                {/* Structured Details */}
+                <div className="mb-6">
+                  {m.type === 'bank' ? (
+                    <div className="space-y-2">
+                       {m.details.split(' | ').map((part, i) => (
+                         <div key={i} className="flex items-center gap-3">
+                           <div className="w-1 h-1 rounded-full bg-slate-700" />
+                           <span className="text-[11px] font-bold text-slate-400 uppercase tracking-tight">
+                             {part.replace('Bank: ', '').replace('A/C: ', 'Account: ').replace('IFSC: ', 'IFSC: ')}
+                           </span>
+                         </div>
+                       ))}
+                    </div>
+                  ) : (
+                    <div className="flex flex-col gap-1">
+                      <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest pl-1">VPA / UPI ID</span>
+                      <div className="bg-black/20 px-4 py-3 rounded-xl border border-white/5">
+                        <p className="text-xs font-mono font-bold text-indigo-400 truncate">{m.details}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
+
+              {/* Default Control */}
+              <div className="mt-auto pt-4 border-t border-white/5">
                 {m.isDefault ? (
-                  <div className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981]" />
-                    <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest">Default Method</span>
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full w-fit">
+                    <Check className="w-3 h-3 text-emerald-500" />
+                    <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest">Active Default</span>
                   </div>
                 ) : (
                   <button
                     onClick={() => handleSetDefault(m._id)}
-                    className="text-[9px] font-black text-slate-500 hover:text-indigo-400 uppercase tracking-widest flex items-center gap-1.5 transition-colors group/btn"
+                    className="flex items-center gap-2 group/btn"
                   >
-                    <div className="w-1.5 h-1.5 rounded-full bg-slate-700 group-hover/btn:bg-indigo-500 transition-colors" />
-                    Mark as Default
+                    <div className="w-5 h-5 rounded-md bg-white/5 border border-white/10 flex items-center justify-center group-hover/btn:bg-indigo-600 group-hover/btn:border-indigo-500 transition-all">
+                      <Check className="w-3 h-3 text-transparent group-hover/btn:text-white" />
+                    </div>
+                    <span className="text-[10px] font-black text-slate-500 group-hover:text-white uppercase tracking-widest transition-colors">Mark as Default</span>
                   </button>
                 )}
+              </div>
             </motion.div>
           ))}
         </AnimatePresence>

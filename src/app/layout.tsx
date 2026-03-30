@@ -39,7 +39,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.className} bg-slate-950 text-slate-50 min-h-screen pb-20 md:pb-0`}>
+      <body className={`${inter.className} bg-slate-950 text-slate-50 min-h-screen pb-12 md:pb-0`}>
         <LoadingProvider>
           <TournamentProvider>
             <AuthProvider>

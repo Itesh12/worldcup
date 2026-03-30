@@ -633,35 +633,38 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 function ScorecardInnings({ team, isFirst = false }: { team: any; isFirst?: boolean }) {
     return (
         <div className="bg-slate-900/50 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl">
-            <div className={`p-6 px-12 flex justify-between items-center border-b border-slate-800 ${isFirst ? 'bg-indigo-600/10' : 'bg-slate-800/20'}`}>
-                <h3 className="text-xl font-black text-white">{team.name}</h3>
-                <span className="text-2xl font-black text-indigo-500 underline decoration-2 underline-offset-4">{team.score}</span>
+            <div className={`p-4 md:p-6 px-4 md:px-12 flex justify-between items-center border-b border-slate-800 ${isFirst ? 'bg-indigo-600/10' : 'bg-slate-800/20'}`}>
+                <h3 className="text-sm md:text-xl font-black text-white truncate mr-2">{team.name}</h3>
+                <span className="text-lg md:text-2xl font-black text-indigo-500 underline decoration-2 underline-offset-4 whitespace-nowrap">{team.score}</span>
             </div>
-            <div className="overflow-x-auto">
-                <table className="w-full">
+            <div className="overflow-x-auto scrollbar-hide">
+                <table className="w-full min-w-[500px]">
                     <thead>
                         <tr className="bg-slate-950/50 border-b border-slate-800">
                             <th className="p-3 md:p-4 px-6 md:px-12 text-left text-[8px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest w-[40%]">Batter</th>
-                            <th className="p-3 md:p-4 text-left text-[8px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest w-[20%]">Status</th>
-                            <th className="p-3 md:p-4 text-center text-[8px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest w-[10%]">R</th>
-                            <th className="p-3 md:p-4 text-center text-[8px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest w-[10%]">B</th>
-                            <th className="p-3 md:p-4 text-center text-[8px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest w-[10%]">4s</th>
-                            <th className="p-3 md:p-4 text-center text-[8px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest w-[10%]">6s</th>
+                            <th className="p-3 md:p-4 text-center text-[8px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest w-[12%]">R</th>
+                            <th className="p-3 md:p-4 text-center text-[8px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest w-[12%]">B</th>
+                            <th className="p-3 md:p-4 text-center text-[8px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest w-[12%]">4s</th>
+                            <th className="p-3 md:p-4 text-center text-[8px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest w-[12%]">6s</th>
+                            <th className="p-3 md:p-4 text-center text-[8px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest w-[12%]">SR</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-800/50">
                         {team.batting.map((b: any, i: number) => (
                             <tr key={i} className="hover:bg-slate-800/20 transition-colors group">
-                                <td className="p-4 px-12">
-                                    <span className="text-sm font-black text-white group-hover:text-indigo-500 transition-colors">{b.name}</span>
+                                <td className="p-4 px-6 md:px-12">
+                                    <div className="flex flex-col">
+                                        <span className="text-xs md:text-sm font-black text-white group-hover:text-indigo-500 transition-colors block mb-0.5">{b.name}</span>
+                                        <span className="text-[9px] md:text-[10px] font-medium text-slate-500 leading-tight italic">{b.outStatus}</span>
+                                    </div>
                                 </td>
-                                <td className="p-4">
-                                    <span className="text-[10px] font-medium text-slate-500">{b.outStatus}</span>
+                                <td className="p-4 text-center font-black text-white text-xs md:text-base">{b.runs}</td>
+                                <td className="p-4 text-center text-[10px] md:text-sm font-bold text-slate-400">{b.balls}</td>
+                                <td className="p-4 text-center text-[10px] md:text-sm font-bold text-slate-400">{b.fours}</td>
+                                <td className="p-4 text-center text-[10px] md:text-sm font-bold text-slate-400">{b.sixes}</td>
+                                <td className="p-4 text-center text-[11px] md:text-sm font-black text-indigo-400/80">
+                                    {b.balls > 0 ? ((b.runs / b.balls) * 100).toFixed(1) : '0.0'}
                                 </td>
-                                <td className="p-4 text-center font-black text-white">{b.runs}</td>
-                                <td className="p-4 text-center text-sm font-bold text-slate-400">{b.balls}</td>
-                                <td className="p-4 text-center text-sm font-bold text-slate-400">{b.fours}</td>
-                                <td className="p-4 text-center text-sm font-bold text-slate-400">{b.sixes}</td>
                             </tr>
                         ))}
                     </tbody>
@@ -669,29 +672,27 @@ function ScorecardInnings({ team, isFirst = false }: { team: any; isFirst?: bool
             </div>
 
             {/* Bowling Stats */}
-            <div className="overflow-x-auto border-t border-slate-800/50">
-                <table className="w-full">
+            <div className="overflow-x-auto scrollbar-hide border-t border-slate-800/50">
+                <table className="w-full min-w-[500px]">
                     <thead>
                         <tr className="bg-slate-950/50 border-b border-slate-800">
-                            <th className="p-4 px-12 text-left text-[10px] font-black text-slate-500 uppercase tracking-widest w-[50%]">Bowler</th>
-                            <th className="p-4 text-center text-[10px] font-black text-slate-500 uppercase tracking-widest w-[10%]">O</th>
-                            <th className="p-4 text-center text-[10px] font-black text-slate-500 uppercase tracking-widest w-[10%]">M</th>
-                            <th className="p-4 text-center text-[10px] font-black text-slate-500 uppercase tracking-widest w-[10%]">R</th>
-                            <th className="p-4 text-center text-[10px] font-black text-slate-500 uppercase tracking-widest w-[10%]">W</th>
-                            <th className="p-4 text-center text-[10px] font-black text-slate-500 uppercase tracking-widest w-[10%]">ECO</th>
+                            <th className="p-4 px-6 md:px-12 text-left text-[8px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest w-[40%]">Bowler</th>
+                            <th className="p-4 text-center text-[8px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest w-[12%]">O</th>
+                            <th className="p-4 text-center text-[8px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest w-[12%]">M</th>
+                            <th className="p-4 text-center text-[8px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest w-[12%]">R</th>
+                            <th className="p-4 text-center text-[8px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest w-[12%]">W</th>
+                            <th className="p-4 text-center text-[8px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest w-[12%]">ECO</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-800/50">
                         {team.bowling && team.bowling.map((b: any, i: number) => (
                             <tr key={i} className="hover:bg-slate-800/20 transition-colors group">
-                                <td className="p-4 px-12">
-                                    <span className="text-sm font-black text-white group-hover:text-indigo-500 transition-colors">{b.name}</span>
-                                </td>
-                                <td className="p-4 text-center text-sm font-bold text-slate-400">{b.overs}</td>
-                                <td className="p-4 text-center text-sm font-bold text-slate-400">{b.maidens}</td>
-                                <td className="p-4 text-center text-sm font-black text-white">{b.runs}</td>
-                                <td className="p-4 text-center text-sm font-black text-indigo-500">{b.wickets}</td>
-                                <td className="p-4 text-center text-sm font-bold text-slate-400">{b.economy}</td>
+                                <td className="p-4 px-6 md:px-12 font-black text-white group-hover:text-indigo-500 text-xs md:text-sm">{b.name}</td>
+                                <td className="p-4 text-center text-[10px] md:text-sm font-bold text-slate-400">{b.overs}</td>
+                                <td className="p-4 text-center text-[10px] md:text-sm font-bold text-slate-400">{b.maidens}</td>
+                                <td className="p-4 text-center text-[10px] md:text-sm font-black text-white">{b.runs}</td>
+                                <td className="p-4 text-center text-[10px] md:text-sm font-black text-indigo-500">{b.wickets}</td>
+                                <td className="p-4 text-center text-[10px] md:text-sm font-bold text-slate-400">{b.economy}</td>
                             </tr>
                         ))}
                     </tbody>
@@ -700,9 +701,9 @@ function ScorecardInnings({ team, isFirst = false }: { team: any; isFirst?: bool
 
             {/* FOW */}
             {team.fow && team.fow.length > 0 && (
-                <div className="bg-slate-950/30 p-6 px-12 border-t border-slate-800/50">
-                    <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-2">Fall of Wickets</p>
-                    <p className="text-xs font-medium text-slate-400 leading-relaxed">{team.fow.join(', ')}</p>
+                <div className="bg-slate-950/30 p-4 md:p-6 px-6 md:px-12 border-t border-slate-800/50">
+                    <p className="text-[8px] md:text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1 md:mb-2 text-center md:text-left">Fall of Wickets</p>
+                    <p className="text-[9px] md:text-xs font-medium text-slate-400 leading-relaxed text-center md:text-left italic">{team.fow.join(', ')}</p>
                 </div>
             )}
         </div>

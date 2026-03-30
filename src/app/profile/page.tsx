@@ -311,29 +311,42 @@ export default function ProfilePage() {
             
             {/* Wallet Overview Banner */}
             <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="relative overflow-hidden rounded-[2.5rem] p-8 bg-gradient-to-br from-indigo-600 via-indigo-700 to-purple-800 border border-white/10 shadow-2xl">
-                <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-soft-light" />
-                <div className="relative z-10">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Wallet className="w-4 h-4 text-white/70" />
-                    <span className="text-[10px] font-black text-white/60 uppercase tracking-[0.2em]">Total Liquidity</span>
+              <div className="relative overflow-hidden rounded-[2.5rem] p-8 bg-slate-900 border border-white/5 shadow-2xl">
+                {/* Background Decoration */}
+                <div className="absolute -bottom-10 -right-10 opacity-[0.03] pointer-events-none select-none">
+                  <IndianRupee className="w-48 h-48 text-white rotate-12" />
+                </div>
+                <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 via-transparent to-transparent pointer-events-none" />
+                
+                <div className="relative z-10 flex flex-col h-full justify-between">
+                  <div>
+                    <div className="flex items-center gap-2 mb-4">
+                      <div className="p-1.5 bg-indigo-500/10 rounded-lg border border-indigo-500/20">
+                        <Wallet className="w-3.5 h-3.5 text-indigo-400" />
+                      </div>
+                      <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Total Liquidity</span>
+                    </div>
+                    
+                    <div className="flex items-center gap-2.5">
+                      <div className="p-2.5 bg-indigo-500/10 rounded-2xl border border-indigo-500/10">
+                        <span className="text-xl font-black text-indigo-500">₹</span>
+                      </div>
+                      <span className="text-5xl font-black text-white tracking-tighter">
+                        {walletLoading ? "----" : walletData?.balance.toLocaleString()}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-xs font-black text-white/50">₹</span>
-                    <span className="text-5xl font-black text-white tracking-tighter">
-                      {walletLoading ? "----" : walletData?.balance.toLocaleString()}
-                    </span>
-                  </div>
-                  <div className="mt-8 flex gap-3">
+
+                  <div className="mt-10 flex gap-4">
                     <button 
                       onClick={() => setIsWalletModalOpen(true)}
-                      className="flex-1 py-3.5 bg-white text-indigo-700 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-black/20 hover:scale-105 transition-transform"
+                      className="flex-1 py-4 bg-indigo-600/10 hover:bg-indigo-600/20 border border-indigo-500/30 text-indigo-400 rounded-2xl text-[10px] font-black uppercase tracking-[0.15em] transition-all hover:scale-[1.02] active:scale-95 shadow-lg shadow-indigo-600/10"
                     >
                       Deposit
                     </button>
                     <button 
                       onClick={() => setIsWithdrawModalOpen(true)}
-                      className="flex-1 py-3.5 bg-black/20 hover:bg-black/30 border border-white/10 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
+                      className="flex-1 py-4 bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 rounded-2xl text-[10px] font-black uppercase tracking-[0.15em] transition-all hover:scale-[1.02] active:scale-95"
                     >
                       Withdraw
                     </button>

@@ -187,7 +187,7 @@ export default function UserMatchesPage() {
   ).sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime()).slice(0, 5); // Descending
 
   return (
-    <div className="min-h-screen bg-[#050B14] pb-20 relative overflow-x-hidden">
+    <div className="min-h-screen bg-[#050B14] relative overflow-x-hidden">
       <Toaster position="top-right" />
       {/* Ambient Backlights */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-indigo-600/10 blur-[120px] rounded-full pointer-events-none" />
@@ -247,7 +247,7 @@ export default function UserMatchesPage() {
         balance={walletData?.balance || 0} 
       />
 
-      <main className="max-w-7xl mx-auto px-4 pt-8 space-y-12">
+      <main className="max-w-7xl mx-auto px-4 pt-2 pb-16 space-y-4 md:space-y-10">
 
         {/* 1. TOP BAR: User Performance Summary (New Placement) */}
         {session && (
@@ -521,8 +521,8 @@ function WinnersSection() {
   if (loading || winners.length === 0) return null;
 
   return (
-    <section className="mt-12 md:mt-24 pb-24 animate-in fade-in slide-in-from-bottom-8 duration-700">
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 mb-10">
+    <section className="animate-in fade-in slide-in-from-bottom-8 duration-700">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6">
         <div className="flex items-center gap-4 md:gap-5">
           <div className="p-3.5 md:p-4 bg-indigo-500/10 rounded-[1.25rem] border border-indigo-500/20 shadow-lg shadow-indigo-500/5">
             <PartyPopper className="w-6 h-6 md:w-7 md:h-7 text-indigo-400" />
