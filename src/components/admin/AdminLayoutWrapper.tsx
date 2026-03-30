@@ -28,7 +28,7 @@ export function AdminLayoutWrapper({ children }: { children: React.ReactNode }) 
                     </button>
                 </header>
 
-                <main className="flex-1 overflow-y-auto bg-[url('/grid-pattern.svg')] bg-fixed relative">
+                <main className="flex-1 overflow-y-auto bg-[url('/grid-pattern.svg')] bg-fixed relative pb-24 lg:pb-0">
                     <div className="absolute inset-0 bg-[#050B14]/90 pointer-events-none" />
                     <div className="relative z-10">
                         {children}

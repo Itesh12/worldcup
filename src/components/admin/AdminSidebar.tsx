@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, Users, Trophy, LogOut, ArrowLeft, Swords, X, IndianRupee } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useEffect } from "react";
 
 interface AdminSidebarProps {
     isOpen?: boolean;
@@ -12,6 +13,18 @@ interface AdminSidebarProps {
 
 export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
     const pathname = usePathname();
+
+    // Prevent background scroll when drawer is open
+    useEffect(() => {
+        if (isOpen) {
+            document.body.style.overflow = "hidden";
+        } else {
+            document.body.style.overflow = "auto";
+        }
+        return () => {
+            document.body.style.overflow = "auto";
+        };
+    }, [isOpen]);
 
     const navItems = [
         { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
@@ -109,7 +122,7 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                             onClick={onClose}
-                            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] lg:hidden"
+                            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[1000] lg:hidden"
                         />
 
                         {/* Drawer */}
@@ -118,7 +131,7 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
                             animate={{ x: 0 }}
                             exit={{ x: "-100%" }}
                             transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                            className="fixed top-0 left-0 bottom-0 w-72 bg-[#050B14] border-r border-white/5 z-[101] lg:hidden shadow-2xl"
+                            className="fixed top-0 left-0 bottom-0 w-72 bg-[#050B14] border-r border-white/5 z-[1001] lg:hidden shadow-2xl"
                         >
                             {SidebarContent}
                         </motion.aside>

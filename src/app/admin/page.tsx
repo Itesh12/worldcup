@@ -169,14 +169,14 @@ export default function AdminDashboardPage() {
             )}
 
             {/* Premium Dashboard Header */}
-            <header className="sticky top-0 z-50 bg-[#050B14]/80 backdrop-blur-xl border-b border-white/5 py-6">
-                <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <header className="sticky top-0 z-50 bg-[#050B14]/80 backdrop-blur-xl border-b border-white/5 py-4 md:py-6">
+                <div className="max-w-7xl mx-auto px-4 md:px-6 flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-6">
                     <div>
-                        <h1 className="text-4xl font-black text-white tracking-tight sm:text-5xl">
+                        <h1 className="text-2xl md:text-4xl font-black text-white tracking-tight">
                             Platform <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">Intelligence</span>
                         </h1>
-                        <p className="text-slate-500 mt-2 text-sm font-medium tracking-wide uppercase">
-                            Real-time analytics and performance monitoring
+                        <p className="text-slate-500 mt-1 md:mt-2 text-[10px] md:text-sm font-medium tracking-wide uppercase">
+                            Real-time analytics and monitoring
                         </p>
                     </div>
                     <div className="flex items-center gap-4">
@@ -194,20 +194,20 @@ export default function AdminDashboardPage() {
                 </div>
             </header>
 
-            <div className="max-w-7xl mx-auto px-6 space-y-10 py-10 pb-20 relative z-10 text-white">
+                <div className="max-w-7xl mx-auto px-4 md:px-6 space-y-6 md:space-y-10 py-6 md:py-10 pb-24 md:pb-20 relative z-10 text-white">
 
-                {/* Row 1: Key Platform Stats - Enhanced with Inner Glows */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 relative z-10">
+                {/* Row 1: Key Platform Stats */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 relative z-10">
                     {/* Total Users */}
-                    <div className="relative overflow-hidden rounded-[32px] p-8 bg-gradient-to-br from-indigo-950 via-slate-950 to-slate-950 border border-white/10 shadow-2xl group transition-all duration-500 hover:scale-[1.02] hover:border-indigo-500/30">
+                    <div className="relative overflow-hidden rounded-[2.5rem] p-6 md:p-8 bg-gradient-to-br from-indigo-950 via-slate-950 to-slate-950 border border-white/10 shadow-2xl group transition-all duration-500 hover:border-indigo-500/30">
                         <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                         <div className="absolute -top-10 -right-10 w-40 h-40 bg-indigo-500/20 blur-[80px] rounded-full pointer-events-none" />
-                        <div className="absolute top-6 right-8 opacity-10 group-hover:opacity-30 group-hover:scale-110 transition-all duration-500">
-                            <Users className="w-16 h-16 text-indigo-400" />
+                        <div className="absolute top-4 right-6 opacity-10 group-hover:opacity-30 group-hover:scale-110 transition-all duration-500">
+                            <Users className="w-12 h-12 text-indigo-400" />
                         </div>
                         <div className="relative z-10">
-                            <p className="text-xs font-black text-indigo-300/70 uppercase tracking-[0.2em] mb-3">Total Community</p>
-                            <h2 className="text-5xl font-black text-white tracking-tighter">{data.users.total}</h2>
+                            <p className="text-[10px] font-black text-indigo-300/70 uppercase tracking-[0.2em] mb-2">Total Community</p>
+                            <h2 className="text-3xl md:text-5xl font-black text-white tracking-tighter">{data.users.total}</h2>
                         </div>
                         <div className="relative z-10 mt-6 flex items-center gap-3">
                             <div className="flex flex-col">
@@ -223,18 +223,18 @@ export default function AdminDashboardPage() {
                     </div>
 
                     {/* Live Matches */}
-                    <div className="relative overflow-hidden rounded-[32px] p-8 bg-gradient-to-br from-slate-900 via-red-950/20 to-slate-950 border border-white/10 shadow-2xl group transition-all duration-500 hover:scale-[1.02] hover:border-red-500/30">
+                    <div className="relative overflow-hidden rounded-[2.5rem] p-6 md:p-8 bg-gradient-to-br from-slate-900 via-red-950/20 to-slate-950 border border-white/10 shadow-2xl group transition-all duration-500 hover:border-red-500/30">
                         <div className="absolute inset-0 bg-gradient-to-tr from-red-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                         <div className="absolute -top-10 -right-10 w-40 h-40 bg-red-500/10 blur-[80px] rounded-full pointer-events-none" />
-                        <div className="absolute top-6 right-8 opacity-10 group-hover:opacity-30 group-hover:scale-110 transition-all duration-500">
-                            <Activity className="w-16 h-16 text-red-400" />
+                        <div className="absolute top-4 right-6 opacity-10 group-hover:opacity-30 group-hover:scale-110 transition-all duration-500">
+                            <Activity className="w-12 h-12 text-red-400" />
                         </div>
                         <div className="relative z-10">
-                            <p className="text-xs font-black text-red-300/70 uppercase tracking-[0.2em] mb-3 flex items-center gap-2">
+                            <p className="text-[10px] font-black text-red-300/70 uppercase tracking-[0.2em] mb-2 flex items-center gap-2">
                                 Live Action
                                 {data.matches.live > 0 && <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse shadow-[0_0_15px_#ef4444]" />}
                             </p>
-                            <h2 className="text-5xl font-black text-white tracking-tighter">{data.matches.live}</h2>
+                            <h2 className="text-3xl md:text-5xl font-black text-white tracking-tighter">{data.matches.live}</h2>
                         </div>
                         <div className="relative z-10 mt-6">
                             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-500/10 border border-red-500/20">
@@ -246,15 +246,15 @@ export default function AdminDashboardPage() {
                     </div>
 
                     {/* Total Matches */}
-                    <div className="relative overflow-hidden rounded-[32px] p-8 bg-gradient-to-br from-slate-900 via-yellow-950/10 to-slate-950 border border-white/10 shadow-2xl group transition-all duration-500 hover:scale-[1.02] hover:border-yellow-500/30">
+                    <div className="relative overflow-hidden rounded-[2.5rem] p-6 md:p-8 bg-gradient-to-br from-slate-900 via-yellow-950/10 to-slate-950 border border-white/10 shadow-2xl group transition-all duration-500 hover:border-yellow-500/30">
                         <div className="absolute inset-0 bg-gradient-to-tr from-yellow-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                         <div className="absolute -top-10 -right-10 w-40 h-40 bg-yellow-500/10 blur-[80px] rounded-full pointer-events-none" />
-                        <div className="absolute top-6 right-8 opacity-10 group-hover:opacity-30 group-hover:scale-110 transition-all duration-500">
-                            <Trophy className="w-16 h-16 text-yellow-500" />
+                        <div className="absolute top-4 right-6 opacity-10 group-hover:opacity-30 group-hover:scale-110 transition-all duration-500">
+                            <Trophy className="w-12 h-12 text-yellow-500" />
                         </div>
                         <div className="relative z-10">
-                            <p className="text-xs font-black text-yellow-300/70 uppercase tracking-[0.2em] mb-3">Tournament Scale</p>
-                            <h2 className="text-5xl font-black text-white tracking-tighter">{data.matches.total}</h2>
+                            <p className="text-[10px] font-black text-yellow-300/70 uppercase tracking-[0.2em] mb-2">Tournament Scale</p>
+                            <h2 className="text-3xl md:text-5xl font-black text-white tracking-tighter">{data.matches.total}</h2>
                         </div>
                         <div className="relative z-10 mt-6 flex items-center gap-4">
                             <div className="flex flex-col">
@@ -269,16 +269,16 @@ export default function AdminDashboardPage() {
                         </div>
                     </div>
 
-                    {/* NEW: Total Revenue / Commission */}
-                    <div className="relative overflow-hidden rounded-[32px] p-8 bg-gradient-to-br from-emerald-950/20 via-slate-950 to-slate-950 border border-emerald-500/20 shadow-2xl group transition-all duration-500 hover:scale-[1.02] hover:border-emerald-500/40">
+                    {/* Platform Revenue */}
+                    <div className="relative overflow-hidden rounded-[2.5rem] p-6 md:p-8 bg-gradient-to-br from-emerald-950/20 via-slate-950 to-slate-950 border border-emerald-500/20 shadow-2xl group transition-all duration-500 hover:border-emerald-500/40">
                         <div className="absolute inset-0 bg-gradient-to-tr from-emerald-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                         <div className="absolute -top-10 -right-10 w-40 h-40 bg-emerald-500/20 blur-[80px] rounded-full pointer-events-none" />
-                        <div className="absolute top-6 right-8 opacity-10 group-hover:opacity-30 group-hover:scale-110 transition-all duration-500">
-                            <TrendingUp className="w-16 h-16 text-emerald-400" />
+                        <div className="absolute top-4 right-6 opacity-10 group-hover:opacity-30 group-hover:scale-110 transition-all duration-500">
+                            <TrendingUp className="w-12 h-12 text-emerald-400" />
                         </div>
                         <div className="relative z-10">
-                            <p className="text-xs font-black text-emerald-400 uppercase tracking-[0.2em] mb-3">Platform Revenue</p>
-                            <h2 className="text-5xl font-black text-white tracking-tighter">₹{data.revenue?.total.toLocaleString() ?? 0}</h2>
+                            <p className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.2em] mb-2">Platform Revenue</p>
+                            <h2 className="text-3xl md:text-5xl font-black text-white tracking-tighter">₹{data.revenue?.total.toLocaleString() ?? 0}</h2>
                         </div>
                         <div className="relative z-10 mt-6">
                             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20">
@@ -290,66 +290,56 @@ export default function AdminDashboardPage() {
                     </div>
                 </div>
 
-                {/* NEW: Admin Weekly Reports Access */}
+                {/* Weekly Intelligence Hub - Compact horizontal banner */}
                 <div className="relative group">
-                    <Link href="/admin/reports" className="block p-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-500 rounded-[2.5rem] transition-all duration-500 hover:scale-[1.01] hover:shadow-[0_0_30px_rgba(99,102,241,0.2)]">
-                        <div className="relative overflow-hidden rounded-[2.4rem] p-10 bg-slate-950 flex flex-col md:flex-row items-center justify-between gap-8">
-                            {/* Animated Background */}
+                    <Link href="/admin/reports" className="block p-0.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-500 rounded-2xl transition-all duration-500 hover:shadow-[0_0_30px_rgba(99,102,241,0.2)]">
+                        <div className="relative overflow-hidden rounded-[1.9rem] p-4 md:p-8 bg-slate-950 flex flex-row items-center justify-between gap-4">
                             <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 via-transparent to-purple-500/10 opacity-50 group-hover:opacity-80 transition-opacity" />
-                            <div className="absolute -top-20 -left-20 w-64 h-64 bg-indigo-500/10 blur-[100px] rounded-full" />
-                            <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-purple-500/10 blur-[100px] rounded-full" />
-
-                            <div className="relative z-10 flex items-center gap-6">
-                                <div className="w-20 h-20 rounded-3xl bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20 shadow-lg shadow-indigo-500/5 group-hover:bg-indigo-500/20 group-hover:border-indigo-500/30 transition-all duration-500">
-                                    <FileText className="w-10 h-10 text-indigo-400" />
+                            <div className="relative z-10 flex items-center gap-3 md:gap-5 min-w-0">
+                                <div className="w-12 h-12 md:w-14 md:h-14 shrink-0 rounded-xl md:rounded-2xl bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20 group-hover:bg-indigo-500/20 transition-all duration-500">
+                                    <FileText className="w-6 h-6 md:w-7 md:h-7 text-indigo-400" />
                                 </div>
-                                <div className="space-y-2">
-                                    <h2 className="text-3xl md:text-5xl font-black text-white tracking-tighter leading-none italic uppercase">
-                                        Weekly Intelligence <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400 pr-4">Hub</span>
+                                <div className="min-w-0">
+                                    <h2 className="text-base md:text-2xl font-black text-white tracking-tight uppercase italic leading-tight">
+                                        Weekly Intelligence <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">Hub</span>
                                     </h2>
-                                    <p className="text-slate-400 font-bold uppercase tracking-[0.2em] text-[10px] md:text-xs">
-                                        Monitor player performance &middot; verify settlements &middot; generate master reports
+                                    <p className="text-slate-500 font-bold uppercase tracking-wide text-[8px] md:text-[10px] mt-0.5 truncate">
+                                        Monitor performance · verify settlements
                                     </p>
                                 </div>
                             </div>
-
-                            <div className="relative z-10">
-                                <div className="flex items-center gap-3 px-8 py-4 rounded-2xl bg-white/5 border border-white/10 group-hover:bg-indigo-500 group-hover:border-indigo-400 transition-all duration-500 shadow-xl group-hover:shadow-indigo-500/30">
-                                    <span className="text-sm font-black text-white uppercase tracking-widest">Enter Hub</span>
-                                    <ArrowUpRight className="w-5 h-5 text-white animate-bounce-subtle" />
+                            <div className="relative z-10 shrink-0">
+                                <div className="flex items-center gap-1.5 px-4 py-2.5 md:px-6 md:py-3 rounded-xl bg-white/5 border border-white/10 group-hover:bg-indigo-500 group-hover:border-indigo-400 transition-all duration-500">
+                                    <span className="text-xs font-black text-white uppercase tracking-wider">Enter</span>
+                                    <ArrowUpRight className="w-4 h-4 text-white" />
                                 </div>
                             </div>
                         </div>
                     </Link>
                 </div>
 
-                {/* NEW: Withdrawal Requests Access */}
+                {/* Payout Management - Compact horizontal banner */}
                 <div className="relative group">
-                    <Link href="/admin/withdrawals" className="block p-1 bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 rounded-[2.5rem] transition-all duration-500 hover:scale-[1.01] hover:shadow-[0_0_30px_rgba(245,158,11,0.2)]">
-                        <div className="relative overflow-hidden rounded-[2.4rem] p-10 bg-slate-950 flex flex-col md:flex-row items-center justify-between gap-8">
-                            {/* Animated Background */}
+                    <Link href="/admin/withdrawals" className="block p-0.5 bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 rounded-2xl transition-all duration-500 hover:shadow-[0_0_30px_rgba(245,158,11,0.2)]">
+                        <div className="relative overflow-hidden rounded-[1.9rem] p-4 md:p-8 bg-slate-950 flex flex-row items-center justify-between gap-4">
                             <div className="absolute inset-0 bg-gradient-to-br from-amber-500/10 via-transparent to-orange-500/10 opacity-50 group-hover:opacity-80 transition-opacity" />
-                            <div className="absolute -top-20 -left-20 w-64 h-64 bg-amber-500/10 blur-[100px] rounded-full" />
-                            <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-orange-500/10 blur-[100px] rounded-full" />
-
-                            <div className="relative z-10 flex items-center gap-6">
-                                <div className="w-20 h-20 rounded-3xl bg-amber-500/10 flex items-center justify-center border border-amber-500/20 shadow-lg shadow-amber-500/5 group-hover:bg-amber-500/20 group-hover:border-amber-500/30 transition-all duration-500">
-                                    <IndianRupee className="w-10 h-10 text-amber-500" />
+                            <div className="relative z-10 flex items-center gap-3 md:gap-5 min-w-0">
+                                <div className="w-12 h-12 md:w-14 md:h-14 shrink-0 rounded-xl md:rounded-2xl bg-amber-500/10 flex items-center justify-center border border-amber-500/20 group-hover:bg-amber-500/20 transition-all duration-500">
+                                    <IndianRupee className="w-6 h-6 md:w-7 md:h-7 text-amber-500" />
                                 </div>
-                                <div className="space-y-2">
-                                    <h2 className="text-3xl md:text-5xl font-black text-white tracking-tighter leading-none italic uppercase">
-                                        Payout <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-400 pr-4">Management</span>
+                                <div className="min-w-0">
+                                    <h2 className="text-base md:text-2xl font-black text-white tracking-tight uppercase italic leading-tight">
+                                        Payout <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-400">Management</span>
                                     </h2>
-                                    <p className="text-slate-400 font-bold uppercase tracking-[0.2em] text-[10px] md:text-xs">
-                                        Process withdrawal requests &middot; verify bank details &middot; manage settlements
+                                    <p className="text-slate-500 font-bold uppercase tracking-wide text-[8px] md:text-[10px] mt-0.5 truncate">
+                                        Process withdrawals · manage settlements
                                     </p>
                                 </div>
                             </div>
-
-                            <div className="relative z-10">
-                                <div className="flex items-center gap-3 px-8 py-4 rounded-2xl bg-white/5 border border-white/10 group-hover:bg-amber-600 group-hover:border-amber-500 transition-all duration-500 shadow-xl group-hover:shadow-amber-500/30">
-                                    <span className="text-sm font-black text-white uppercase tracking-widest">Process Payouts</span>
-                                    <ArrowUpRight className="w-5 h-5 text-white animate-bounce-subtle" />
+                            <div className="relative z-10 shrink-0">
+                                <div className="flex items-center gap-1.5 px-4 py-2.5 md:px-6 md:py-3 rounded-xl bg-white/5 border border-white/10 group-hover:bg-amber-600 group-hover:border-amber-500 transition-all duration-500">
+                                    <span className="text-xs font-black text-white uppercase tracking-wider">Manage</span>
+                                    <ArrowUpRight className="w-4 h-4 text-white" />
                                 </div>
                             </div>
                         </div>
@@ -493,33 +483,36 @@ export default function AdminDashboardPage() {
                     </div>
 
                     {/* Match Pipeline */}
-                    <div className="p-10 rounded-[32px] bg-slate-950/40 border border-white/5 backdrop-blur-xl group">
-                        <div className="flex items-center gap-4 mb-10">
-                            <div className="w-12 h-12 rounded-2xl bg-yellow-500/10 flex items-center justify-center border border-yellow-500/20 group-hover:bg-yellow-500/20 transition-colors">
-                                <TrendingUp className="w-6 h-6 text-yellow-400" />
+                    <div className="p-6 md:p-10 rounded-[32px] bg-slate-950/40 border border-white/5 backdrop-blur-xl group">
+                        <div className="flex items-center gap-4 mb-8 md:mb-10">
+                            <div className="w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-yellow-500/10 flex items-center justify-center border border-yellow-500/20 group-hover:bg-yellow-500/20 transition-colors">
+                                <TrendingUp className="w-5 h-5 md:w-6 md:h-6 text-yellow-400" />
                             </div>
                             <div>
-                                <h3 className="text-xl font-black text-white tracking-tight">Fixtures Pipeline</h3>
-                                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mt-1">Lifecycle Tracking</p>
+                                <h3 className="text-lg md:text-xl font-black text-white tracking-tight italic uppercase">Fixtures Pipeline</h3>
+                                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-0.5 md:mt-1">Lifecycle Tracking</p>
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-3 gap-6">
-                            <div className="p-6 rounded-[24px] bg-slate-900/50 border border-white/5 hover:border-indigo-500/20 transition-all group/stat">
-                                <Clock className="w-8 h-8 text-indigo-500/50 group-hover/stat:text-indigo-400 transition-colors mb-4" />
-                                <div className="text-3xl font-black text-white tracking-tighter">{data.matches.upcoming}</div>
-                                <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-1 text-center">Upcoming</div>
+                        {/* Always 3-column on all screen sizes */}
+                        <div className="grid grid-cols-3 gap-3 md:gap-6">
+                            <div className="relative p-4 md:p-6 rounded-2xl md:rounded-[24px] bg-slate-900/50 border border-white/5 hover:border-indigo-500/30 transition-all group/stat overflow-hidden flex flex-col items-center text-center">
+                                <div className="absolute top-0 right-0 w-16 h-16 bg-indigo-500/5 blur-xl group-hover/stat:bg-indigo-500/10 transition-colors" />
+                                <Clock className="w-5 h-5 md:w-7 md:h-7 text-indigo-400/60 group-hover/stat:text-indigo-400 transition-colors mb-2 md:mb-3" />
+                                <div className="text-2xl md:text-3xl font-black text-white tracking-tighter">{data.matches.upcoming}</div>
+                                <div className="text-[8px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest mt-1">Upcoming</div>
                             </div>
-                            <div className="p-6 rounded-[24px] bg-slate-900/50 border border-white/5 relative overflow-hidden flex flex-col items-center hover:border-red-500/20 transition-all group/stat">
+                            <div className="relative p-4 md:p-6 rounded-2xl md:rounded-[24px] bg-slate-900/50 border border-white/5 overflow-hidden flex flex-col items-center text-center hover:border-red-500/30 transition-all group/stat">
                                 {data.matches.live > 0 && <div className="absolute inset-0 bg-red-500/5 animate-pulse" />}
-                                <Activity className="w-8 h-8 text-red-500/50 group-hover/stat:text-red-400 transition-colors mb-4 z-10" />
-                                <div className="text-3xl font-black text-white tracking-tighter z-10">{data.matches.live}</div>
-                                <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-1 z-10">Running</div>
+                                <Activity className="w-5 h-5 md:w-7 md:h-7 text-red-400/60 group-hover/stat:text-red-400 transition-colors mb-2 md:mb-3 z-10" />
+                                <div className="text-2xl md:text-3xl font-black text-white tracking-tighter z-10">{data.matches.live}</div>
+                                <div className="text-[8px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest mt-1 z-10">Running</div>
                             </div>
-                            <div className="p-6 rounded-[24px] bg-slate-900/50 border border-white/5 hover:border-green-500/20 transition-all group/stat">
-                                <CheckCircle className="w-8 h-8 text-green-500/50 group-hover/stat:text-green-400 transition-colors mb-4" />
-                                <div className="text-3xl font-black text-white tracking-tighter">{data.matches.finished}</div>
-                                <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-1 text-center">Settled</div>
+                            <div className="relative p-4 md:p-6 rounded-2xl md:rounded-[24px] bg-slate-900/50 border border-white/5 hover:border-emerald-500/30 transition-all group/stat overflow-hidden flex flex-col items-center text-center">
+                                <div className="absolute top-0 right-0 w-16 h-16 bg-emerald-500/5 blur-xl" />
+                                <CheckCircle className="w-5 h-5 md:w-7 md:h-7 text-emerald-400/60 group-hover/stat:text-emerald-400 transition-colors mb-2 md:mb-3" />
+                                <div className="text-2xl md:text-3xl font-black text-white tracking-tighter">{data.matches.finished}</div>
+                                <div className="text-[8px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest mt-1">Settled</div>
                             </div>
                         </div>
                     </div>
