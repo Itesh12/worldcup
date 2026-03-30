@@ -9,6 +9,7 @@ import jsPDF from "jspdf";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { UserContextSwitcher } from "@/components/UserContextSwitcher";
+import { useTournament } from "@/components/TournamentContext";
 import { WalletCard } from "@/components/WalletCard";
 import { AddFundsDialog } from "@/components/AddFundsDialog";
 import { WithdrawDialog } from "@/components/WithdrawDialog";
@@ -42,7 +43,7 @@ export default function UserMatchesPage() {
   const [walletLoading, setWalletLoading] = useState(true);
 
   const [refreshing, setRefreshing] = useState(false);
-  const [tournamentId, setTournamentId] = useState<string | null>(null);
+  const { tournamentId, setTournamentId } = useTournament();
 
 
   const handleRefresh = async () => {
@@ -50,7 +51,7 @@ export default function UserMatchesPage() {
     setRefreshing(true);
     try {
       // Trigger the background sync (loud)
-      await fetch("/api/matches/sync", {
+      await fetch(`/api/matches/sync?tournamentId=${tournamentId}`, {
         method: "POST"
       });
 
@@ -192,88 +193,59 @@ export default function UserMatchesPage() {
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-indigo-600/10 blur-[120px] rounded-full pointer-events-none" />
 
       {/* Header / Nav */}
-      <header className="sticky top-0 z-40 bg-[#050B14]/80 backdrop-blur-xl border-b border-white/5">
-        <div className="max-w-7xl mx-auto px-4 py-4 grid grid-cols-3 items-center">
-          <div className="flex items-center gap-2 md:gap-3 justify-self-start">
-            <Trophy className="w-6 h-6 md:w-8 md:h-8 text-indigo-500" />
-            <div className="hidden sm:block">
-              <h1 className="text-lg md:text-xl font-black text-white tracking-tight leading-none">WORLD CUP <span className="text-indigo-500">HUB</span></h1>
-              <p className="text-[9px] md:text-[10px] text-slate-500 font-bold uppercase tracking-widest hidden sm:block">Official Player Portal</p>
-            </div>
-            <div className="sm:hidden block ml-2">
-                <UserContextSwitcher onSelect={setTournamentId} />
+      <header className="sticky top-0 z-50 bg-[#050B14]/80 backdrop-blur-xl border-b border-white/5">
+        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-2 md:gap-3 min-w-0">
+            <Trophy className="w-5 h-5 md:w-8 md:h-8 text-indigo-500 shrink-0" />
+            <div className="min-w-0">
+              <h1 className="text-sm md:text-xl font-black text-white tracking-tight leading-none uppercase italic">WORLD CUP <span className="text-indigo-500">HUB</span></h1>
+              <p className="text-[8px] md:text-[10px] text-slate-500 font-bold uppercase tracking-widest hidden xs:block mt-1">Official Player Portal</p>
             </div>
           </div>
 
-          <div className="justify-self-center hidden sm:flex items-center gap-4">
-              <UserContextSwitcher onSelect={setTournamentId} />
+          <div className="flex items-center gap-2 md:gap-4 shrink-0">
             {session?.user && (session.user as any).role === "admin" && (
               <Link
                 href="/admin"
-                className="hidden md:flex items-center gap-2 px-6 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold uppercase tracking-widest rounded-xl transition-colors border border-white/5 shadow-lg shadow-black/20"
+                className="hidden lg:flex items-center gap-2 px-6 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold uppercase tracking-widest rounded-xl transition-colors border border-white/5 shadow-lg shadow-black/20"
               >
                 <LayoutDashboard className="w-4 h-4 text-indigo-400" />
                 Admin
               </Link>
             )}
           </div>
-
-          <div className="flex items-center gap-4 justify-self-end">
-            {session?.user ? (
-              <>
-                <div className="flex items-center gap-4">
-                  {/* Refresh Button */}
-                  <button
-                    onClick={handleRefresh}
-                    disabled={refreshing}
-                    className={`p-2 rounded-full bg-slate-800/50 border border-white/5 text-slate-400 hover:text-white hover:bg-slate-700/50 transition-all ${refreshing ? 'animate-spin text-indigo-500' : ''}`}
-                    title="Refresh Data"
-                  >
-                    <RefreshCcw className="w-4 h-4" />
-                  </button>
-
-                  <div
-                    className="flex items-center gap-4 cursor-pointer group"
-                    onClick={() => router.push('/profile')}
-                  >
-                    <div className="hidden md:flex flex-col items-end mr-2">
-                      <span className="text-sm font-bold text-white leading-none group-hover:text-indigo-400 transition-colors">{(session.user as any).name}</span>
-                      <span className="text-[10px] text-indigo-400 uppercase font-bold tracking-wider">{(session.user as any).role}</span>
-                    </div>
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-indigo-600 to-purple-600 p-[2px] shadow-lg shadow-indigo-500/20 group-hover:shadow-indigo-500/40 transition-all">
-                      <div className="w-full h-full rounded-full bg-[#050B14] flex items-center justify-center overflow-hidden">
-                        {/* @ts-ignore */}
-                        {(session.user as any).image ? (
-                          <img src={(session.user as any).image} alt="Profile" className="w-full h-full object-cover" />
-                        ) : (
-                          <span className="font-bold text-white text-sm">{(session.user.name || "U")?.[0]}</span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <AddFundsDialog 
-                  isOpen={isWalletModalOpen} 
-                  onClose={() => setIsWalletModalOpen(false)} 
-                  onAdd={handleAddFunds} 
-                />
-
-                <WithdrawDialog 
-                  isOpen={isWithdrawModalOpen} 
-                  onClose={() => setIsWithdrawModalOpen(false)} 
-                  onSuccess={fetchWalletData} 
-                  balance={walletData?.balance || 0} 
-                />
-              </>
-            ) : (
-              <Link href="/login" className="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold rounded-lg transition-colors">
-                Sign In
-              </Link>
-            )}
-          </div>
         </div>
       </header>
+
+      {/* Control Row (League Selection & Refresh) */}
+      <div className="max-w-7xl mx-auto px-2 md:px-4 pt-6">
+        <div className="flex items-stretch gap-1.5 max-w-md mx-auto min-w-0">
+          <div className="flex-[4] min-w-0">
+            <UserContextSwitcher onSelect={setTournamentId} />
+          </div>
+          <button
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className={`flex-[1] max-w-[48px] md:max-w-[56px] flex items-center justify-center rounded-2xl bg-slate-800/60 border border-white/10 text-slate-400 hover:text-white hover:bg-slate-700/80 transition-all shadow-xl backdrop-blur-sm group ${refreshing ? 'cursor-not-allowed' : ''}`}
+            title="Refresh Data"
+          >
+            <RefreshCcw className={`w-3.5 h-3.5 md:w-5 md:h-5 ${refreshing ? 'animate-spin text-indigo-500' : 'group-hover:rotate-180 transition-transform duration-500'}`} />
+          </button>
+        </div>
+      </div>
+
+      {/* Modals placed outside header */}
+      <AddFundsDialog 
+        isOpen={isWalletModalOpen} 
+        onClose={() => setIsWalletModalOpen(false)} 
+        onAdd={handleAddFunds} 
+      />
+      <WithdrawDialog 
+        isOpen={isWithdrawModalOpen} 
+        onClose={() => setIsWithdrawModalOpen(false)} 
+        onSuccess={fetchWalletData} 
+        balance={walletData?.balance || 0} 
+      />
 
       <main className="max-w-7xl mx-auto px-4 pt-8 space-y-12">
 
@@ -289,37 +261,37 @@ export default function UserMatchesPage() {
                   <p className="text-indigo-400 text-[10px] font-bold uppercase tracking-widest opacity-70">Total Batting stats across all tournaments</p>
                 </div>
 
-                <div className="flex items-center gap-6 md:gap-12">
+                <div className="grid grid-cols-3 md:flex items-center gap-4 md:gap-12 w-full md:w-auto">
                   <div className="flex flex-col items-center">
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="flex items-center gap-1 md:gap-2 mb-1">
                       <Activity className="w-3 h-3 text-indigo-400" />
-                      <span className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Total Runs</span>
+                      <span className="text-[7px] md:text-[9px] font-black text-slate-500 uppercase tracking-[0.1em] md:tracking-[0.2em]">Runs</span>
                     </div>
-                    <span className="text-3xl md:text-4xl font-black text-white">
+                    <span className="text-xl md:text-4xl font-black text-white">
                       {statsLoading ? "---" : (userStats?.totalRuns ?? 0)}
                     </span>
                   </div>
 
-                  <div className="w-px h-12 bg-white/5 hidden md:block" />
+                  <div className="w-px h-8 md:h-12 bg-white/5 hidden md:block" />
 
                   <div className="flex flex-col items-center">
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="flex items-center gap-1 md:gap-2 mb-1">
                       <TrendingUp className="w-3 h-3 text-purple-400" />
-                      <span className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Global Rank</span>
+                      <span className="text-[7px] md:text-[9px] font-black text-slate-500 uppercase tracking-[0.1em] md:tracking-[0.2em]">Rank</span>
                     </div>
-                    <span className="text-3xl md:text-4xl font-black text-white">
+                    <span className="text-xl md:text-4xl font-black text-white">
                       {statsLoading ? "#--" : `#${userStats?.rank ?? "--"}`}
                     </span>
                   </div>
 
-                  <div className="w-px h-12 bg-white/5 hidden md:block" />
+                  <div className="w-px h-8 md:h-12 bg-white/5 hidden md:block" />
 
                   <div className="flex flex-col items-center">
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="flex items-center gap-1 md:gap-2 mb-1">
                       <Zap className="w-3 h-3 text-amber-400" />
-                      <span className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Net Worth</span>
+                      <span className="text-[7px] md:text-[9px] font-black text-slate-500 uppercase tracking-[0.1em] md:tracking-[0.2em]">Net Worth</span>
                     </div>
-                    <span className={`text-3xl md:text-4xl font-black ${userStats && userStats.netWorth >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                    <span className={`text-xl md:text-4xl font-black ${userStats && userStats.netWorth >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                       {statsLoading ? "₹--" : `₹${userStats?.netWorth ?? 0}`}
                     </span>
                   </div>
@@ -388,21 +360,29 @@ export default function UserMatchesPage() {
               </button>
             </div>
 
-            {/* Content - 2 Column Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            {/* Content - Responsive Carousel (Mobile/Tablet) or 2 Column Grid (Desktop) */}
+            <div className="flex lg:grid overflow-x-auto lg:overflow-x-visible snap-x snap-mandatory lg:snap-none lg:grid-cols-2 gap-6 mb-8 scrollbar-hide -mx-4 px-4 lg:mx-0 lg:px-0">
               {activeTab === 'upcoming' ? (
                 upcomingMatches.length > 0 ? (
-                  upcomingMatches.map(match => <StandardMatchCard key={match._id} match={match} />)
+                  upcomingMatches.map(match => (
+                    <div key={match._id} className="min-w-[85vw] md:min-w-[45vw] lg:min-w-0 snap-center shrink-0 lg:shrink">
+                      <StandardMatchCard match={match} />
+                    </div>
+                  ))
                 ) : (
-                  <div className="md:col-span-2">
+                  <div className="w-full lg:col-span-2">
                     <EmptyState message="No upcoming matches scheduled." />
                   </div>
                 )
               ) : (
                 finishedMatches.length > 0 ? (
-                  finishedMatches.map(match => <StandardMatchCard key={match._id} match={match} />)
+                  finishedMatches.map(match => (
+                    <div key={match._id} className="min-w-[85vw] md:min-w-[45vw] lg:min-w-0 snap-center shrink-0 lg:shrink">
+                      <StandardMatchCard match={match} />
+                    </div>
+                  ))
                 ) : (
-                  <div className="md:col-span-2">
+                  <div className="w-full lg:col-span-2">
                     <EmptyState message="No completed matches yet." />
                   </div>
                 )
@@ -541,29 +521,31 @@ function WinnersSection() {
   if (loading || winners.length === 0) return null;
 
   return (
-    <section className="mt-12 md:mt-20 pb-20 animate-in fade-in slide-in-from-bottom-8 duration-700">
-      <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center gap-4">
-          <div className="p-3 bg-indigo-500/10 rounded-2xl border border-indigo-500/20">
-            <PartyPopper className="w-6 h-6 text-indigo-400" />
+    <section className="mt-12 md:mt-24 pb-24 animate-in fade-in slide-in-from-bottom-8 duration-700">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 mb-10">
+        <div className="flex items-center gap-4 md:gap-5">
+          <div className="p-3.5 md:p-4 bg-indigo-500/10 rounded-[1.25rem] border border-indigo-500/20 shadow-lg shadow-indigo-500/5">
+            <PartyPopper className="w-6 h-6 md:w-7 md:h-7 text-indigo-400" />
           </div>
           <div>
-            <h2 className="text-2xl font-black text-white uppercase tracking-tight">Hall of <span className="text-indigo-500">Fame</span></h2>
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Recent Match Champions</p>
+            <h2 className="text-2xl md:text-4xl font-black text-white uppercase tracking-tighter leading-none">Hall of <span className="text-indigo-500 italic">Fame</span></h2>
+            <p className="text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-[0.3em] mt-2">Recent Match Champions</p>
           </div>
         </div>
+        
         <Link
           href="/hall-of-fame"
-          className="px-6 py-2 bg-slate-800 hover:bg-slate-700 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all border border-white/5 flex items-center gap-2"
+          className="w-full sm:w-auto px-6 py-3 bg-slate-900/60 hover:bg-slate-800 text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-xl transition-all border border-white/5 flex items-center justify-center gap-3 group shadow-xl hover:border-indigo-500/30 overflow-hidden relative whitespace-nowrap"
         >
-          View All
-          <ChevronRight className="w-4 h-4 text-indigo-400" />
+          <span className="relative z-10">View All</span>
+          <ChevronRight className="w-4 h-4 text-indigo-400 group-hover:translate-x-1 transition-transform relative z-10" />
+          <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
         </Link>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="flex lg:grid overflow-x-auto lg:overflow-x-visible snap-x snap-mandatory lg:snap-none lg:grid-cols-3 gap-6 scrollbar-hide -mx-4 px-4 lg:mx-0 lg:px-0">
         {winners.map((item, idx) => (
-          <div key={idx} className="group relative overflow-hidden bg-slate-900/40 border border-white/5 rounded-[2rem] p-6 hover:border-indigo-500/30 transition-all duration-500 hover:bg-slate-900/60 shadow-lg">
+          <div key={idx} className="min-w-[85vw] md:min-w-[45vw] lg:min-w-0 snap-center shrink-0 lg:shrink group relative overflow-hidden bg-slate-900/40 border border-white/5 rounded-[2rem] p-6 hover:border-indigo-500/30 transition-all duration-500 hover:bg-slate-900/60 shadow-lg">
             {/* Background Glow */}
             <div className="absolute -top-10 -right-10 w-32 h-32 bg-indigo-500/10 blur-[50px] rounded-full group-hover:bg-indigo-500/20 transition-all duration-500" />
 
@@ -624,7 +606,7 @@ function HeroMatchCard({ match }: { match: Match }) {
   const date = new Date(match.startTime);
 
   return (
-    <Link href={`/matches/${match._id}`} className="group relative block w-full h-[240px] md:h-[300px] rounded-3xl overflow-hidden shadow-2xl transition-all duration-500 hover:scale-[1.02] hover:shadow-indigo-500/10">
+    <Link href={`/matches/${match._id}`} className="group relative block w-full h-[200px] xs:h-[240px] md:h-[300px] rounded-3xl overflow-hidden shadow-2xl transition-all duration-500 hover:scale-[1.02] hover:shadow-indigo-500/10">
       {/* Background with Gradient & Mesh */}
       <div className="absolute inset-0 bg-[#050B14]" />
       <div className="absolute inset-0 bg-gradient-to-br from-indigo-600/20 via-slate-900/40 to-purple-600/20 opacity-60 group-hover:opacity-80 transition-opacity" />
@@ -664,10 +646,10 @@ function HeroMatchCard({ match }: { match: Match }) {
         <div className="w-full flex items-center justify-center gap-4 sm:gap-8 md:gap-16">
           {/* Team 1 */}
           <div className="flex flex-col items-center flex-1 min-w-0">
-            <h3 className="text-3xl sm:text-4xl md:text-6xl font-black text-white tracking-tighter group-hover:scale-110 transition-transform duration-500 drop-shadow-2xl">
+            <h3 className="text-2xl xs:text-3xl sm:text-4xl md:text-6xl font-black text-white tracking-tighter group-hover:scale-110 transition-transform duration-500 drop-shadow-2xl">
               {match.teams[0].shortName}
             </h3>
-            <p className="text-[8px] md:text-[10px] text-slate-500 font-black uppercase tracking-[0.2em] mt-1 md:mt-3 truncate w-full text-center px-2">
+            <p className="text-[7px] xs:text-[8px] md:text-[10px] text-slate-500 font-black uppercase tracking-[0.2em] mt-1 md:mt-3 truncate w-full text-center px-1 md:px-2">
               {match.teams[0].name}
             </p>
           </div>
@@ -689,10 +671,10 @@ function HeroMatchCard({ match }: { match: Match }) {
 
           {/* Team 2 */}
           <div className="flex flex-col items-center flex-1 min-w-0">
-            <h3 className="text-3xl sm:text-4xl md:text-6xl font-black text-white tracking-tighter group-hover:scale-110 transition-transform duration-500 drop-shadow-2xl">
+            <h3 className="text-2xl xs:text-3xl sm:text-4xl md:text-6xl font-black text-white tracking-tighter group-hover:scale-110 transition-transform duration-500 drop-shadow-2xl">
               {match.teams[1].shortName}
             </h3>
-            <p className="text-[8px] md:text-[10px] text-slate-500 font-black uppercase tracking-[0.2em] mt-1 md:mt-3 truncate w-full text-center px-2">
+            <p className="text-[7px] xs:text-[8px] md:text-[10px] text-slate-500 font-black uppercase tracking-[0.2em] mt-1 md:mt-3 truncate w-full text-center px-1 md:px-2">
               {match.teams[1].name}
             </p>
           </div>
@@ -741,11 +723,11 @@ function StandardMatchCard({ match }: { match: Match }) {
 
       {/* Middle Section: Teams Grid */}
       <div className="flex items-center justify-between gap-2 mb-6 px-1 md:px-2">
-        <div className="flex-1 flex flex-col items-center gap-2">
-          <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-white/5 border border-white/5 flex items-center justify-center group-hover:border-indigo-500/30 transition-colors shadow-inner">
-            <span className="text-base md:text-xl font-black text-white">{match.teams[0].shortName}</span>
+        <div className="flex-1 flex flex-col items-center gap-1.5 md:gap-2">
+          <div className="w-9 h-9 md:w-12 md:h-12 rounded-xl bg-white/5 border border-white/5 flex items-center justify-center group-hover:border-indigo-500/30 transition-colors shadow-inner">
+            <span className="text-sm md:text-xl font-black text-white">{match.teams[0].shortName}</span>
           </div>
-          <span className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-tight text-center truncate w-full">{match.teams[0].name}</span>
+          <span className="text-[7px] md:text-[10px] font-bold text-slate-400 uppercase tracking-tight text-center truncate w-full px-1">{match.teams[0].name}</span>
         </div>
 
         <div className="flex flex-col items-center">
@@ -753,11 +735,11 @@ function StandardMatchCard({ match }: { match: Match }) {
           <div className="w-px h-6 bg-gradient-to-b from-transparent via-slate-700 to-transparent" />
         </div>
 
-        <div className="flex-1 flex flex-col items-center gap-2">
-          <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-white/5 border border-white/5 flex items-center justify-center group-hover:border-indigo-500/30 transition-colors shadow-inner">
-            <span className="text-base md:text-xl font-black text-white">{match.teams[1].shortName}</span>
+        <div className="flex-1 flex flex-col items-center gap-1.5 md:gap-2">
+          <div className="w-9 h-9 md:w-12 md:h-12 rounded-xl bg-white/5 border border-white/5 flex items-center justify-center group-hover:border-indigo-500/30 transition-colors shadow-inner">
+            <span className="text-sm md:text-xl font-black text-white">{match.teams[1].shortName}</span>
           </div>
-          <span className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-tight text-center truncate w-full">{match.teams[1].name}</span>
+          <span className="text-[7px] md:text-[10px] font-bold text-slate-400 uppercase tracking-tight text-center truncate w-full px-1">{match.teams[1].name}</span>
         </div>
       </div>
 

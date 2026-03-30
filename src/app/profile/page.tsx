@@ -35,6 +35,7 @@ import { AddFundsDialog } from "@/components/AddFundsDialog";
 import { WithdrawDialog } from "@/components/WithdrawDialog";
 import { PayoutMethodManager } from "@/components/PayoutMethodManager";
 import { UserContextSwitcher } from "@/components/UserContextSwitcher";
+import { useTournament } from "@/components/TournamentContext";
 import { toast, Toaster } from "react-hot-toast";
 
 export default function ProfilePage() {
@@ -47,7 +48,7 @@ export default function ProfilePage() {
   const [walletLoading, setWalletLoading] = useState(true);
   const [statsLoading, setStatsLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [tournamentId, setTournamentId] = useState<string | null>(null);
+  const { tournamentId } = useTournament();
   const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
   const [formData, setFormData] = useState({
@@ -181,41 +182,39 @@ export default function ProfilePage() {
       </div>
 
       {/* Standardized Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-[#050B14]/80 backdrop-blur-xl border-b border-white/5">
-          <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-              <div className="flex items-center gap-3 md:gap-6">
-                  <Link href="/dashboard" className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-slate-900 border border-white/5 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800 transition-colors shadow-lg">
-                      <ArrowLeft className="w-4 h-4 md:w-5 md:h-5" />
-                  </Link>
-                  <div className="flex items-center gap-2 md:gap-3">
-                      <Trophy className="w-5 h-5 md:w-6 md:h-6 text-indigo-500" />
-                      <h1 className="text-lg md:text-xl font-black text-white tracking-tight italic uppercase">
-                          Player <span className="text-indigo-500">Profile</span>
-                      </h1>
-                  </div>
-              </div>
-              
-              <div className="flex items-center gap-4">
-                  <UserContextSwitcher onSelect={setTournamentId} />
-                  <div className="w-px h-8 bg-white/5 hidden md:block mx-1" />
-                  <button
-                    onClick={handleRefresh}
-                    disabled={refreshing}
-                    className={`p-2.5 rounded-xl bg-slate-900 border border-white/5 text-slate-400 hover:text-white transition-all hover:bg-slate-800 group ${refreshing ? 'cursor-not-allowed opacity-50' : ''} shadow-lg`}
-                    title="Refresh Match Data"
-                  >
-                    <RefreshCcw className={`w-4 h-4 ${refreshing ? 'animate-spin text-indigo-500' : 'group-hover:rotate-180 transition-transform duration-500'}`} />
-                  </button>
-              </div>
-          </div>
-      </header>
+            <header className="fixed top-0 left-0 right-0 z-50 bg-[#050B14]/80 backdrop-blur-xl border-b border-white/5">
+                <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-3 md:gap-6 min-w-0">
+                        <Link href="/dashboard" className="shrink-0 w-8 h-8 md:w-10 md:h-10 rounded-full bg-slate-900 border border-white/5 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800 transition-colors shadow-lg">
+                            <ArrowLeft className="w-4 h-4 md:w-5 md:h-5" />
+                        </Link>
+                        <div className="flex items-center gap-2 md:gap-3 min-w-0">
+                            <Trophy className="shrink-0 w-5 h-5 md:w-6 md:h-6 text-indigo-500" />
+                            <h1 className="text-sm md:text-xl font-black text-white tracking-tight italic uppercase truncate">
+                                Player <span className="text-indigo-500">Profile</span>
+                            </h1>
+                        </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-2 md:gap-4 shrink-0">
+                        <button
+                          onClick={handleRefresh}
+                          disabled={refreshing}
+                          className={`p-2 md:p-2.5 rounded-xl bg-slate-900 border border-white/5 text-slate-400 hover:text-white transition-all hover:bg-slate-800 group ${refreshing ? 'cursor-not-allowed opacity-50' : ''} shadow-lg`}
+                          title="Refresh Match Data"
+                        >
+                          <RefreshCcw className={`w-3.5 h-3.5 md:w-4 h-4 ${refreshing ? 'animate-spin text-indigo-500' : 'group-hover:rotate-180 transition-transform duration-500'}`} />
+                        </button>
+                    </div>
+                </div>
+            </header>
 
-      <main className="max-w-7xl mx-auto px-4 py-24">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+      <main className="max-w-7xl mx-auto px-4 py-20 md:py-24">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 md:gap-12">
           
           {/* Left Column: Profile Card */}
-          <div className="lg:col-span-4 space-y-8">
-            <section className="relative overflow-hidden rounded-[2.5rem] bg-slate-900/40 border border-white/5 shadow-2xl backdrop-blur-md p-8 md:p-10">
+          <div className="lg:col-span-4 space-y-6 md:space-y-8">
+            <section className="relative overflow-hidden rounded-[2rem] md:rounded-[2.5rem] bg-slate-900/40 border border-white/5 shadow-2xl backdrop-blur-md p-6 md:p-10">
               <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-br from-indigo-600/20 to-purple-600/20 opacity-50" />
               
               <div className="relative z-10 flex flex-col items-center">
@@ -367,36 +366,36 @@ export default function ProfilePage() {
                     <TrendingUp className="w-4 h-4 text-emerald-400" />
                     <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Financial Performance</span>
                   </div>
-                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
+                  <div className="grid grid-cols-2 xs:grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8">
                     <div className="flex flex-col">
-                      <div className="h-8 mb-1">
-                        <p className="text-[9px] font-black text-slate-600 uppercase tracking-wider">Lifetime P&L</p>
+                      <div className="h-6 md:h-8 mb-1">
+                        <p className="text-[8px] md:text-[9px] font-black text-slate-600 uppercase tracking-wider">Lifetime P&L</p>
                       </div>
-                      <p className={`text-2xl font-black leading-none ${ (userStats?.overview?.netWorth || 0) >= 0 ? 'text-emerald-400' : 'text-rose-500' }`}>
+                      <p className={`text-lg md:text-2xl font-black leading-none ${ (userStats?.overview?.netWorth || 0) >= 0 ? 'text-emerald-400' : 'text-rose-500' }`}>
                         {statsLoading ? "₹----" : `${(userStats?.overview?.netWorth || 0) >= 0 ? '+' : '-'}₹${Math.abs(userStats?.overview?.netWorth || 0)}`}
                       </p>
                     </div>
                     <div className="flex flex-col">
-                      <div className="h-8 mb-1">
-                        <p className="text-[9px] font-black text-slate-600 uppercase tracking-wider">Win Ratio</p>
+                      <div className="h-6 md:h-8 mb-1">
+                        <p className="text-[8px] md:text-[9px] font-black text-slate-600 uppercase tracking-wider">Win Ratio</p>
                       </div>
-                      <p className="text-2xl font-black text-white leading-none">
+                      <p className="text-lg md:text-2xl font-black text-white leading-none">
                         {statsLoading ? "---%" : `${userStats?.history?.length > 0 ? ((userStats.history.filter((h: any) => h.outcome === 'win').length / userStats.history.length) * 100).toFixed(0) : 0}%`}
                       </p>
                     </div>
                     <div className="flex flex-col">
-                      <div className="h-8 mb-1">
-                        <p className="text-[9px] font-black text-slate-600 uppercase tracking-wider">Total Runs</p>
+                      <div className="h-6 md:h-8 mb-1">
+                        <p className="text-[8px] md:text-[9px] font-black text-slate-600 uppercase tracking-wider">Total Runs</p>
                       </div>
-                      <p className="text-2xl font-black text-indigo-400 leading-none">
+                      <p className="text-lg md:text-2xl font-black text-indigo-400 leading-none">
                         {statsLoading ? "----" : (userStats?.overview?.runs || 0)}
                       </p>
                     </div>
                     <div className="flex flex-col">
-                      <div className="h-8 mb-1">
-                        <p className="text-[9px] font-black text-slate-600 uppercase tracking-wider">Lifetime S/R</p>
+                      <div className="h-6 md:h-8 mb-1">
+                        <p className="text-[8px] md:text-[9px] font-black text-slate-600 uppercase tracking-wider">Lifetime S/R</p>
                       </div>
-                      <p className="text-2xl font-black text-white leading-none">
+                      <p className="text-lg md:text-2xl font-black text-white leading-none">
                         {statsLoading ? "---.--" : (userStats?.overview?.strikeRate || "0.00")}
                       </p>
                     </div>
@@ -415,22 +414,22 @@ export default function ProfilePage() {
             </div>
 
             {/* Transaction History Page Version */}
-            <section className="rounded-[2.5rem] bg-slate-900/40 border border-white/5 backdrop-blur-md overflow-hidden shadow-2xl">
-              <div className="p-8 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 bg-amber-500/10 rounded-2xl border border-amber-500/20">
-                    <Receipt className="w-5 h-5 text-amber-500" />
+            <section className="rounded-[2rem] md:rounded-[2.5rem] bg-slate-900/40 border border-white/5 backdrop-blur-md overflow-hidden shadow-2xl">
+              <div className="p-6 md:p-8 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
+                <div className="flex items-center gap-3 md:gap-4">
+                  <div className="p-2.5 md:p-3 bg-amber-500/10 rounded-2xl border border-amber-500/20">
+                    <Receipt className="w-4 h-4 md:w-5 md:h-5 text-amber-500" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-black text-white uppercase tracking-tight">Ledger <span className="text-amber-500">Activity</span></h3>
-                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Unified Financial Flow</p>
+                    <h3 className="text-sm md:text-lg font-black text-white uppercase tracking-tight">Ledger <span className="text-amber-500">Activity</span></h3>
+                    <p className="text-[9px] md:text-[10px] font-bold text-slate-500 uppercase tracking-widest">Unified Financial Flow</p>
                   </div>
                 </div>
-                <button className="p-3 rounded-xl bg-white/5 border border-white/5 text-slate-400 hover:text-white transition-all">
-                  <Download className="w-5 h-5" />
+                <button className="p-2.5 md:p-3 rounded-xl bg-white/5 border border-white/5 text-slate-400 hover:text-white transition-all">
+                  <Download className="w-4 h-4 md:w-5 md:h-5" />
                 </button>
               </div>
-                <div className="p-8">
+                <div className="p-4 md:p-8 overflow-x-auto">
                   <TransactionList transactions={unifiedActivity} loading={statsLoading || walletLoading} />
                 </div>
             </section>

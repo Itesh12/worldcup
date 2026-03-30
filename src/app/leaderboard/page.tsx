@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Trophy, Medal, Award, TrendingUp, Search, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { UserContextSwitcher } from "@/components/UserContextSwitcher";
+import { useTournament } from "@/components/TournamentContext";
 
 interface LeaderboardEntry {
     _id: string;
@@ -16,9 +17,9 @@ interface LeaderboardEntry {
 }
 
 export default function LeaderboardPage() {
+    const { tournamentId } = useTournament();
     const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
     const [loading, setLoading] = useState(true);
-    const [tournamentId, setTournamentId] = useState<string | null>(null);
 
     useEffect(() => {
         const fetchLeaderboard = async () => {
@@ -44,19 +45,18 @@ export default function LeaderboardPage() {
         <div className="min-h-screen bg-slate-950 pb-20 pt-24">
             {/* Standardized Header */}
             <header className="fixed top-0 left-0 right-0 z-50 bg-[#050B14]/80 backdrop-blur-xl border-b border-white/5">
-                <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-                    <div className="flex items-center gap-6">
-                        <Link href="/dashboard" className="w-10 h-10 rounded-full bg-slate-900 border border-white/5 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800 transition-colors shadow-lg">
-                            <ArrowLeft className="w-5 h-5" />
+                <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-3 md:gap-6 min-w-0">
+                        <Link href="/dashboard" className="shrink-0 w-8 h-8 md:w-10 md:h-10 rounded-full bg-slate-900 border border-white/5 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800 transition-colors shadow-lg">
+                            <ArrowLeft className="w-4 h-4 md:w-5 md:h-5" />
                         </Link>
-                        <div className="flex items-center gap-3">
-                            <Trophy className="w-6 h-6 text-indigo-500" />
-                            <h1 className="text-xl font-black text-white tracking-tight italic uppercase">
+                        <div className="flex items-center gap-2 md:gap-3 min-w-0">
+                            <Trophy className="shrink-0 w-5 h-5 md:w-6 md:h-6 text-indigo-500" />
+                            <h1 className="text-sm md:text-xl font-black text-white tracking-tight italic uppercase truncate">
                                 {tournamentId ? "League" : "Global"} <span className="text-indigo-500">{tournamentId ? "Standings" : "Leaderboard"}</span>
                             </h1>
                         </div>
                     </div>
-                    <UserContextSwitcher onSelect={setTournamentId} />
                 </div>
             </header>
 
@@ -100,38 +100,38 @@ export default function LeaderboardPage() {
 
                         <div className="divide-y divide-slate-800">
                             {entries.map((entry, index) => (
-                                <div key={entry._id} className={`p-6 flex items-center justify-between hover:bg-slate-800/30 transition-colors ${index < 3 ? 'bg-blue-500/5' : ''}`}>
-                                    <div className="flex items-center gap-6">
-                                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-sm
-                      ${index === 0 ? 'bg-yellow-500 text-yellow-950' :
+                                <div key={entry._id} className={`p-4 md:p-6 flex items-center justify-between hover:bg-slate-800/30 transition-colors ${index < 3 ? 'bg-blue-500/5' : ''}`}>
+                                    <div className="flex items-center gap-3 md:gap-6 min-w-0">
+                                        <div className={`shrink-0 w-7 h-7 md:w-8 md:h-8 rounded-lg flex items-center justify-center font-black text-xs md:text-sm
+                      ${index === 0 ? 'bg-yellow-500 text-yellow-950 shadow-lg shadow-yellow-500/20' :
                                                 index === 1 ? 'bg-slate-300 text-slate-900' :
                                                     index === 2 ? 'bg-orange-500 text-orange-950' :
-                                                        'text-slate-500'}`}
+                                                        'text-slate-500 bg-slate-800/50'}`}
                                         >
                                             {index + 1}
                                         </div>
 
-                                        <div className="flex items-center gap-4">
-                                            <div className="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center text-slate-400 font-bold">
+                                        <div className="flex items-center gap-3 md:gap-4 min-w-0">
+                                            <div className="shrink-0 w-9 h-9 md:w-10 md:h-10 rounded-xl bg-slate-800 flex items-center justify-center text-slate-400 font-bold text-xs md:text-sm">
                                                 {entry.userId?.name?.[0]}
                                             </div>
-                                            <div>
-                                                <p className="text-sm font-bold text-white">{entry.userId?.name || 'Anonymous'}</p>
-                                                <p className="text-[10px] text-slate-500 font-medium uppercase tracking-tighter">Verified User</p>
+                                            <div className="min-w-0">
+                                                <p className="text-xs md:text-sm font-bold text-white truncate">{entry.userId?.name || 'Anonymous'}</p>
+                                                <p className="text-[9px] md:text-[10px] text-slate-500 font-medium uppercase tracking-tighter">Verified User</p>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div className="flex items-center gap-8">
-                                        <div className="text-right min-w-[60px]">
-                                            <p className="text-xl font-black text-white leading-none">{entry.totalRuns}</p>
-                                            <p className="text-[10px] font-bold text-slate-500 mt-1 uppercase">Runs</p>
+                                    <div className="flex items-center gap-4 md:gap-8 shrink-0">
+                                        <div className="text-right min-w-[50px] md:min-w-[60px]">
+                                            <p className="text-lg md:text-xl font-black text-white leading-none">{entry.totalRuns}</p>
+                                            <p className="text-[9px] md:text-[10px] font-bold text-slate-500 mt-1 uppercase">Runs</p>
                                         </div>
-                                        <div className="text-right min-w-[60px]">
-                                            <p className="text-sm font-bold text-blue-500 leading-none">
+                                        <div className="text-right min-w-[50px] md:min-w-[60px]">
+                                            <p className="text-xs md:text-sm font-bold text-blue-500 leading-none">
                                                 {entry.totalBalls > 0 ? ((entry.totalRuns / entry.totalBalls) * 100).toFixed(1) : '0.0'}
                                             </p>
-                                            <p className="text-[10px] font-bold text-slate-500 mt-1 uppercase">SR</p>
+                                            <p className="text-[9px] md:text-[10px] font-bold text-slate-500 mt-1 uppercase">SR</p>
                                         </div>
                                     </div>
                                 </div>

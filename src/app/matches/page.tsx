@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ArrowLeft, Calendar, Trophy, ChevronRight, Clock, Activity, Search, MapPin } from "lucide-react";
+import { ArrowLeft, Calendar, Trophy, ChevronRight, Clock, Activity, Search, MapPin, RefreshCcw } from "lucide-react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { UserContextSwitcher } from "@/components/UserContextSwitcher";
+import { useTournament } from "@/components/TournamentContext";
 
 interface Match {
     _id: string;
@@ -17,23 +18,41 @@ interface Match {
 
 export default function AllMatchesPage() {
     const { data: session } = useSession();
+    const { tournamentId } = useTournament();
     const [matches, setMatches] = useState<Match[]>([]);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<'upcoming' | 'finished'>('upcoming');
     const [searchQuery, setSearchQuery] = useState("");
-    const [tournamentId, setTournamentId] = useState<string | null>(null);
+    const [refreshing, setRefreshing] = useState(false);
 
     const fetchMatches = async () => {
-        if (!tournamentId) return;
         try {
             setLoading(true);
-            const res = await fetch(`/api/matches?tournamentId=${tournamentId}`);
+            const url = tournamentId 
+                ? `/api/matches?tournamentId=${tournamentId}`
+                : `/api/matches`; // Fetch all if global
+            const res = await fetch(url);
             const data = await res.json();
             if (res.ok) setMatches(data);
         } catch (err) {
             console.error("Failed to load matches", err);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleRefresh = async () => {
+        if (refreshing) return;
+        setRefreshing(true);
+        try {
+            await fetch(`/api/matches/sync?tournamentId=${tournamentId}`, {
+                method: "POST"
+            });
+            await fetchMatches();
+        } catch (err) {
+            console.error("Failed to refresh matches", err);
+        } finally {
+            setRefreshing(false);
         }
     };
 
@@ -68,34 +87,44 @@ export default function AllMatchesPage() {
 
             {/* Header */}
             <header className="sticky top-0 z-40 bg-[#050B14]/80 backdrop-blur-xl border-b border-white/5">
-                <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-                    <div className="flex items-center gap-6">
-                        <Link href="/dashboard" className="w-10 h-10 rounded-full bg-slate-900 border border-white/5 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800 transition-colors">
-                            <ArrowLeft className="w-5 h-5" />
+                <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-3 md:gap-6 min-w-0">
+                        <Link href="/dashboard" className="shrink-0 w-8 h-8 md:w-10 md:h-10 rounded-full bg-slate-900 border border-white/5 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800 transition-colors shadow-lg">
+                            <ArrowLeft className="w-4 h-4 md:w-5 md:h-5" />
                         </Link>
-                        <div className="flex items-center gap-3">
-                            <Trophy className="w-6 h-6 text-indigo-500" />
-                            <h1 className="text-xl font-black text-white tracking-tight">FULL <span className="text-indigo-500">SCHEDULE</span></h1>
+                        <div className="flex items-center gap-2 md:gap-3 min-w-0">
+                            <Trophy className="shrink-0 w-5 h-5 md:w-6 md:h-6 text-indigo-500" />
+                            <h1 className="text-sm md:text-xl font-black text-white tracking-tight truncate">FULL <span className="text-indigo-500">SCHEDULE</span></h1>
                         </div>
                     </div>
-                    <UserContextSwitcher onSelect={setTournamentId} />
+                    
+                    <div className="flex items-center gap-2 md:gap-4 shrink-0">
+                        <button
+                          onClick={handleRefresh}
+                          disabled={refreshing}
+                          className={`p-2 md:p-2.5 rounded-xl bg-slate-900 border border-white/5 text-slate-400 hover:text-white transition-all hover:bg-slate-800 group ${refreshing ? 'cursor-not-allowed opacity-50' : ''} shadow-lg`}
+                          title="Refresh Match Data"
+                        >
+                          <RefreshCcw className={`w-3.5 h-3.5 md:w-4 h-4 ${refreshing ? 'animate-spin text-indigo-500' : 'group-hover:rotate-180 transition-transform duration-500'}`} />
+                        </button>
+                    </div>
                 </div>
             </header>
 
             <main className="max-w-7xl mx-auto px-4 pt-10">
                 {/* Search & Tabs */}
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
-                    <div className="flex items-center gap-6 border-b border-white/10 flex-1 md:flex-none">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                    <div className="flex items-center gap-6 border-b border-white/10 overflow-x-auto scrollbar-hide">
                         <button
                             onClick={() => setActiveTab('upcoming')}
-                            className={`pb-3 text-sm font-bold uppercase tracking-widest transition-all relative ${activeTab === 'upcoming' ? 'text-white' : 'text-slate-500 hover:text-slate-300'}`}
+                            className={`pb-3 text-xs md:text-sm font-bold uppercase tracking-widest transition-all relative whitespace-nowrap ${activeTab === 'upcoming' ? 'text-white' : 'text-slate-500 hover:text-slate-300'}`}
                         >
                             Upcoming
                             {activeTab === 'upcoming' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-indigo-500" />}
                         </button>
                         <button
                             onClick={() => setActiveTab('finished')}
-                            className={`pb-3 text-sm font-bold uppercase tracking-widest transition-all relative ${activeTab === 'finished' ? 'text-white' : 'text-slate-500 hover:text-slate-300'}`}
+                            className={`pb-3 text-xs md:text-sm font-bold uppercase tracking-widest transition-all relative whitespace-nowrap ${activeTab === 'finished' ? 'text-white' : 'text-slate-500 hover:text-slate-300'}`}
                         >
                             Past Results
                             {activeTab === 'finished' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-indigo-500" />}
@@ -103,13 +132,13 @@ export default function AllMatchesPage() {
                     </div>
 
                     <div className="relative group flex-1 max-w-md">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-focus-within:text-indigo-500 transition-colors" />
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500 group-focus-within:text-indigo-500 transition-colors" />
                         <input
                             type="text"
-                            placeholder="Search teams..."
+                            placeholder="Find target teams..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full bg-slate-900/50 border border-white/5 rounded-2xl py-3 pl-11 pr-4 text-sm text-white focus:outline-none focus:border-indigo-500/50 transition-all"
+                            className="w-full bg-slate-900/50 border border-white/5 rounded-xl py-2.5 md:py-3 pl-11 pr-4 text-xs md:text-sm text-white focus:outline-none focus:border-indigo-500/50 transition-all"
                         />
                     </div>
                 </div>
@@ -166,24 +195,24 @@ function StandardMatchCard({ match }: { match: Match }) {
             </div>
 
             {/* Middle Section: Teams Grid */}
-            <div className="flex items-center justify-between gap-4 mb-8 px-2">
-                <div className="flex-1 flex flex-col items-center gap-3">
-                    <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-center group-hover:border-indigo-500/40 transition-all shadow-inner">
-                        <span className="text-2xl font-black text-white">{match.teams[0].shortName}</span>
+            <div className="flex items-center justify-between gap-3 mb-8 px-1 md:px-2">
+                <div className="flex-1 flex flex-col items-center gap-2.5">
+                    <div className="w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-center group-hover:border-indigo-500/40 transition-all shadow-inner">
+                        <span className="text-xl md:text-2xl font-black text-white">{match.teams[0].shortName}</span>
                     </div>
-                    <span className="text-xs font-bold text-slate-400 uppercase tracking-tight text-center truncate w-full">{match.teams[0].name}</span>
+                    <span className="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-tight text-center truncate w-full">{match.teams[0].name}</span>
                 </div>
 
                 <div className="flex flex-col items-center">
-                    <div className="text-xs font-black text-slate-700 mb-2">VS</div>
-                    <div className="w-px h-10 bg-gradient-to-b from-transparent via-slate-700 to-transparent" />
+                    <div className="text-[10px] md:text-xs font-black text-slate-700 mb-2">VS</div>
+                    <div className="w-px h-8 md:h-10 bg-gradient-to-b from-transparent via-slate-700 to-transparent" />
                 </div>
 
-                <div className="flex-1 flex flex-col items-center gap-3">
-                    <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-center group-hover:border-indigo-500/40 transition-all shadow-inner">
-                        <span className="text-2xl font-black text-white">{match.teams[1].shortName}</span>
+                <div className="flex-1 flex flex-col items-center gap-2.5">
+                    <div className="w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-center group-hover:border-indigo-500/40 transition-all shadow-inner">
+                        <span className="text-xl md:text-2xl font-black text-white">{match.teams[1].shortName}</span>
                     </div>
-                    <span className="text-xs font-bold text-slate-400 uppercase tracking-tight text-center truncate w-full">{match.teams[1].name}</span>
+                    <span className="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-tight text-center truncate w-full">{match.teams[1].name}</span>
                 </div>
             </div>
 

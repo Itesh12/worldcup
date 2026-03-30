@@ -1,33 +1,32 @@
 const mongoose = require('mongoose');
+require('dotenv').config();
 
-// Use simple require for diagnostic script
-const UserSchema = new mongoose.Schema({
-    email: String,
-    withdrawalMethods: Array
-}, { strict: false });
+const MatchSchema = new mongoose.Schema({
+    status: String,
+    tournamentId: mongoose.Schema.Types.ObjectId
+});
 
-const User = mongoose.models.User || mongoose.model('User', UserSchema);
+const Match = mongoose.models.Match || mongoose.model('Match', MatchSchema);
 
 async function check() {
     try {
-        console.log("Connecting to database...");
-        // Use environment variable from process.env if available, or try to load .env.local
-        const uri = "mongodb://localhost:27017/worldcup"; // Fallback to local default if env missing
-        await mongoose.connect(process.env.MONGODB_URI || uri);
+        await mongoose.connect(process.env.MONGODB_URI);
+        console.log('Connected to DB');
         
-        console.log("Searching for users with withdrawal methods...");
-        const users = await User.find({ "withdrawalMethods.0": { $exists: true } });
+        const allStatuses = await Match.distinct('status');
+        console.log('Unique statuses in DB:', allStatuses);
         
-        console.log(`Found ${users.length} users with payout methods.`);
+        const count = await Match.countDocuments();
+        console.log('Total matches:', count);
         
-        users.forEach(u => {
-            console.log(`User: ${u.email}`);
-            console.log(`Methods:`, JSON.stringify(u.withdrawalMethods, null, 2));
-        });
-
+        const finished = await Match.find({ 
+            status: { $in: ['finished', 'completed', 'result', 'settled'] } 
+        }).limit(5);
+        console.log('Sample finished matches:', JSON.stringify(finished, null, 2));
+        
         process.exit(0);
     } catch (err) {
-        console.error("Error:", err);
+        console.error(err);
         process.exit(1);
     }
 }

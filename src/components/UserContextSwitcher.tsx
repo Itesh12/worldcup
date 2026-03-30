@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Trophy, ChevronDown, Check } from "lucide-react";
+import { useTournament } from "@/components/TournamentContext";
 
 interface Tournament {
     _id: string;
@@ -9,29 +10,25 @@ interface Tournament {
     isActive: boolean;
 }
 
-export function UserContextSwitcher({ onSelect }: { onSelect: (id: string | null) => void }) {
+export function UserContextSwitcher({ onSelect }: { onSelect?: (id: string | null) => void }) {
+    const { tournamentId, setTournamentId } = useTournament();
     const [tournaments, setTournaments] = useState<Tournament[]>([]);
-    const [activeId, setActiveId] = useState<string | null>(null);
     const [isOpen, setIsOpen] = useState(false);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchTournaments = async () => {
             try {
-                // Fetch tournaments using the admin API (or create a public one if preferred)
-                // For now, let's assume the admin API is readable by users or we have a public route.
-                // Re-using the admin route might fail if not admin, so let's verify.
-                const res = await fetch("/api/tournaments"); // We'll need to create this public route
+                const res = await fetch("/api/tournaments");
                 if (res.ok) {
                     const data: Tournament[] = await res.json();
                     setTournaments(data);
                     
-                    if (data.length > 0) {
+                    // If no tournament is selected yet, pick the active one or the first one
+                    if (!tournamentId && data.length > 0) {
                         const active = data.find(t => t.isActive) || data[0];
-                        setActiveId(active._id);
-                        onSelect(active._id);
-                    } else {
-                        onSelect(null);
+                        setTournamentId(active._id);
+                        if (onSelect) onSelect(active._id);
                     }
                 }
             } catch (error) {
@@ -42,7 +39,7 @@ export function UserContextSwitcher({ onSelect }: { onSelect: (id: string | null
         };
 
         fetchTournaments();
-    }, [onSelect]);
+    }, [tournamentId, setTournamentId, onSelect]);
 
     if (loading) {
         return <div className="h-9 w-32 bg-slate-800 animate-pulse rounded-xl"></div>;
@@ -52,17 +49,21 @@ export function UserContextSwitcher({ onSelect }: { onSelect: (id: string | null
         return null;
     }
 
-    const activeTournament = tournaments.find(t => t._id === activeId);
+    const activeTournament = tournaments.find(t => t._id === tournamentId);
 
     return (
-        <div className="relative">
+        <div className="relative w-full">
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="flex items-center gap-2 px-4 py-2 bg-slate-800/80 hover:bg-slate-700 text-white text-xs font-bold rounded-xl transition-colors border border-white/5 shadow-lg max-w-[200px]"
+                className="w-full flex items-center justify-between gap-2 px-3 md:px-5 py-3.5 bg-slate-800/40 hover:bg-slate-700/60 text-white text-[10px] md:text-sm font-black rounded-2xl transition-all border border-white/10 shadow-2xl backdrop-blur-sm group"
             >
-                <Trophy className="w-3.5 h-3.5 text-indigo-400" />
-                <span className="truncate">{activeTournament?.name || "Select League"}</span>
-                <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform ${isOpen ? "rotate-180" : ""}`} />
+                <div className="flex items-center gap-2 md:gap-3 min-w-0">
+                    <div className="p-1 md:p-1.5 bg-indigo-500/20 rounded-lg group-hover:bg-indigo-500/30 transition-colors shrink-0">
+                        <Trophy className="w-3.5 h-3.5 md:w-4 md:h-4 text-indigo-400" />
+                    </div>
+                    <span className="truncate tracking-tight uppercase italic leading-none">{activeTournament?.name || "Select League"}</span>
+                </div>
+                <ChevronDown className={`w-3.5 h-3.5 md:w-4 md:h-4 text-slate-500 transition-transform duration-300 shrink-0 ${isOpen ? "rotate-180" : ""}`} />
             </button>
 
             {isOpen && (
@@ -73,34 +74,20 @@ export function UserContextSwitcher({ onSelect }: { onSelect: (id: string | null
                             <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-2">Select League</span>
                         </div>
                         <div className="max-h-60 overflow-y-auto p-1">
-                            <button
-                                onClick={() => {
-                                    setActiveId(null);
-                                    onSelect(null);
-                                    setIsOpen(false);
-                                }}
-                                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-left transition-colors ${
-                                    activeId === null ? 'bg-indigo-500/10 text-white' : 'text-slate-400 hover:bg-white/5 hover:text-white'
-                                }`}
-                            >
-                                <span className="text-sm font-black truncate pr-2 uppercase italic tracking-tighter">Global Hall of Fame</span>
-                                {activeId === null && <Check className="w-4 h-4 text-indigo-500 shrink-0" />}
-                            </button>
-                            <div className="h-px bg-white/5 my-1" />
                             {tournaments.map((t) => (
                                 <button
                                     key={t._id}
                                     onClick={() => {
-                                        setActiveId(t._id);
-                                        onSelect(t._id);
+                                        setTournamentId(t._id);
+                                        if (onSelect) onSelect(t._id);
                                         setIsOpen(false);
                                     }}
                                     className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-left transition-colors ${
-                                        t._id === activeId ? 'bg-indigo-500/10 text-white' : 'text-slate-400 hover:bg-white/5 hover:text-white'
+                                        t._id === tournamentId ? 'bg-indigo-500/10 text-white' : 'text-slate-400 hover:bg-white/5 hover:text-white'
                                     }`}
                                 >
                                     <span className="text-sm font-bold truncate pr-2">{t.name}</span>
-                                    {t._id === activeId && <Check className="w-4 h-4 text-indigo-500 shrink-0" />}
+                                    {t._id === tournamentId && <Check className="w-4 h-4 text-indigo-500 shrink-0" />}
                                 </button>
                             ))}
                         </div>

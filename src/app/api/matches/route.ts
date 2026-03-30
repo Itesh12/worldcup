@@ -7,12 +7,13 @@ export async function GET(req: NextRequest) {
         const { searchParams } = new URL(req.url);
         const tournamentId = searchParams.get('tournamentId');
 
-        if (!tournamentId) {
-            return NextResponse.json({ message: "tournamentId is required" }, { status: 400 });
+        await connectDB();
+        const filter: any = {};
+        if (tournamentId) {
+            filter.tournamentId = tournamentId;
         }
 
-        await connectDB();
-        const matches = await Match.find({ tournamentId }).sort({ startTime: -1 });
+        const matches = await Match.find(filter).sort({ startTime: -1 });
         return NextResponse.json(matches);
     } catch (error: any) {
         return NextResponse.json({ message: error.message }, { status: 500 });

@@ -3,19 +3,25 @@ import Match from "@/models/Match";
 import Tournament from "@/models/Tournament";
 import { getCricbuzzMatches } from "@/lib/cricbuzzScraper";
 
-export async function performMatchSync() {
+export async function performMatchSync(requestTournamentId?: string) {
     try {
         await connectDB();
 
-        // Find active tournament
-        const activeTournament = await Tournament.findOne({ isActive: true });
-        if (!activeTournament) {
-            console.log("Match Sync Utility - No active tournament found.");
-            return { success: false, count: 0, message: "No active tournament found" };
+        // 1. Determine which tournament to sync
+        let targetTournament;
+        if (requestTournamentId) {
+            targetTournament = await Tournament.findById(requestTournamentId);
+        } else {
+            targetTournament = await Tournament.findOne({ isActive: true });
         }
 
-        console.log(`Match Sync Utility - Seeking matches from Cricbuzz Scraper for ${activeTournament.name}`);
-        const scrapedMatches = await getCricbuzzMatches(activeTournament.cricbuzzSeriesId, activeTournament.cricbuzzSlug);
+        if (!targetTournament) {
+            console.log("Match Sync Utility - Target tournament not found.");
+            return { success: false, count: 0, message: "Tournament not found" };
+        }
+
+        console.log(`Match Sync Utility - Seeking matches from Cricbuzz Scraper for ${targetTournament.name}`);
+        const scrapedMatches = await getCricbuzzMatches(targetTournament.cricbuzzSeriesId, targetTournament.cricbuzzSlug);
 
         if (scrapedMatches.length === 0) {
             console.log("Match Sync Utility - Scraper found 0 matches.");
@@ -30,7 +36,7 @@ export async function performMatchSync() {
                 : new Date();
 
             return {
-                tournamentId: activeTournament._id,
+                tournamentId: targetTournament._id,
                 externalMatchId: m.id,
                 teams: [
                     { name: m.team1, shortName: m.team1.substring(0, 3).toUpperCase() },

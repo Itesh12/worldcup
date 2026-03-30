@@ -46,27 +46,27 @@ export default function HallOfFamePage() {
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-indigo-600/10 blur-[120px] rounded-full pointer-events-none" />
 
             <header className="sticky top-0 z-40 bg-[#050B14]/80 backdrop-blur-xl border-b border-white/5">
-                <div className="max-w-7xl mx-auto px-4 py-6 flex items-center justify-between">
-                    <Link href="/dashboard" className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors">
-                        <ArrowLeft className="w-5 h-5" />
-                        <span className="text-sm font-bold uppercase tracking-widest">Back to Dashboard</span>
+                <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between gap-4">
+                    <Link href="/dashboard" className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors shrink-0">
+                        <ArrowLeft className="w-4 h-4 md:w-5 md:h-5" />
+                        <span className="text-[10px] md:text-sm font-bold uppercase tracking-widest hidden sm:inline">Back</span>
                     </Link>
-                    <div className="flex items-center gap-3">
-                        <Trophy className="w-6 h-6 text-indigo-500" />
-                        <h1 className="text-xl font-black text-white uppercase tracking-tight">WORLD CUP <span className="text-indigo-500">HUB</span></h1>
+                    <div className="flex items-center gap-2 md:gap-3 min-w-0">
+                        <Trophy className="shrink-0 w-5 h-5 md:w-6 md:h-6 text-indigo-500" />
+                        <h1 className="text-sm md:text-xl font-black text-white uppercase tracking-tight truncate">WORLD CUP <span className="text-indigo-500">HUB</span></h1>
                     </div>
-                    <div className="w-24 hidden md:block" /> {/* Spacer */}
+                    <div className="w-8 md:w-24 shrink-0" />
                 </div>
             </header>
 
-            <main className="max-w-7xl mx-auto px-4 pt-12">
-                <div className="text-center mb-16">
-                    <div className="inline-flex items-center gap-3 px-4 py-2 bg-indigo-500/10 rounded-2xl border border-indigo-500/20 mb-6 group">
-                        <PartyPopper className="w-6 h-6 text-indigo-400 group-hover:scale-110 transition-transform" />
-                        <span className="text-indigo-400 text-xs font-black uppercase tracking-[0.2em]">The Elite Circle</span>
+            <main className="max-w-7xl mx-auto px-4 pt-8 md:pt-12">
+                <div className="text-center mb-10 md:mb-16">
+                    <div className="inline-flex items-center gap-2 md:gap-3 px-3 py-1.5 md:px-4 md:py-2 bg-indigo-500/10 rounded-2xl border border-indigo-500/20 mb-4 md:mb-6 group">
+                        <PartyPopper className="w-4 h-4 md:w-6 md:h-6 text-indigo-400 group-hover:scale-110 transition-transform" />
+                        <span className="text-indigo-400 text-[10px] md:text-xs font-black uppercase tracking-[0.2em]">The Elite Circle</span>
                     </div>
-                    <h2 className="text-4xl md:text-6xl font-black text-white uppercase tracking-tighter mb-4">Hall of <span className="text-indigo-500">Fame</span></h2>
-                    <p className="text-slate-500 font-bold uppercase tracking-widest text-sm">Honoring the best performers of every match</p>
+                    <h2 className="text-3xl md:text-6xl font-black text-white uppercase tracking-tighter mb-3 md:mb-4">Hall of <span className="text-indigo-500">Fame</span></h2>
+                    <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px] md:text-sm">Honoring the best performers of every match</p>
                 </div>
 
                 {loading ? (
@@ -83,25 +83,25 @@ export default function HallOfFamePage() {
                     <>
                         {/* Dominance Leaderboard Section */}
                         {sortedUniqueWinners.length > 0 && (
-                            <div className="mb-16 animate-in fade-in slide-in-from-bottom-5 duration-700">
-                                <div className="flex items-center gap-3 mb-8">
-                                    <div className="w-1.5 h-6 bg-indigo-500 rounded-full" />
-                                    <h3 className="text-xl font-black text-white uppercase tracking-tight">Most Dominant Players</h3>
+                            <div className="mb-12 md:mb-16 animate-in fade-in slide-in-from-bottom-5 duration-700">
+                                <div className="flex items-center gap-3 mb-6 md:mb-8">
+                                    <div className="w-1.5 h-5 md:h-6 bg-indigo-500 rounded-full" />
+                                    <h3 className="text-lg md:text-xl font-black text-white uppercase tracking-tight">Most Dominant Players</h3>
                                 </div>
-                                <div className="flex flex-wrap gap-4">
+                                <div className="flex overflow-x-auto pb-4 gap-4 scrollbar-hide md:flex-wrap">
                                     {sortedUniqueWinners.map(([uId, count], idx) => {
                                         const firstWin = winners.find(w => w.winner.userId === uId);
                                         return (
-                                            <div key={uId} className="flex items-center gap-4 bg-slate-900/60 border border-white/5 rounded-2xl px-5 py-3 hover:border-indigo-500/30 transition-all">
-                                                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-xs ${idx === 0 ? 'bg-yellow-500 text-black shadow-lg shadow-yellow-500/50' :
+                                            <div key={uId} className="flex items-center gap-3 md:gap-4 bg-slate-900/60 border border-white/5 rounded-2xl px-4 py-2.5 md:px-5 md:py-3 hover:border-indigo-500/30 transition-all shrink-0">
+                                                <div className={`w-7 h-7 md:w-8 md:h-8 rounded-full flex items-center justify-center font-black text-[10px] md:text-xs ${idx === 0 ? 'bg-yellow-500 text-black shadow-lg shadow-yellow-500/50' :
                                                     idx === 1 ? 'bg-slate-300 text-black' :
                                                         idx === 2 ? 'bg-orange-700 text-white' : 'bg-slate-800 text-slate-400'
                                                     }`}>
                                                     {idx + 1}
                                                 </div>
                                                 <div className="flex flex-col">
-                                                    <span className="text-sm font-black text-white">{firstWin?.winner.name}</span>
-                                                    <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest">{count} {count === 1 ? 'Win' : 'Wins'}</span>
+                                                    <span className="text-xs md:text-sm font-black text-white whitespace-nowrap">{firstWin?.winner.name}</span>
+                                                    <span className="text-[9px] md:text-[10px] font-bold text-indigo-400 uppercase tracking-widest">{count} {count === 1 ? 'Win' : 'Wins'}</span>
                                                 </div>
                                             </div>
                                         );

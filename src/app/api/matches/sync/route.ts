@@ -9,9 +9,11 @@ export async function POST(req: NextRequest) {
         if (!session) {
             return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
         }
+        const { searchParams } = new URL(req.url);
+        const tournamentId = searchParams.get('tournamentId') || undefined;
 
-        console.log("Public Match Sync - Triggered by user:", session.user?.email);
-        const result = await performMatchSync();
+        console.log("Public Match Sync - Triggered by user:", session.user?.email, "Tournament:", tournamentId || "Active only");
+        const result = await performMatchSync(tournamentId);
 
         return NextResponse.json({
             message: "Matches synced successfully",
