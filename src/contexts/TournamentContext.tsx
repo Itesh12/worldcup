@@ -1,14 +1,7 @@
-// Force Turbopack recompilation
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-
-interface TournamentContextType {
-    tournamentId: string | null;
-    setTournamentId: (id: string | null) => void;
-}
-
-const TournamentContext = createContext<TournamentContextType | undefined>(undefined);
+import React, { useState, useEffect, useCallback, useContext } from 'react';
+import { TournamentContext, TournamentContextType } from './TournamentContextCore';
 
 export function TournamentProvider({ children }: { children: React.ReactNode }) {
     const [tournamentId, setTournamentIdState] = useState<string | null>(null);
@@ -39,8 +32,12 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
 
 export function useTournament() {
     const context = useContext(TournamentContext);
+    
+    // Diagnostic check for context availability
     if (context === undefined) {
+        console.error("useTournament: Context is undefined! Are you sure the component is wrapped in TournamentProvider?");
         throw new Error('useTournament must be used within a TournamentProvider');
     }
+    
     return context;
 }

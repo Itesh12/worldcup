@@ -1,8 +1,8 @@
-"use strict";
 "use client";
 
 import { useEffect, useState } from "react";
 import { CheckCircle, Circle, Plus, Trophy, Activity, Globe, Search, RefreshCw, ChevronDown, AlertTriangle } from "lucide-react";
+import { Spinner } from "@/components/ui/Spinner";
 
 interface Tournament {
     _id: string;
@@ -378,7 +378,9 @@ export default function AdminTournamentsPage() {
                 )}
 
                 {loading ? (
-                    <div className="h-40 bg-slate-900/40 border border-white/5 rounded-2xl animate-pulse" />
+                    <div className="flex flex-col items-center justify-center py-40 gap-4">
+                        <Spinner />
+                    </div>
                 ) : tournaments.length === 0 ? (
                     <div className="text-center py-20 bg-slate-950/40 border border-dashed border-white/10 rounded-3xl">
                         <Globe className="w-12 h-12 text-slate-800 mx-auto mb-4 opacity-50" />

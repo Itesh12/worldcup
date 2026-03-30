@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import toast from "react-hot-toast";
+import { Spinner } from "@/components/ui/Spinner";
 
 export default function AdminWithdrawalsPage() {
   const [withdrawals, setWithdrawals] = useState<any[]>([]);
@@ -113,8 +114,7 @@ export default function AdminWithdrawalsPage() {
             <main className="max-w-7xl mx-auto px-4 md:px-6 pt-6 md:pt-10 relative z-10 w-full mb-10">
                 {loading ? (
                   <div className="flex flex-col items-center justify-center py-40 gap-4">
-                    <Loader2 className="w-10 h-10 text-amber-500 animate-spin" />
-                    <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.3em]">Syncing Requests...</p>
+                    <Spinner />
                   </div>
                 ) : filteredWithdrawals.length === 0 ? (
                   <div className="bg-slate-900/40 border-dashed border border-white/10 rounded-[2.5rem] py-32 text-center shadow-xl">

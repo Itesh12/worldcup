@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Users, Trophy, Activity, TrendingUp, ShieldCheck, Clock, CheckCircle, Ticket, Medal, Flame, ArrowLeft, Trash2, AlertTriangle, X, FileText, ArrowUpRight, IndianRupee } from "lucide-react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
+import { Spinner } from "@/components/ui/Spinner";
 
 interface AnalyticsData {
     users: {
@@ -87,7 +88,7 @@ export default function AdminDashboardPage() {
     if (loading) {
         return (
             <div className="flex h-[50vh] items-center justify-center">
-                <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+                <Spinner />
             </div>
         );
     }

@@ -22,6 +22,7 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { toPng } from "html-to-image";
 import jsPDF from "jspdf";
+import { Spinner } from "@/components/ui/Spinner";
 
 // Re-using the premium Performance Hub for the list items
 function MiniPerformanceHub({ percentage, style }: { percentage: number, style: any }) {
@@ -273,7 +274,7 @@ export default function AdminReportsPage() {
     if (loading) {
         return (
             <div className="flex h-[80vh] items-center justify-center">
-                <div className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+                <Spinner />
             </div>
         );
     }

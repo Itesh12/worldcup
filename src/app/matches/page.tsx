@@ -5,7 +5,7 @@ import { ArrowLeft, Calendar, Trophy, ChevronRight, Clock, Activity, Search, Map
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { UserContextSwitcher } from "@/components/UserContextSwitcher";
-import { useTournament } from "@/components/TournamentContext";
+import { useTournament } from "@/contexts/TournamentContext";
 
 interface Match {
     _id: string;

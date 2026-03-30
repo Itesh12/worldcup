@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Trophy, Medal, Award, TrendingUp, Search, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { UserContextSwitcher } from "@/components/UserContextSwitcher";
-import { useTournament } from "@/components/TournamentContext";
+import { useTournament } from "@/contexts/TournamentContext";
 
 interface LeaderboardEntry {
     _id: string;

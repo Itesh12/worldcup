@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Trophy, ChevronDown, Check } from "lucide-react";
-import { useTournament } from "@/components/TournamentContext";
+import { useTournament } from "@/contexts/TournamentContext";
 
 interface Tournament {
     _id: string;

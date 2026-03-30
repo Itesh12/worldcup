@@ -4,6 +4,7 @@ import { useEffect, useState, use } from "react";
 import { ArrowLeft, User, Target, Zap, Info, Calendar, MapPin, Users, Activity, Trophy, X, Star, PartyPopper, RefreshCw, Ban, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
+import { Spinner } from "@/components/ui/Spinner";
 
 interface SlotData {
     inningsNumber: number;
@@ -97,16 +98,7 @@ export default function MatchDetailPage({ params }: { params: Promise<{ id: stri
 
     if (loading) return (
         <div className="min-h-screen bg-[#050810] flex items-center justify-center">
-            <div className="flex flex-col items-center gap-6">
-                <div className="relative">
-                    <div className="w-16 h-16 border-4 border-indigo-600/30 border-t-indigo-600 rounded-full animate-spin" />
-                    <Trophy className="w-6 h-6 text-indigo-500 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
-                </div>
-                <div className="text-center">
-                    <p className="text-white font-black uppercase tracking-[0.2em] text-sm">Synchronizing Assets</p>
-                    <p className="text-slate-500 text-xs font-bold mt-1">Fetching live match engine...</p>
-                </div>
-            </div>
+            <Spinner />
         </div>
     );
 

@@ -35,8 +35,9 @@ import { AddFundsDialog } from "@/components/AddFundsDialog";
 import { WithdrawDialog } from "@/components/WithdrawDialog";
 import { PayoutMethodManager } from "@/components/PayoutMethodManager";
 import { UserContextSwitcher } from "@/components/UserContextSwitcher";
-import { useTournament } from "@/components/TournamentContext";
+import { useTournament } from "@/contexts/TournamentContext";
 import { toast, Toaster } from "react-hot-toast";
+import { Spinner } from "@/components/ui/Spinner";
 
 export default function ProfilePage() {
   const { data: session, update } = useSession();
@@ -46,8 +47,9 @@ export default function ProfilePage() {
   const [walletData, setWalletData] = useState<{ balance: number; transactions: any[] } | null>(null);
   const [userStats, setUserStats] = useState<any>(null);
   const [walletLoading, setWalletLoading] = useState(true);
-  const [statsLoading, setStatsLoading] = useState(false);
+  const [statsLoading, setStatsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(true);
   const { tournamentId } = useTournament();
   const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
@@ -62,42 +64,51 @@ export default function ProfilePage() {
         name: session.user.name || "",
         image: session.user.image || "",
       });
-      fetchWalletData();
-    }
-  }, [session]);
-
-  useEffect(() => {
-    if (session?.user) {
-      fetchUserStats();
+      
+      // Coordinate initial unified data load
+      const loadInitialData = async () => {
+        setIsInitializing(true);
+        await Promise.all([
+          fetchWalletData(true),
+          fetchUserStats(true)
+        ]);
+        setIsInitializing(false);
+      };
+      
+      loadInitialData();
     }
   }, [session, tournamentId]);
 
-  const fetchWalletData = async () => {
+  const fetchWalletData = async (silent = false) => {
     try {
-      setWalletLoading(true);
+      if (!silent) setWalletLoading(true);
       const res = await fetch("/api/user/wallet");
       const data = await res.json();
       if (res.ok) setWalletData(data);
     } catch (err) {
       console.error("Failed to fetch wallet data", err);
     } finally {
-      setWalletLoading(false);
+      if (!silent) setWalletLoading(false);
     }
   };
 
-  const fetchUserStats = async () => {
+  const fetchUserStats = async (silent = false) => {
     try {
-      setStatsLoading(true);
+      if (!silent) setStatsLoading(true);
       const url = tournamentId 
         ? `/api/user/stats?detailed=true&tournamentId=${tournamentId}`
         : `/api/user/stats?detailed=true`;
-      const res = await fetch(url);
+      
+      const headers: any = {};
+      if (silent) headers['x-silent-fetch'] = 'true';
+      
+      const res = await fetch(url, { headers });
       const data = await res.json();
       if (res.ok) setUserStats(data);
     } catch (err) {
       console.error("Failed to fetch user stats", err);
     } finally {
-      setStatsLoading(false);
+      if (!silent) setStatsLoading(false);
       setRefreshing(false);
     }
   };
@@ -163,10 +174,10 @@ export default function ProfilePage() {
     })) || [])
   ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-  if (!session) {
+  if (!session || isInitializing) {
     return (
       <div className="min-h-screen bg-[#050B14] flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
+        <Spinner />
       </div>
     );
   }

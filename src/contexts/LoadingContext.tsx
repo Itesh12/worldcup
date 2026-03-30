@@ -1,14 +1,7 @@
 "use client";
 
-import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
-
-interface LoadingContextType {
-    isLoading: boolean;
-    startLoading: () => void;
-    stopLoading: () => void;
-}
-
-const LoadingContext = createContext<LoadingContextType | undefined>(undefined);
+import React, { useState, useCallback, useEffect, useContext } from 'react';
+import { LoadingContext, LoadingContextType } from './LoadingContextCore';
 
 // Global counter to track active requests across the whole app immediately
 let activeRequests = 0;

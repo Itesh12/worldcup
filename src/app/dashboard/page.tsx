@@ -9,13 +9,14 @@ import jsPDF from "jspdf";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { UserContextSwitcher } from "@/components/UserContextSwitcher";
-import { useTournament } from "@/components/TournamentContext";
+import { useTournament } from "@/contexts/TournamentContext";
 import { WalletCard } from "@/components/WalletCard";
 import { AddFundsDialog } from "@/components/AddFundsDialog";
 import { WithdrawDialog } from "@/components/WithdrawDialog";
 import { TransactionList } from "@/components/TransactionList";
 import { toast, Toaster } from "react-hot-toast";
 import { useRouter } from "next/navigation";
+import { Spinner } from "@/components/ui/Spinner";
 
 interface Match {
   _id: string;
@@ -43,36 +44,45 @@ export default function UserMatchesPage() {
   const [walletLoading, setWalletLoading] = useState(true);
 
   const [refreshing, setRefreshing] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(true);
   const { tournamentId, setTournamentId } = useTournament();
 
-
-  const handleRefresh = async () => {
+  const handleRefresh = async (isInitial = false) => {
     if (refreshing || !tournamentId) return;
-    setRefreshing(true);
-    try {
-      // Trigger the background sync (loud)
-      await fetch(`/api/matches/sync?tournamentId=${tournamentId}`, {
-        method: "POST"
-      });
+    
+    if (isInitial) {
+        setIsInitializing(true);
+    } else {
+        setRefreshing(true);
+    }
 
-      // Fetch updated data
+    try {
+      if (!isInitial) {
+        // Trigger the background sync (loud) only on manual refresh
+        await fetch(`/api/matches/sync?tournamentId=${tournamentId}`, {
+          method: "POST"
+        });
+      }
+
+      // Fetch all data concurrently
       await Promise.all([
-        fetchMatches(true), // passing true forces loading state on match list if needed, or keeps it silent
-        fetchDashboardStats(false),
-        fetchWeeklyReports(),
-        fetchWalletData()
+        fetchMatches(!isInitial), // silent if manual refresh, so it doesn't flicker
+        fetchDashboardStats(!isInitial),
+        fetchWeeklyReports(!isInitial),
+        fetchWalletData(!isInitial)
       ]);
     } catch (err) {
-      console.error("Manual sync failed", err);
+      console.error("Dashboard sync failed", err);
     } finally {
+      if (isInitial) setIsInitializing(false);
       setRefreshing(false);
     }
   };
 
   useEffect(() => {
-    // Initial fetch with sync
+    // Initial fetch
     if (tournamentId) {
-        handleRefresh();
+        handleRefresh(true);
     }
   }, [tournamentId]);
 
@@ -101,29 +111,29 @@ export default function UserMatchesPage() {
     }
   };
 
-  const fetchWeeklyReports = async () => {
+  const fetchWeeklyReports = async (silent = false) => {
     try {
-      setWeeklyLoading(true);
+      if (!silent) setWeeklyLoading(true);
       const res = await fetch("/api/user/weekly-report");
       const data = await res.json();
       if (res.ok) setWeeklyReports(data.weeks);
     } catch (err) {
       console.error("Failed to fetch weekly reports", err);
     } finally {
-      setWeeklyLoading(false);
+      if (!silent) setWeeklyLoading(false);
     }
   };
 
-  const fetchWalletData = async () => {
+  const fetchWalletData = async (silent = false) => {
     try {
-      setWalletLoading(true);
+      if (!silent) setWalletLoading(true);
       const res = await fetch("/api/user/wallet");
       const data = await res.json();
       if (res.ok) setWalletData(data);
     } catch (err) {
       console.error("Failed to fetch wallet data", err);
     } finally {
-      setWalletLoading(false);
+       if (!silent) setWalletLoading(false);
     }
   };
 
@@ -224,7 +234,7 @@ export default function UserMatchesPage() {
             <UserContextSwitcher onSelect={setTournamentId} />
           </div>
           <button
-            onClick={handleRefresh}
+            onClick={() => handleRefresh(false)}
             disabled={refreshing}
             className={`flex-[1] max-w-[48px] md:max-w-[56px] flex items-center justify-center rounded-2xl bg-slate-800/60 border border-white/10 text-slate-400 hover:text-white hover:bg-slate-700/80 transition-all shadow-xl backdrop-blur-sm group ${refreshing ? 'cursor-not-allowed' : ''}`}
             title="Refresh Data"
@@ -247,9 +257,12 @@ export default function UserMatchesPage() {
         balance={walletData?.balance || 0} 
       />
 
-      <main className="max-w-7xl mx-auto px-4 pt-6 pb-20 space-y-8 md:space-y-12">
+      {isInitializing ? (
+        null
+      ) : (
+        <main className="max-w-7xl mx-auto px-4 pt-6 pb-20 space-y-8 md:space-y-12">
 
-        {/* 1. TOP BAR: User Performance Summary (New Placement) */}
+          {/* 1. TOP BAR: User Performance Summary (New Placement) */}
         {session && (
           <section className="animate-in fade-in slide-in-from-top-4 duration-700">
             <div className="relative overflow-hidden rounded-[2rem] p-6 md:p-8 bg-gradient-to-br from-slate-900 via-[#050B14] to-slate-900 border border-white/10 shadow-[0_10px_40px_rgba(0,0,0,0.5)] transition-all duration-500 flex flex-col lg:flex-row items-center lg:items-center justify-between gap-6 group">
@@ -503,6 +516,7 @@ export default function UserMatchesPage() {
         {/* Match Winners Section */}
         <WinnersSection />
       </main>
+      )}
     </div>
   );
 }
