@@ -115,26 +115,36 @@ export default function AdminMatchesPage() {
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 relative pb-20">
             {/* Standardized Header */}
             <header className="sticky top-0 z-[60] bg-[#050B14]/80 backdrop-blur-xl border-b border-white/5">
-                <div className="max-w-7xl mx-auto px-4 md:px-6 py-4 flex items-center justify-between font-sans">
-                    <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-3">
-                            <Swords className="w-5 h-5 md:w-6 md:h-6 text-indigo-500" />
-                            <h1 className="text-lg md:text-xl font-black text-white tracking-tight uppercase">Match <span className="text-indigo-500">Management</span></h1>
+                <div className="max-w-7xl mx-auto px-4 md:px-6 py-4 md:py-6">
+                    {/* Row 1: Title + Sync button */}
+                    <div className="flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-3 md:gap-4">
+                            <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20 shrink-0">
+                                <Swords className="w-5 h-5 md:w-6 md:h-6 text-indigo-400" />
+                            </div>
+                            <div>
+                                <h1 className="text-xl md:text-3xl font-black text-white tracking-tighter uppercase italic leading-none">
+                                    Match <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">Management</span>
+                                </h1>
+                                <p className="text-[9px] md:text-xs font-bold text-slate-500 uppercase tracking-widest mt-1 hidden xs:block">
+                                    Control Central
+                                </p>
+                            </div>
                         </div>
-                        <div className="hidden md:block h-6 w-px bg-white/10 mx-2" />
-                        <AdminContextSwitcher onSelect={(id) => setSelectedTournament(id)} />
-                    </div>
-
-                    <div className="flex items-center gap-3">
                         <button
                             onClick={handleSync}
                             disabled={syncing}
-                            className="group relative flex items-center gap-2 md:gap-3 px-4 md:px-6 py-2.5 md:py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-black transition-all shadow-xl shadow-indigo-600/20 hover:shadow-indigo-600/40 disabled:opacity-50 active:scale-95 overflow-hidden"
+                            className="group relative flex items-center gap-2 px-4 md:px-6 py-2.5 md:py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl md:rounded-2xl font-black transition-all shadow-lg shadow-indigo-600/20 disabled:opacity-50 active:scale-95 shrink-0"
                         >
-                            <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]" />
-                            <RefreshCcw className={`w-3.5 h-3.5 md:w-4 md:h-4 ${syncing ? "animate-spin" : ""}`} />
-                            <span className="uppercase tracking-widest text-[9px] md:text-[10px]">{syncing ? "Sync..." : "Global Sync"}</span>
+                            <RefreshCcw className={`w-4 h-4 md:w-5 md:h-5 ${syncing ? "animate-spin" : ""}`} />
+                            <span className="uppercase tracking-widest text-[10px] md:text-xs">
+                                <span className="hidden sm:inline">Global </span>Sync
+                            </span>
                         </button>
+                    </div>
+                    {/* Row 2: Tournament Switcher */}
+                    <div className="mt-4 md:mt-6">
+                        <AdminContextSwitcher onSelect={(id) => setSelectedTournament(id)} />
                     </div>
                 </div>
             </header>
@@ -144,36 +154,33 @@ export default function AdminMatchesPage() {
                 <div className="absolute top-0 right-0 w-[400px] md:w-[800px] h-[300px] md:h-[500px] bg-indigo-600/10 blur-[150px] rounded-full" />
             </div>
 
-            <div className="max-w-7xl mx-auto px-6 pt-10 md:pt-12 relative z-10">
-                <p className="text-slate-400 font-medium text-sm md:text-base italic opacity-80">Control fixtures, sync API data, and manage player slot assignments.</p>
-            </div>
 
-            {/* Tabs Navigation - Scrollable on mobile */}
-            <div className="max-w-7xl mx-auto px-6 mt-8 md:mt-10 overflow-x-auto scrollbar-hide">
-                <div className="relative z-10 flex items-center gap-1 bg-slate-950/40 p-1 rounded-2xl border border-white/5 backdrop-blur-md w-max md:w-fit">
+            {/* Tabs Navigation */}
+            <div className="max-w-7xl mx-auto px-4 md:px-6 mt-4 md:mt-8">
+                <div className="relative z-10 flex items-center gap-1 bg-slate-950/40 p-1 rounded-2xl border border-white/5 backdrop-blur-md">
                     <button
                         onClick={() => setActiveTab('today')}
-                        className={`flex items-center gap-2 px-5 md:px-6 py-3 rounded-xl text-[10px] md:text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap ${activeTab === 'today' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'text-slate-500 hover:text-slate-300'}`}
+                        className={`flex-1 flex items-center justify-center gap-1.5 md:gap-2 px-3 md:px-6 py-2.5 md:py-3 rounded-xl text-[9px] md:text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'today' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'text-slate-500 hover:text-slate-300'}`}
                     >
-                        <Activity className={`w-3.5 h-3.5 md:w-4 md:h-4 ${activeTab === 'today' ? 'animate-pulse' : ''}`} />
-                        Live & Today
-                        {categorizedMatches.today.length > 0 && <span className="ml-1 px-1.5 py-0.5 bg-white/20 rounded text-[9px] md:text-[10px]">{categorizedMatches.today.length}</span>}
+                        <Activity className={`w-3 h-3 md:w-4 md:h-4 ${activeTab === 'today' ? 'animate-pulse' : ''}`} />
+                        <span className="hidden sm:inline">Live &</span> Today
+                        {categorizedMatches.today.length > 0 && <span className="ml-1 px-1.5 py-0.5 bg-white/20 rounded text-[8px] md:text-[9px]">{categorizedMatches.today.length}</span>}
                     </button>
                     <button
                         onClick={() => setActiveTab('upcoming')}
-                        className={`flex items-center gap-2 px-5 md:px-6 py-3 rounded-xl text-[10px] md:text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap ${activeTab === 'upcoming' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'text-slate-500 hover:text-slate-300'}`}
+                        className={`flex-1 flex items-center justify-center gap-1.5 md:gap-2 px-3 md:px-6 py-2.5 md:py-3 rounded-xl text-[9px] md:text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'upcoming' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'text-slate-500 hover:text-slate-300'}`}
                     >
-                        <Clock className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                        <Clock className="w-3 h-3 md:w-4 md:h-4" />
                         Upcoming
-                        {categorizedMatches.upcoming.length > 0 && <span className="ml-1 px-1.5 py-0.5 bg-white/20 rounded text-[9px] md:text-[10px]">{categorizedMatches.upcoming.length}</span>}
+                        {categorizedMatches.upcoming.length > 0 && <span className="ml-1 px-1.5 py-0.5 bg-white/20 rounded text-[8px] md:text-[9px]">{categorizedMatches.upcoming.length}</span>}
                     </button>
                     <button
                         onClick={() => setActiveTab('past')}
-                        className={`flex items-center gap-2 px-5 md:px-6 py-3 rounded-xl text-[10px] md:text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap ${activeTab === 'past' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'text-slate-500 hover:text-slate-300'}`}
+                        className={`flex-1 flex items-center justify-center gap-1.5 md:gap-2 px-3 md:px-6 py-2.5 md:py-3 rounded-xl text-[9px] md:text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'past' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'text-slate-500 hover:text-slate-300'}`}
                     >
-                        <CheckCircle className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                        <CheckCircle className="w-3 h-3 md:w-4 md:h-4" />
                         Past
-                        {categorizedMatches.past.length > 0 && <span className="ml-1 px-1.5 py-0.5 bg-white/20 rounded text-[9px] md:text-[10px]">{categorizedMatches.past.length}</span>}
+                        {categorizedMatches.past.length > 0 && <span className="ml-1 px-1.5 py-0.5 bg-white/20 rounded text-[8px] md:text-[9px]">{categorizedMatches.past.length}</span>}
                     </button>
                 </div>
             </div>
