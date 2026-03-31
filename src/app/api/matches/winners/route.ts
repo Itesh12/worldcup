@@ -2,13 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import connectDB from "@/lib/db";
 import Match from "@/models/Match";
 import UserMatchStats from "@/models/UserMatchStats";
-import User from "@/models/User"; // Ensure User model is registered
+import User from "@/models/User";
+import Tournament from "@/models/Tournament";
 
 export async function GET(req: NextRequest) {
     try {
         await connectDB();
 
-        const { searchParams } = new URL(req.url);
+        const { searchParams } = req.nextUrl;
         const limit = parseInt(searchParams.get("limit") || "5");
 
         // 1. Find recent finished matches

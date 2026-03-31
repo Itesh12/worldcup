@@ -40,6 +40,7 @@ export default function MatchSlotsPage({ params }: { params: Promise<{ id: strin
     const [loading, setLoading] = useState(true);
     const [generating, setGenerating] = useState(false);
     const [autoAssigning, setAutoAssigning] = useState(false);
+    const [slotCount, setSlotCount] = useState(8);
 
     useEffect(() => {
         fetchData();
@@ -79,7 +80,7 @@ export default function MatchSlotsPage({ params }: { params: Promise<{ id: strin
             const res = await fetch("/api/admin/slots", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ matchId })
+                body: JSON.stringify({ matchId, slotCount })
             });
             if (res.ok) await fetchData();
         } catch (err) {
@@ -185,7 +186,7 @@ export default function MatchSlotsPage({ params }: { params: Promise<{ id: strin
 
             {/* Page Header Area */}
             <div className="max-w-7xl mx-auto px-4 pt-12 relative z-10">
-                <p className="text-slate-400 font-medium italic">Strategic assignment of player slots for 8 total positions.</p>
+                <p className="text-slate-400 font-medium italic italic">Strategic assignment of player slots for {slots.length || slotCount} total positions.</p>
             </div>
 
             {/* Innings Grid - Only show if slots are generated */}
@@ -199,12 +200,12 @@ export default function MatchSlotsPage({ params }: { params: Promise<{ id: strin
                                         <span className="w-10 h-10 rounded-xl bg-indigo-600/20 border border-indigo-500/30 text-indigo-400 flex items-center justify-center text-lg font-black shadow-lg shadow-indigo-500/10">
                                             {innings}
                                         </span>
-                                        Innings {innings} <span className="text-slate-500 font-bold uppercase text-xs tracking-[0.3em] ml-2">Positions 1-4</span>
+                                        Innings {innings} <span className="text-slate-500 font-bold uppercase text-[10px] tracking-[0.3em] ml-2">Positions 1-{slots.length / 2}</span>
                                     </h2>
                                 </div>
 
                                 <div className="space-y-3">
-                                    {Array.from({ length: 4 }, (_, i) => i + 1).map((pos) => {
+                                    {Array.from({ length: slots.length / 2 }, (_, i) => i + 1).map((pos) => {
                                         const assignment = getAssignment(innings, pos);
                                         return (
                                             <div key={pos} className="group relative overflow-hidden bg-slate-950/40 border border-white/5 rounded-2xl p-4 hover:border-indigo-500/30 transition-all duration-300 flex items-center gap-6">
@@ -272,19 +273,39 @@ export default function MatchSlotsPage({ params }: { params: Promise<{ id: strin
                             <Swords className="w-10 h-10 text-indigo-400" />
                         </div>
                         <h3 className="text-2xl font-black text-white mb-3">Database Initialization Required</h3>
-                        <p className="text-slate-400 max-w-md mx-auto mb-10 font-medium leading-relaxed">
-                            This match has no batting slots defined in the system. <br />
-                            Please initialize the **8 core slots** to begin player assignments.
+                        <p className="text-slate-400 max-w-md mx-auto mb-8 font-medium leading-relaxed italic">
+                            This match has no batting slots defined. <br />
+                            Choose the number of positions below to begin.
                         </p>
+
+                        <div className="max-w-xs mx-auto mb-10 space-y-4">
+                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Total Match Slots</label>
+                            <div className="flex items-center justify-center gap-2">
+                                {[2, 4, 6, 8, 10].map((num) => (
+                                    <button
+                                        key={num}
+                                        onClick={() => setSlotCount(num)}
+                                        className={`w-10 h-10 rounded-xl font-black transition-all border ${
+                                            slotCount === num 
+                                            ? "bg-indigo-600 text-white border-indigo-400 shadow-lg shadow-indigo-600/40" 
+                                            : "bg-slate-900 text-slate-500 border-white/5 hover:border-white/20"
+                                        }`}
+                                    >
+                                        {num}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
                         <button
                             onClick={handleGenerateSlots}
                             disabled={generating}
                             className="group relative inline-flex items-center gap-3 px-10 py-5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-black transition-all shadow-2xl shadow-indigo-600/30 hover:shadow-indigo-600/50 disabled:opacity-50 active:scale-95 overflow-hidden"
                         >
                             <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]" />
-                            <Plus className="w-5 h-5" />
+                            <Plus className="w-5 h-5 transition-transform group-hover:rotate-90" />
                             <span className="uppercase tracking-[0.2em] text-xs leading-none">
-                                {generating ? "Initializing System..." : "Initialize 8 Batting Slots"}
+                                {generating ? "Initializing System..." : `Initialize ${slotCount} Batting Slots`}
                             </span>
                         </button>
                     </div>

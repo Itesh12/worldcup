@@ -3,8 +3,10 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import connectDB from "@/lib/db";
 import UserMatchStats from "@/models/UserMatchStats";
-import UserBattingAssignment from "@/models/UserBattingAssignment";
+import Transaction from "@/models/Transaction";
 import User from "@/models/User";
+import Match from "@/models/Match";
+import Arena from "@/models/Arena";
 import mongoose from "mongoose";
 
 function getWeekBoundaries(date: Date) {
@@ -38,15 +40,21 @@ export async function GET(req: NextRequest) {
 
         await connectDB();
 
-        // 1. Fetch all users
-        const allUsers = await User.find({}).select("name image").lean();
+        // 1. Identify Roles
+        const admins = await User.find({ role: 'admin' }).select('_id').lean();
+        const adminIds = new Set(admins.map(a => String(a._id)));
+        const subadmins = await User.find({ role: 'subadmin' }).select('_id').lean();
+        const subadminIds = new Set(subadmins.map(s => String(s._id)));
+
+        // 2. Fetch all users for identity
+        const allUsers = await User.find({}).select("name image email").lean();
         const userMap = new Map(allUsers.map(u => [String(u._id), u]));
 
-        // 2. Fetch all match stats
+        // 3. Get all active Match Stats as the skeleton
         const allStats = await UserMatchStats.find({})
             .populate({
                 path: 'matchId',
-                select: 'startTime teams venue status'
+                select: 'startTime teams venue status entryFee'
             })
             .sort({ 'matchId.startTime': -1 })
             .lean();
@@ -55,46 +63,13 @@ export async function GET(req: NextRequest) {
             return NextResponse.json({ weeks: [] });
         }
 
-        const matchIds = [...new Set(allStats.map(s => String(s.matchId._id)))];
-
-        // 3. Fetch winners for these matches
-        const winners = await UserMatchStats.aggregate([
-            {
-                $match: {
-                    matchId: { $in: matchIds.map(id => new mongoose.Types.ObjectId(id)) },
-                    totalRuns: { $gt: 0 }
-                }
-            },
-            { $sort: { totalRuns: -1, totalBalls: 1 } },
-            {
-                $group: {
-                    _id: "$matchId",
-                    winnerId: { $first: "$userId" }
-                }
-            }
-        ]);
-        const winnersMap = new Map(winners.map(w => [String(w._id), String(w.winnerId)]));
-
-        // 4. Fetch participants for these matches
-        const participants = await UserBattingAssignment.find({ matchId: { $in: matchIds.map(id => new mongoose.Types.ObjectId(id)) } })
-            .populate('userId', 'name')
-            .lean();
-
-        const matchParticipants: Record<string, any[]> = {};
-        participants.forEach(p => {
-            const mid = String(p.matchId);
-            if (!matchParticipants[mid]) matchParticipants[mid] = [];
-            matchParticipants[mid].push(p.userId);
-        });
-
-        // 5. Group by Week and then by User
+        // 4. Group by Week
         const weeks: Record<string, any> = {};
 
         for (const stat of allStats) {
             if (!stat.matchId) continue;
-
             const matchDate = new Date((stat.matchId as any).startTime);
-            const { start, label } = getWeekBoundaries(matchDate);
+            const { start, end, label } = getWeekBoundaries(matchDate);
             const weekKey = start.getTime().toString();
 
             if (!weeks[weekKey]) {
@@ -102,11 +77,19 @@ export async function GET(req: NextRequest) {
                     key: weekKey,
                     label,
                     startDate: start,
-                    userData: {} // userId -> { name, stats, matches, ledger }
+                    endDate: end,
+                    totalTurnover: 0,
+                    totalAdminYield: 0,
+                    subAdminRevenue: 0,
+                    matchIds: new Set(),
+                    userData: {} // userId -> { name, stats, matches }
                 };
             }
 
             const week = weeks[weekKey];
+            const mid = String((stat.matchId as any)._id);
+            week.matchIds.add(mid);
+
             const userIdStr = String(stat.userId);
             const user = userMap.get(userIdStr);
             if (!user) continue;
@@ -115,62 +98,23 @@ export async function GET(req: NextRequest) {
                 week.userData[userIdStr] = {
                     userId: userIdStr,
                     name: user.name,
+                    email: user.email,
                     image: user.image,
                     stats: {
                         runs: 0,
                         balls: 0,
                         wins: 0,
                         losses: 0,
-                        netWorth: 0
+                        netWorth: 0,
+                        turnover: 0
                     },
-                    matches: [],
-                    ledger: {} // otherUserId -> amount
+                    matches: []
                 };
             }
 
             const uData = week.userData[userIdStr];
-            const mid = String(stat.matchId._id);
-            const winnerId = winnersMap.get(mid);
-            const players = matchParticipants[mid] || [];
-            const numParticipants = players.length;
-
-            let pnl = 0;
-            let outcome = 'played';
-
-            if (winnerId && numParticipants > 1) {
-                if (winnerId === userIdStr) {
-                    pnl = (numParticipants - 1) * 50;
-                    outcome = 'win';
-                    uData.stats.wins++;
-                } else {
-                    pnl = -50;
-                    outcome = 'loss';
-                    uData.stats.losses++;
-                }
-            }
-
             uData.stats.runs += stat.totalRuns;
             uData.stats.balls += stat.totalBalls;
-            uData.stats.netWorth += pnl;
-
-            // Ledger updates
-            if (pnl !== 0) {
-                if (outcome === 'win') {
-                    players.forEach(p => {
-                        const pid = String(p._id);
-                        if (pid === userIdStr) return;
-                        if (!uData.ledger[pid]) uData.ledger[pid] = { name: p.name, amount: 0 };
-                        uData.ledger[pid].amount += 50;
-                    });
-                } else {
-                    const winner = players.find(p => String(p._id) === winnerId);
-                    if (winner) {
-                        const pid = String(winner._id);
-                        if (!uData.ledger[pid]) uData.ledger[pid] = { name: winner.name, amount: 0 };
-                        uData.ledger[pid].amount -= 50;
-                    }
-                }
-            }
 
             uData.matches.push({
                 matchId: mid,
@@ -178,8 +122,76 @@ export async function GET(req: NextRequest) {
                 venue: (stat.matchId as any).venue,
                 runs: stat.totalRuns,
                 balls: stat.totalBalls,
-                pnl,
-                outcome
+                outcome: stat.totalRuns > 0 ? 'played' : 'did_not_bat'
+            });
+        }
+
+        // 5. Enrich each week with ACTUAL Match and Transactional Data
+        for (const weekKey in weeks) {
+            const week = weeks[weekKey];
+            
+            // A. Fetch Match Details
+            const matchesForWeek = await Match.find({ _id: { $in: Array.from(week.matchIds) } }).lean();
+            const matchFinancialMap: Record<string, any> = {};
+
+            for (const match of matchesForWeek) {
+                const mid = String(match._id);
+                // Fetch arenas for this match to get sub-admin splits
+                const arenas = await Arena.find({ matchId: match._id }).lean();
+                
+                let matchTurnover = 0;
+                let matchAdminTake = 0;
+                let matchSubAdminCut = 0;
+
+                arenas.forEach((a: any) => {
+                    const pool = a.slotsCount * a.entryFee;
+                    matchTurnover += pool;
+                    matchAdminTake += pool * (a.adminCommissionPercentage / 100);
+                    matchSubAdminCut += pool * (a.organizerCommissionPercentage / 100);
+                });
+
+                matchFinancialMap[mid] = {
+                    id: mid,
+                    name: `${match.teams?.[0]?.shortName} vs ${match.teams?.[1]?.shortName}`,
+                    date: match.startTime,
+                    venue: match.venue,
+                    turnover: matchTurnover,
+                    adminTake: matchAdminTake,
+                    subAdminCut: matchSubAdminCut,
+                    enrolled: arenas.reduce((acc, a) => acc + a.slotsCount, 0)
+                };
+
+                // Add to week totals
+                week.totalTurnover += matchTurnover;
+                week.totalAdminYield += matchAdminTake;
+                week.subAdminRevenue += matchSubAdminCut;
+            }
+
+            week.matchReports = Object.values(matchFinancialMap).sort((a: any, b: any) => b.date.getTime() - a.date.getTime());
+
+            // B. Individual Player Enrichment from Transactions
+            const transactions = await Transaction.find({
+                createdAt: { $gte: week.startDate, $lte: week.endDate },
+                status: 'completed',
+                type: { $in: ['winnings', 'bet_placed', 'refund'] }
+            }).lean();
+
+            transactions.forEach((tx: any) => {
+                const txUserId = String(tx.userId);
+                if (week.userData[txUserId]) {
+                    const uData = week.userData[txUserId];
+                    uData.stats.netWorth += tx.amount;
+                    if (tx.type === 'bet_placed') {
+                        uData.stats.turnover += Math.abs(tx.amount);
+                    }
+                }
+            });
+
+            // Update match outcome results
+            Object.values(week.userData).forEach((u: any) => {
+                const wins = u.matches.filter((m: any) => m.runs > 0).length;
+                u.stats.wins = wins;
+                u.stats.losses = Math.max(0, u.matches.length - wins);
             });
         }
 
@@ -188,25 +200,17 @@ export async function GET(req: NextRequest) {
             .sort((a: any, b: any) => b.startDate.getTime() - a.startDate.getTime())
             .map((w: any) => ({
                 ...w,
+                matchIds: undefined, // Cleanup
                 users: Object.values(w.userData).map((u: any) => ({
                     ...u,
-                    stats: {
-                        ...u.stats,
-                        average: u.matches.length > 0 ? (u.stats.runs / u.matches.length).toFixed(1) : "0.0",
-                        strikeRate: u.stats.balls > 0 ? ((u.stats.runs / u.stats.balls) * 100).toFixed(1) : "0.0"
-                    },
-                    ledger: Object.entries(u.ledger).map(([id, lData]: [string, any]) => ({
-                        userId: id,
-                        name: lData.name,
-                        amount: lData.amount
-                    })).sort((a, b) => b.amount - a.amount)
-                })).sort((a, b) => b.stats.netWorth - a.stats.netWorth) // Sort by P&L
+                    ledger: []
+                })).sort((a, b) => b.stats.netWorth - a.stats.netWorth)
             }));
 
         return NextResponse.json({ weeks: formattedWeeks });
 
     } catch (error: any) {
-        console.error("Admin Weekly Report API Error:", error);
+        console.error("Admin Weekly Report API error:", error);
         return NextResponse.json({ message: error.message }, { status: 500 });
     }
 }

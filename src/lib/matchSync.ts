@@ -1,7 +1,9 @@
 import connectDB from "@/lib/db";
 import Match from "@/models/Match";
 import Tournament from "@/models/Tournament";
+import Arena from "@/models/Arena";
 import { getCricbuzzMatches } from "@/lib/cricbuzzScraper";
+import { revealArenaPositions } from "./revealLogic";
 
 export async function performMatchSync(requestTournamentId?: string) {
     try {
@@ -58,6 +60,27 @@ export async function performMatchSync(requestTournamentId?: string) {
         }
 
         console.log(`Match Sync Utility - Successfully synced ${matchesToSync.length} matches (IDs preserved)`);
+        
+        // 3. Automated 'Blind Draft' T-30 Reveal Logic
+        const now = new Date();
+        const pendingArenas = await Arena.find({
+            isRevealed: false,
+            // Matches scheduled to start within 30 mins (or already started)
+            revealTime: { $lte: now },
+            status: { $ne: 'completed' }
+        });
+
+        if (pendingArenas.length > 0) {
+            console.log(`Match Sync Utility - Found ${pendingArenas.length} arenas awaiting 'T-30' position reveal.`);
+            for (const arena of pendingArenas) {
+                try {
+                    await revealArenaPositions(arena._id.toString());
+                    console.log(`Match Sync Utility - Successfully revealed arena: ${arena.name}`);
+                } catch (revealError) {
+                    console.error(`Match Sync Utility - Failed to reveal arena ${arena.name}:`, revealError);
+                }
+            }
+        }
 
         return { success: true, count: matchesToSync.length };
     } catch (error: any) {

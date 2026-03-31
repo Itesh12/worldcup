@@ -12,7 +12,12 @@ import {
   Filter,
   ExternalLink,
   MessageSquare,
-  Loader2
+  Loader2,
+  TrendingUp,
+  Wallet,
+  Coins,
+  ShieldCheck,
+  LayoutDashboard
 } from "lucide-react";
 import Link from "next/link";
 import toast from "react-hot-toast";
@@ -24,6 +29,8 @@ export default function AdminWithdrawalsPage() {
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [filter, setFilter] = useState<"all" | "pending" | "completed" | "failed">("pending");
   const [adminNote, setAdminNote] = useState("");
+  const [stats, setStats] = useState<any>(null);
+  const [statsLoading, setStatsLoading] = useState(true);
 
   const fetchWithdrawals = async () => {
     try {
@@ -40,8 +47,23 @@ export default function AdminWithdrawalsPage() {
     }
   };
 
+  const fetchStats = async () => {
+    try {
+      setStatsLoading(true);
+      const res = await fetch("/api/admin/finance/stats");
+      if (res.ok) {
+        setStats(await res.json());
+      }
+    } catch (err) {
+      console.error("Failed to fetch finance stats", err);
+    } finally {
+      setStatsLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchWithdrawals();
+    fetchStats();
   }, []);
 
   const handleProcess = async (transactionId: string, action: 'approve' | 'reject') => {
@@ -84,34 +106,114 @@ export default function AdminWithdrawalsPage() {
                             </div>
                             <div>
                                 <h1 className="text-xl md:text-3xl font-black text-white tracking-tighter uppercase italic leading-none">
-                                    Financial <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-400">Requests</span>
+                                    Financial <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-400">Control Center</span>
                                 </h1>
                                 <p className="text-[9px] md:text-xs font-bold text-slate-500 uppercase tracking-widest mt-1 hidden xs:block">
-                                    Withdrawal Processing
+                                    Revenue & Payout Management
                                 </p>
                             </div>
                         </div>
 
-                        <div className="flex items-center gap-2 shrink-0 overflow-x-auto no-scrollbar pb-1 -mb-1 bg-white/5 p-1 rounded-xl md:rounded-2xl border border-white/10">
-                            {(["all", "pending", "completed", "failed"] as const).map((f) => (
-                                <button
-                                    key={f}
-                                    onClick={() => setFilter(f)}
-                                    className={`px-3 py-2 md:px-4 md:py-2.5 rounded-lg md:rounded-xl text-[10px] md:text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap ${
-                                        filter === f 
-                                            ? "bg-amber-600 text-white shadow-lg shadow-amber-900/20" 
-                                            : "text-slate-400 hover:text-slate-200 hover:bg-white/5"
-                                    }`}
-                                >
-                                    {f}
-                                </button>
-                            ))}
+                        <div className="flex items-center gap-4">
+                            <button 
+                                onClick={() => { fetchWithdrawals(); fetchStats(); }}
+                                className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:text-white transition-all"
+                            >
+                                <Loader2 className={`w-4 h-4 ${loading || statsLoading ? 'animate-spin' : ''}`} />
+                            </button>
+                            <div className="flex items-center gap-2 shrink-0 overflow-x-auto no-scrollbar pb-1 -mb-1 bg-white/5 p-1 rounded-xl md:rounded-2xl border border-white/10 text-nowrap">
+                                {(["all", "pending", "completed", "failed"] as const).map((f) => (
+                                    <button
+                                        key={f}
+                                        onClick={() => setFilter(f)}
+                                        className={`px-3 py-2 md:px-4 md:py-2.5 rounded-lg md:rounded-xl text-[10px] md:text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap ${
+                                            filter === f 
+                                                ? "bg-amber-600 text-white shadow-lg shadow-amber-900/20" 
+                                                : "text-slate-400 hover:text-slate-200 hover:bg-white/5"
+                                        }`}
+                                    >
+                                        {f}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
                     </div>
                 </div>
             </header>
 
             <main className="max-w-7xl mx-auto px-4 md:px-6 pt-6 md:pt-10 relative z-10 w-full mb-10">
+                {/* Finance Dashboard Grid */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 mb-10">
+                    {[
+                        { 
+                            label: "Total Net Revenue", 
+                            value: stats?.totalRevenue || 0, 
+                            icon: TrendingUp, 
+                            color: "text-emerald-400", 
+                            bg: "bg-emerald-500/10", 
+                            border: "border-emerald-500/20",
+                            tag: "Platform Profit"
+                        },
+                        { 
+                            label: "Active Liability", 
+                            value: stats?.totalLiability || 0, 
+                            icon: Wallet, 
+                            color: "text-amber-400", 
+                            bg: "bg-amber-500/10", 
+                            border: "border-amber-500/20",
+                            tag: "User Balances"
+                        },
+                        { 
+                            label: "Sub-Admin Owed", 
+                            value: stats?.subAdminOwed || 0, 
+                            icon: Coins, 
+                            color: "text-indigo-400", 
+                            bg: "bg-indigo-500/10", 
+                            border: "border-indigo-500/20",
+                            tag: "Unpaid Commissions"
+                        },
+                        { 
+                            label: "Pending Payouts", 
+                            value: stats?.pendingWithdrawals || 0, 
+                            icon: Clock, 
+                            color: "text-rose-400", 
+                            bg: "bg-rose-500/10", 
+                            border: "border-rose-500/20",
+                            tag: "Cash Out Requests"
+                        }
+                    ].map((card, i) => (
+                        <div key={i} className="bg-slate-900/40 backdrop-blur-xl border border-white/5 hover:border-white/10 rounded-[2rem] p-5 md:p-6 transition-all duration-500 group relative overflow-hidden shadow-2xl">
+                            {/* Subtle Ambient Glow */}
+                            <div className={`absolute -right-4 -top-4 w-24 h-24 rounded-full blur-3xl opacity-0 group-hover:opacity-20 transition-opacity duration-700 ${card.bg}`} />
+                            
+                            <div className="flex flex-col h-full justify-between">
+                                <div className="flex items-center justify-between mb-4">
+                                    <div className={`w-10 h-10 md:w-12 md:h-12 rounded-2xl ${card.bg} ${card.border} border flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-500`}>
+                                        <card.icon className={`w-5 h-5 md:w-6 md:h-6 ${card.color}`} />
+                                    </div>
+                                    <span className="text-[8px] md:text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">{card.tag}</span>
+                                </div>
+                                
+                                <div>
+                                    <p className="text-[10px] md:text-xs font-black text-slate-400 uppercase tracking-widest mb-1.5">{card.label}</p>
+                                    <div className="flex items-baseline gap-1">
+                                        <span className={`text-xl md:text-3xl font-black italic tracking-tighter leading-none ${card.color}`}>
+                                            ₹{card.value.toLocaleString()}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+
+                <div className="flex items-center gap-3 mb-6">
+                    <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center border border-white/10">
+                        <IndianRupee className="w-4 h-4 text-slate-500" />
+                    </div>
+                    <h2 className="text-sm md:text-base font-black text-white uppercase tracking-widest italic">Payout Queue</h2>
+                    <div className="h-px flex-1 bg-gradient-to-r from-white/10 to-transparent" />
+                </div>
                 {loading ? (
                   <div className="flex flex-col items-center justify-center py-40 gap-4">
                     <Spinner />

@@ -1,19 +1,21 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Trophy, Medal, Award, TrendingUp, Search, ArrowLeft } from "lucide-react";
+import { Trophy, Medal, Award, TrendingUp, Search, ArrowLeft, IndianRupee, Target, Crown } from "lucide-react";
 import Link from "next/link";
-import { UserContextSwitcher } from "@/components/UserContextSwitcher";
 import { useTournament } from "@/contexts/TournamentContext";
 
 interface LeaderboardEntry {
     _id: string;
     userId: {
+        _id: string;
         name: string;
         email: string;
+        image?: string;
     };
-    totalRuns: number;
-    totalBalls: number;
+    netProfit: number;
+    totalWon: number;
+    winCount: number;
 }
 
 export default function LeaderboardPage() {
@@ -37,12 +39,18 @@ export default function LeaderboardPage() {
             }
         };
         fetchLeaderboard();
-        const interval = setInterval(fetchLeaderboard, 15000); // Refresh every 15s
+        const interval = setInterval(fetchLeaderboard, 30000); // 30s refresh for precision
         return () => clearInterval(interval);
     }, [tournamentId]);
 
     return (
-        <div className="min-h-screen bg-slate-950 pb-20 pt-24">
+        <div className="min-h-screen bg-[#020617] pb-20 pt-24 text-slate-200">
+            {/* Ambient Background Glows */}
+            <div className="fixed inset-0 pointer-events-none z-0">
+                <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-indigo-600/10 blur-[150px] rounded-full" />
+                <div className="absolute bottom-0 right-1/4 w-[600px] h-[600px] bg-purple-600/5 blur-[150px] rounded-full" />
+            </div>
+
             {/* Standardized Header */}
             <header className="fixed top-0 left-0 right-0 z-50 bg-[#050B14]/80 backdrop-blur-xl border-b border-white/5">
                 <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between gap-4">
@@ -51,114 +59,157 @@ export default function LeaderboardPage() {
                             <ArrowLeft className="w-4 h-4 md:w-5 md:h-5" />
                         </Link>
                         <div className="flex items-center gap-2 md:gap-3 min-w-0">
-                            <Trophy className="shrink-0 w-5 h-5 md:w-6 md:h-6 text-indigo-500" />
+                            <Crown className="shrink-0 w-5 h-5 md:w-6 md:h-6 text-yellow-500" />
                             <h1 className="text-sm md:text-xl font-black text-white tracking-tight italic uppercase truncate">
-                                {tournamentId ? "League" : "Global"} <span className="text-indigo-500">{tournamentId ? "Standings" : "Leaderboard"}</span>
+                                {tournamentId ? "League" : "Global"} <span className="text-indigo-500">{tournamentId ? "Top Profiteers" : "Wealth Ranking"}</span>
                             </h1>
                         </div>
                     </div>
                 </div>
             </header>
 
-            {/* Top Cards Hero replacement */}
-            <div className="max-w-7xl mx-auto px-4 mb-12">
-                <div className="relative overflow-hidden rounded-[40px] p-10 bg-gradient-to-br from-indigo-900/20 via-slate-900 to-slate-950 border border-white/5 text-center shadow-2xl">
-                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-64 bg-indigo-500/10 blur-[100px] rounded-full" />
-                    <div className="relative z-10">
-                        <div className="w-20 h-20 rounded-3xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center mx-auto mb-6 shadow-glow">
-                            <Trophy className="w-10 h-10 text-indigo-500" />
+            {/* Hero Section */}
+            <div className="max-w-7xl mx-auto px-4 mb-12 relative z-10">
+                <div className="relative overflow-hidden rounded-[40px] p-8 md:p-12 bg-slate-900/40 border border-white/5 backdrop-blur-3xl shadow-inner-white">
+                    <div className="absolute top-0 right-0 p-8 opacity-10">
+                        <Trophy className="w-48 h-48 text-indigo-500 transform rotate-12" />
+                    </div>
+                    
+                    <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
+                        <div className="text-center md:text-left">
+                            <h2 className="text-4xl md:text-6xl font-black text-white tracking-tighter mb-4 italic uppercase leading-none">
+                                Wealth & <span className="text-indigo-500">Prowess</span>
+                            </h2>
+                            <p className="text-slate-400 font-bold uppercase tracking-[0.3em] text-[10px] md:text-xs">
+                                {tournamentId ? "The absolute financial elite of this league" : "Global rankings based on net lifetime profit"}
+                            </p>
                         </div>
-                        <h2 className="text-3xl font-black text-white tracking-tighter mb-2 italic uppercase">
-                            {tournamentId ? "The League Race" : "The Hall of Fame"}
-                        </h2>
-                        <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">
-                            {tournamentId ? "Live standings for the current selected league" : "Top performing users of all-time across all leagues"}
-                        </p>
+                        
+                        <div className="flex gap-4">
+                            <div className="px-6 py-4 bg-white/5 border border-white/10 rounded-3xl backdrop-blur-md">
+                                <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1">Top Prize</p>
+                                <p className="text-2xl font-black text-white italic">₹50,000</p>
+                            </div>
+                            <div className="px-6 py-4 bg-white/5 border border-white/10 rounded-3xl backdrop-blur-md">
+                                <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-1">Active Pros</p>
+                                <p className="text-2xl font-black text-white italic">{entries.length}</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <div className="max-w-7xl mx-auto px-4">
-                {loading && entries.length === 0 ? (
-                    <div className="space-y-4">
-                        {[1, 2, 3, 4, 5].map(i => (
-                            <div key={i} className="h-20 bg-slate-900 border border-slate-800 rounded-2xl animate-pulse" />
-                        ))}
-                    </div>
-                ) : (
-                    <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl">
-                        <div className="p-6 border-b border-slate-800 flex justify-between items-center bg-slate-800/20 backdrop-blur-sm">
-                            <div className="flex items-center gap-2">
-                                <TrendingUp className="w-4 h-4 text-blue-500" />
-                                <span className="text-xs font-bold text-slate-300 uppercase tracking-widest">Live Standings</span>
+            <div className="max-w-7xl mx-auto px-4 relative z-10">
+                <div className="flex flex-col gap-6">
+                    {loading ? (
+                        [1, 2, 3, 4, 5].map(i => (
+                            <div key={i} className="h-24 bg-slate-900/40 border border-white/5 rounded-[2.5rem] animate-pulse" />
+                        ))
+                    ) : (
+                        <div className="grid gap-4">
+                            {/* Table Header - Desktop Only */}
+                            <div className="hidden md:grid grid-cols-12 px-10 py-3 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">
+                                <div className="col-span-1">Rank</div>
+                                <div className="col-span-4">Contestant</div>
+                                <div className="col-span-2 text-center">Wins</div>
+                                <div className="col-span-5 text-right">Net Profit</div>
                             </div>
-                            <div className="flex items-center gap-6">
-                                <span className="text-[10px] font-bold text-slate-500 uppercase">Runs</span>
-                                <span className="text-[10px] font-bold text-slate-500 uppercase">S/R</span>
-                            </div>
-                        </div>
 
-                        <div className="divide-y divide-slate-800">
                             {entries.map((entry, index) => (
-                                <div key={entry._id} className={`p-4 md:p-6 flex items-center justify-between hover:bg-slate-800/30 transition-colors ${index < 3 ? 'bg-blue-500/5' : ''}`}>
-                                    <div className="flex items-center gap-3 md:gap-6 min-w-0">
-                                        <div className={`shrink-0 w-7 h-7 md:w-8 md:h-8 rounded-lg flex items-center justify-center font-black text-xs md:text-sm
-                      ${index === 0 ? 'bg-yellow-500 text-yellow-950 shadow-lg shadow-yellow-500/20' :
-                                                index === 1 ? 'bg-slate-300 text-slate-900' :
-                                                    index === 2 ? 'bg-orange-500 text-orange-950' :
-                                                        'text-slate-500 bg-slate-800/50'}`}
+                                <div 
+                                    key={entry._id} 
+                                    className={`group relative grid grid-cols-12 items-center p-5 md:p-7 bg-slate-900/40 border border-white/5 rounded-[2.5rem] transition-all duration-500 hover:bg-slate-800/60 hover:border-indigo-500/30 hover:-translate-y-1 shadow-xl ${index < 3 ? 'bg-gradient-to-r from-indigo-500/5 via-transparent to-transparent border-indigo-500/20' : ''}`}
+                                >
+                                    {/* Rank Indicator */}
+                                    <div className="col-span-2 md:col-span-1 flex items-center gap-4">
+                                        <div className={`w-8 h-8 md:w-10 md:h-10 rounded-2xl flex items-center justify-center font-black text-xs md:text-sm
+                                            ${index === 0 ? 'bg-yellow-500 text-yellow-950 shadow-[0_0_20px_rgba(234,179,8,0.3)]' :
+                                            index === 1 ? 'bg-slate-300 text-slate-950 shadow-[0_0_20px_rgba(203,213,225,0.2)]' :
+                                            index === 2 ? 'bg-orange-500 text-orange-950 shadow-[0_0_20px_rgba(249,115,22,0.2)]' :
+                                            'bg-white/5 text-slate-400 group-hover:text-white'}`}
                                         >
                                             {index + 1}
                                         </div>
+                                    </div>
 
-                                        <div className="flex items-center gap-3 md:gap-4 min-w-0">
-                                            <div className="shrink-0 w-9 h-9 md:w-10 md:h-10 rounded-xl bg-slate-800 flex items-center justify-center text-slate-400 font-bold text-xs md:text-sm">
-                                                {entry.userId?.name?.[0]}
+                                    {/* User Details */}
+                                    <div className="col-span-10 md:col-span-4 flex items-center gap-4">
+                                        <div className="relative">
+                                            <div className="w-10 h-10 md:w-14 md:h-14 rounded-2xl bg-slate-800 border-2 border-white/5 overflow-hidden flex items-center justify-center shadow-inner group-hover:border-indigo-500/50 transition-colors">
+                                                {entry.userId?.image ? (
+                                                    <img src={entry.userId.image} alt="" className="w-full h-full object-cover" />
+                                                ) : (
+                                                    <span className="text-xl font-black text-slate-600 italic uppercase">{entry.userId?.name?.[0] || 'A'}</span>
+                                                )}
                                             </div>
-                                            <div className="min-w-0">
-                                                <p className="text-xs md:text-sm font-bold text-white truncate">{entry.userId?.name || 'Anonymous'}</p>
-                                                <p className="text-[9px] md:text-[10px] text-slate-500 font-medium uppercase tracking-tighter">Verified User</p>
+                                            {index < 3 && (
+                                                <div className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-slate-950 border border-white/10 flex items-center justify-center shadow-lg">
+                                                    <Medal className={`w-3 h-3 ${index === 0 ? 'text-yellow-500' : index === 1 ? 'text-slate-400' : 'text-orange-500'}`} />
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="min-w-0">
+                                            <p className="text-sm md:text-base font-black text-white italic uppercase tracking-tight truncate">{entry.userId?.name || 'Anonymous Pro'}</p>
+                                            <div className="flex items-center gap-2 mt-1">
+                                                <Target className="w-3 h-3 text-slate-600" />
+                                                <p className="text-[9px] md:text-[10px] text-slate-500 font-bold uppercase tracking-widest">{entry.winCount} Match Victories</p>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div className="flex items-center gap-4 md:gap-8 shrink-0">
-                                        <div className="text-right min-w-[50px] md:min-w-[60px]">
-                                            <p className="text-lg md:text-xl font-black text-white leading-none">{entry.totalRuns}</p>
-                                            <p className="text-[9px] md:text-[10px] font-bold text-slate-500 mt-1 uppercase">Runs</p>
-                                        </div>
-                                        <div className="text-right min-w-[50px] md:min-w-[60px]">
-                                            <p className="text-xs md:text-sm font-bold text-blue-500 leading-none">
-                                                {entry.totalBalls > 0 ? ((entry.totalRuns / entry.totalBalls) * 100).toFixed(1) : '0.0'}
+                                    {/* Wins - Desktop only */}
+                                    <div className="hidden md:flex col-span-2 flex-col items-center">
+                                        <p className="text-xl font-black text-indigo-400 italic">{entry.winCount}</p>
+                                        <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest">Contests</p>
+                                    </div>
+
+                                    {/* Profit - Primary Metric */}
+                                    <div className="col-span-12 md:col-span-5 flex items-center justify-end gap-6 mt-4 md:mt-0 pt-4 md:pt-0 border-t md:border-0 border-white/5">
+                                        <div className="text-right">
+                                            <div className="flex items-center justify-end gap-1.5 md:gap-2">
+                                                <IndianRupee className={`w-4 h-4 md:w-6 md:h-6 ${entry.netProfit >= 0 ? 'text-emerald-400' : 'text-red-400'}`} />
+                                                <span className={`text-2xl md:text-4xl font-black italic tracking-tighter ${entry.netProfit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                                                    {Math.abs(entry.netProfit).toLocaleString()}
+                                                </span>
+                                            </div>
+                                            <p className="text-[9px] md:text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] mt-1 shrink-0">
+                                                Net Lifetime Profit
                                             </p>
-                                            <p className="text-[9px] md:text-[10px] font-bold text-slate-500 mt-1 uppercase">SR</p>
+                                        </div>
+                                        <div className="w-10 h-10 rounded-2xl bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20 group-hover:bg-indigo-600 group-hover:border-indigo-400 group-hover:scale-110 transition-all duration-500">
+                                            <TrendingUp className="w-5 h-5 text-indigo-400 group-hover:text-white" />
                                         </div>
                                     </div>
                                 </div>
                             ))}
                         </div>
-                    </div>
-                )}
+                    )}
+                </div>
             </div>
 
-            <div className="max-w-4xl mx-auto px-4 mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-slate-900/50 border border-slate-800 p-6 rounded-3xl flex items-center gap-4">
-                    <Medal className="w-8 h-8 text-yellow-500" />
+            {/* Bottom Insight */}
+            <div className="max-w-4xl mx-auto px-4 mt-16 grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10">
+                <div className="bg-slate-900/40 border border-white/5 p-8 rounded-[2.5rem] backdrop-blur-xl flex items-start gap-5">
+                    <div className="p-3 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl">
+                        <Award className="w-6 h-6 text-indigo-400" />
+                    </div>
                     <div>
-                        <p className="text-xs font-bold text-slate-500 uppercase">Winner Prize</p>
-                        <p className="text-lg font-black text-white">$5,000</p>
+                        <h4 className="text-sm font-black text-white italic uppercase tracking-widest mb-2">The Elite Circle</h4>
+                        <p className="text-slate-500 text-[10px] md:text-xs font-medium leading-relaxed">
+                            Pro-tier rankings are calculated based on entry fees vs winnings. Maintain a positive net profit to unlock exclusive "Host" features.
+                        </p>
                     </div>
                 </div>
-                <div className="bg-slate-900/50 border border-slate-800 p-6 rounded-3xl flex items-center gap-4">
-                    <Award className="w-8 h-8 text-blue-500" />
-                    <div>
-                        <p className="text-xs font-bold text-slate-500 uppercase">Top 100 Reward</p>
-                        <p className="text-lg font-black text-white">VIP Badge</p>
+                <div className="bg-slate-900/40 border border-white/5 p-8 rounded-[2.5rem] backdrop-blur-xl flex items-start gap-5">
+                    <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl">
+                        <TrendingUp className="w-6 h-6 text-emerald-400" />
                     </div>
-                </div>
-                <div className="bg-slate-900/50 border border-slate-800 p-6 rounded-3xl flex items-center gap-4 text-slate-500">
-                    <TrendingUp className="w-8 h-8" />
-                    <p className="text-xs font-medium italic">Ranking updates every 15 seconds during live matches.</p>
+                    <div>
+                        <h4 className="text-sm font-black text-white italic uppercase tracking-widest mb-2">Real-time Updates</h4>
+                        <p className="text-slate-500 text-[10px] md:text-xs font-medium leading-relaxed">
+                            Financial data is synchronized with the Match hub every 30 seconds to ensure absolute transparency across all tiers.
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>

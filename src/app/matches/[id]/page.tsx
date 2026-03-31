@@ -1,14 +1,19 @@
 "use client";
 
 import { useEffect, useState, use } from "react";
-import { ArrowLeft, User, Target, Zap, Info, Calendar, MapPin, Users, Activity, Trophy, X, Star, PartyPopper, RefreshCw, Ban, AlertCircle } from "lucide-react";
+import { ArrowLeft, User, Target, Zap, Info, Calendar, MapPin, Users, Activity, Trophy, X, Star, PartyPopper, RefreshCw, Ban, AlertCircle, Lock } from "lucide-react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { Spinner } from "@/components/ui/Spinner";
+import { ArenaSelectionDialog } from "@/components/ArenaSelectionDialog";
+import { Swords } from "lucide-react";
 
 interface SlotData {
     inningsNumber: number;
-    position: number;
+    position: number | null;
+    isRevealed: boolean;
+    revealTime: string;
+    arenaName: string;
     resolution?: {
         playerName: string;
     };
@@ -19,6 +24,41 @@ interface SlotData {
         sixes: number;
         isOut: boolean;
     };
+}
+
+function RevealCountdown({ targetDate, onComplete }: { targetDate: string, onComplete: () => void }) {
+    const [timeLeft, setTimeLeft] = useState("");
+
+    useEffect(() => {
+        const calculate = () => {
+            const difference = new Date(targetDate).getTime() - new Date().getTime();
+            if (difference <= 0) {
+                onComplete();
+                setTimeLeft("REVEALING...");
+                return;
+            }
+
+            const minutes = Math.floor((difference / 1000 / 60) % 60);
+            const seconds = Math.floor((difference / 1000) % 60);
+
+            return `${minutes}m ${seconds}s`;
+        };
+
+        const timer = setInterval(() => {
+            const result = calculate();
+            if (result) setTimeLeft(result);
+            else clearInterval(timer);
+        }, 1000);
+
+        const initial = calculate();
+        if (initial) setTimeLeft(initial);
+
+        return () => clearInterval(timer);
+    }, [targetDate, onComplete]);
+
+    return (
+        <span className="text-indigo-400 font-black tabular-nums">{timeLeft}</span>
+    );
 }
 
 export default function MatchDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -35,6 +75,7 @@ export default function MatchDetailPage({ params }: { params: Promise<{ id: stri
     const [showAbandonedPopup, setShowAbandonedPopup] = useState(false);
     const [winnerData, setWinnerData] = useState<any>(null);
     const [hasShownPopup, setHasShownPopup] = useState(false);
+    const [isArenaDialogOpen, setIsArenaDialogOpen] = useState(false);
 
     const fetchLeaderboard = async () => {
         try {
@@ -118,6 +159,15 @@ export default function MatchDetailPage({ params }: { params: Promise<{ id: stri
     );
 
     const { match, slots, advanced } = data;
+
+    // Grouping slots by arenaName
+    const groupedSlots = slots.reduce((acc: any, slot: SlotData) => {
+        if (!acc[slot.arenaName]) {
+            acc[slot.arenaName] = [];
+        }
+        acc[slot.arenaName].push(slot);
+        return acc;
+    }, {});
 
     // Helper to find score for a specific team from the advanced scorecard
     const getTeamScore = (teamName: string) => {
@@ -255,48 +305,105 @@ export default function MatchDetailPage({ params }: { params: Promise<{ id: stri
                 {/* Tab Content */}
                 {activeTab === 'slots' && (
                     <div className="space-y-10 animate-in fade-in slide-in-from-bottom-5 duration-700">
-                        <SectionHeader title="Your Assignments" icon={Target} color="indigo" />
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                            <SectionHeader title="Your Assignments" icon={Target} color="indigo" />
+                            {session && (
+                                <button 
+                                    onClick={() => setIsArenaDialogOpen(true)}
+                                    className="flex items-center gap-3 px-8 py-4 bg-purple-600 hover:bg-purple-500 text-white rounded-2xl text-xs font-black italic uppercase tracking-widest transition-all shadow-lg shadow-purple-600/20 active:scale-95"
+                                >
+                                    <Swords className="w-4 h-4" />
+                                    Join More Arenas
+                                </button>
+                            )}
+                        </div>
+
                         {!session ? (
                             <AuthBackdrop message="Personalized assignments are private. Sign in to view your batting slots." />
-                        ) : slots.length === 0 ? (
-                            <EmptyState message="You haven't been assigned to any slots yet." />
+                        ) : Object.keys(groupedSlots).length === 0 ? (
+                            <EmptyState message="You haven't been assigned to any slots yet. Launch into an arena to start playing!" />
                         ) : (
-                            <div className="grid gap-6">
-                                {slots.map((slot: SlotData, idx: number) => (
-                                    <div key={idx} className="relative overflow-hidden bg-[#0A0F1C]/60 border border-white/5 rounded-[1.5rem] md:rounded-[2rem] p-6 md:p-10 backdrop-blur-3xl group hover:border-indigo-500/30 transition-all flex flex-col md:flex-row gap-6 md:gap-10 items-center justify-between shadow-2xl">
-                                        <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 blur-[50px] rounded-full pointer-events-none" />
-                                        <div className="flex items-center gap-4 md:gap-8 w-full md:w-auto relative z-10">
-                                            <div className="w-12 h-12 md:w-16 md:h-16 rounded-xl md:rounded-2xl bg-indigo-600 flex flex-col items-center justify-center shadow-lg shadow-indigo-600/20 group-hover:scale-110 transition-transform">
-                                                <span className="text-[8px] md:text-[10px] font-black text-indigo-100 uppercase mb-0.5">Pos</span>
-                                                <span className="text-lg md:text-2xl font-black text-white leading-none">{slot.position}</span>
+                            <div className="space-y-16">
+                                {Object.entries(groupedSlots).map(([arenaName, arenaSlots]: [string, any], aIdx) => (
+                                    <div key={aIdx} className="space-y-6">
+                                        <div className="flex items-center gap-4 px-2">
+                                            <div className="h-px flex-1 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+                                            <div className="flex items-center gap-3 px-6 py-2 bg-slate-900/40 border border-white/5 rounded-full backdrop-blur-md">
+                                                <Zap className="w-3 h-3 text-purple-400" />
+                                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] italic">{arenaName}</span>
                                             </div>
-                                            <div>
-                                                <h3 className="text-lg md:text-xl font-black text-white tracking-tight uppercase">Innings {slot.inningsNumber}</h3>
-                                                <div className="flex items-center gap-2 mt-1 md:mt-2">
-                                                    <div className="w-3.5 h-3.5 md:w-4 md:h-4 rounded-full bg-indigo-500/20 flex items-center justify-center">
-                                                        <Activity className="w-2 md:w-2.5 h-2 md:h-2.5 text-indigo-500" />
-                                                    </div>
-                                                    <span className="text-[8px] md:text-[10px] font-black text-indigo-400/80 uppercase tracking-[0.15em] md:tracking-[0.2em] whitespace-nowrap">
-                                                        Playing as {slot.resolution?.playerName || "TBD"}
-                                                    </span>
-                                                </div>
-                                            </div>
+                                            <div className="h-px flex-1 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
                                         </div>
 
-                                        <div className="flex gap-4 md:gap-10 items-end md:items-center flex-wrap md:flex-nowrap border-t md:border-t-0 md:border-l border-white/5 pt-6 md:pt-0 md:pl-10 relative z-10 w-full md:w-auto justify-between md:justify-end">
-                                            <div className="flex gap-4 sm:gap-6 md:gap-10 overflow-x-auto scrollbar-hide pb-2 md:pb-0">
-                                                <StatItem label="RUNS" value={slot.score?.runs ?? 0} primary />
-                                                <StatItem label="BALLS" value={slot.score?.balls ?? 0} />
-                                                <StatItem label="4s" value={slot.score?.fours ?? 0} />
-                                                <StatItem label="6s" value={slot.score?.sixes ?? 0} />
-                                                <StatItem label="S/R" value={slot.score?.balls ? ((slot.score.runs / slot.score.balls) * 100).toFixed(1) : '0.0'} />
-                                            </div>
-                                            <div className="flex flex-col items-end shrink-0">
-                                                <span className="text-[8px] md:text-[10px] font-black text-slate-500 uppercase mb-1 md:mb-2 tracking-widest">Status</span>
-                                                <span className={`px-3 md:px-4 py-1 rounded-lg text-[8px] md:text-[9px] font-black uppercase tracking-widest ${slot.score?.isOut ? 'bg-red-500/10 text-red-500 border border-red-500/20' : 'bg-green-500/10 text-green-500 border border-green-500/20'}`}>
-                                                    {slot.score?.isOut ? 'OUT' : ((slot.score?.balls ?? 0) > 0 ? 'BATTING' : 'DNB')}
-                                                </span>
-                                            </div>
+                                        <div className="grid gap-6">
+                                            {arenaSlots.map((slot: SlotData, idx: number) => {
+                                                const isRevealed = slot.isRevealed;
+
+                                                return (
+                                                    <div key={idx} className={`relative overflow-hidden ${!isRevealed ? 'bg-indigo-900/10 border-indigo-500/30' : 'bg-[#0A0F1C]/60 border-white/5'} border rounded-[1.5rem] md:rounded-[2rem] p-6 md:p-10 backdrop-blur-3xl group hover:border-indigo-500/30 transition-all flex flex-col md:flex-row gap-6 md:gap-10 items-center justify-between shadow-2xl`}>
+                                                        {/* Slot Content (keeping original layout) */}
+                                                        <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 blur-[50px] rounded-full pointer-events-none" />
+                                                        <div className="flex items-center gap-4 md:gap-8 w-full md:w-auto relative z-10">
+                                                            <div className={`w-12 h-12 md:w-16 md:h-16 rounded-xl md:rounded-2xl flex flex-col items-center justify-center shadow-lg transition-transform ${isRevealed ? 'bg-indigo-600 shadow-indigo-600/20 group-hover:scale-110' : 'bg-slate-800 border border-white/5 animate-pulse'}`}>
+                                                                <span className="text-[8px] md:text-[10px] font-black text-indigo-100/50 uppercase mb-0.5">Pos</span>
+                                                                <span className={`text-lg md:text-2xl font-black text-white leading-none ${!isRevealed ? 'tracking-widest' : ''}`}>
+                                                                    {isRevealed ? slot.position : "??"}
+                                                                </span>
+                                                            </div>
+                                                            <div>
+                                                                <h3 className="text-lg md:text-xl font-black text-white tracking-tight uppercase">
+                                                                    Innings {slot.inningsNumber}
+                                                                </h3>
+                                                                <div className="flex items-center gap-2 mt-1 md:mt-2">
+                                                                    <div className={`w-3.5 h-3.5 md:w-4 md:h-4 rounded-full flex items-center justify-center ${isRevealed ? 'bg-indigo-500/20' : 'bg-amber-500/20'}`}>
+                                                                        {isRevealed ? (
+                                                                            <Activity className="w-2 md:w-2.5 h-2 md:h-2.5 text-indigo-500" />
+                                                                        ) : (
+                                                                            <Lock className="w-2 md:w-2.5 h-2 md:h-2.5 text-amber-500" />
+                                                                        )}
+                                                                    </div>
+                                                                    <span className={`text-[8px] md:text-[10px] font-black uppercase tracking-[0.15em] md:tracking-[0.2em] whitespace-nowrap ${isRevealed ? 'text-indigo-400/80' : 'text-amber-500/80'}`}>
+                                                                        {isRevealed ? (
+                                                                            `Playing as ${slot.resolution?.playerName || "TBD"}`
+                                                                        ) : (
+                                                                            <span className="flex items-center gap-2">
+                                                                                Position reveal in <RevealCountdown targetDate={slot.revealTime} onComplete={() => fetchMatchData(true)} />
+                                                                            </span>
+                                                                        )}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="flex gap-4 md:gap-10 items-end md:items-center flex-wrap md:flex-nowrap border-t md:border-t-0 md:border-l border-white/5 pt-6 md:pt-0 md:pl-10 relative z-10 w-full md:w-auto justify-between md:justify-end">
+                                                            {isRevealed ? (
+                                                                <>
+                                                                    <div className="flex gap-4 sm:gap-6 md:gap-10 overflow-x-auto scrollbar-hide pb-2 md:pb-0">
+                                                                        <StatItem label="RUNS" value={slot.score?.runs ?? 0} primary />
+                                                                        <StatItem label="BALLS" value={slot.score?.balls ?? 0} />
+                                                                        <StatItem label="4s" value={slot.score?.fours ?? 0} />
+                                                                        <StatItem label="6s" value={slot.score?.sixes ?? 0} />
+                                                                        <StatItem label="S/R" value={slot.score?.balls ? ((slot.score.runs / slot.score.balls) * 100).toFixed(1) : '0.0'} />
+                                                                    </div>
+                                                                    <div className="flex flex-col items-end shrink-0">
+                                                                        <span className="text-[8px] md:text-[10px] font-black text-slate-500 uppercase mb-1 md:mb-2 tracking-widest">Status</span>
+                                                                        <span className={`px-3 md:px-4 py-1 rounded-lg text-[8px] md:text-[9px] font-black uppercase tracking-widest ${slot.score?.isOut ? 'bg-red-500/10 text-red-500 border border-red-500/20' : 'bg-green-500/10 text-green-500 border border-green-500/20'}`}>
+                                                                            {slot.score?.isOut ? 'OUT' : ((slot.score?.balls ?? 0) > 0 ? 'BATTING' : 'DNB')}
+                                                                        </span>
+                                                                    </div>
+                                                                </>
+                                                            ) : (
+                                                                <div className="flex flex-col items-end gap-1">
+                                                                    <div className="flex items-center gap-2 px-4 py-2 bg-indigo-500/10 border border-indigo-500/30 rounded-xl">
+                                                                        <Zap className="w-3.5 h-3.5 text-indigo-400" />
+                                                                        <span className="text-[10px] font-black text-white italic tracking-widest uppercase">Blind Draft Active</span>
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
                                         </div>
                                     </div>
                                 ))}
@@ -551,6 +658,14 @@ export default function MatchDetailPage({ params }: { params: Promise<{ id: stri
                     </div>
                 )
             }
+
+            <ArenaSelectionDialog
+                isOpen={isArenaDialogOpen}
+                onClose={() => setIsArenaDialogOpen(false)}
+                matchId={matchId}
+                matchName={`${match.teams[0].shortName} VS ${match.teams[1].shortName}`}
+                onJoinSuccess={() => fetchMatchData(true)}
+            />
         </div>
     );
 }

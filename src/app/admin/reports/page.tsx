@@ -16,6 +16,8 @@ import {
     Activity,
     ArrowUpRight,
     ChevronDown,
+    Wallet,
+    Zap,
     User as UserIcon
 } from "lucide-react";
 import Link from "next/link";
@@ -74,51 +76,91 @@ const MasterReportTemplate = React.forwardRef<HTMLDivElement, { week: any }>((({
                     </div>
                     <div className="text-right">
                         <p className="text-sm font-black text-slate-500 uppercase tracking-widest leading-relaxed">Platform Authority</p>
-                        <p className="text-2xl font-black text-white italic">WorldCupHub Intelligence</p>
+                        <p className="text-2xl font-black text-white italic">WorldCupHub Financial Audit</p>
                     </div>
                 </div>
 
                 <div className="mt-20 space-y-10">
                     <h2 className="text-3xl font-black uppercase tracking-widest flex items-center gap-4">
                         <Trophy className="w-8 h-8 text-amber-500" />
-                        Executive Summary
+                        Executive Financial Summary
                     </h2>
-                    <div className="grid grid-cols-3 gap-10">
+                    <div className="grid grid-cols-4 gap-10">
                         <div className="p-10 rounded-[3rem] bg-indigo-500/5 border border-indigo-500/10">
-                            <p className="text-xs font-black text-indigo-400 uppercase tracking-[0.2em] mb-3">Participation</p>
-                            <h3 className="text-5xl font-black">{week.users.length} <span className="text-xl text-slate-600">Players</span></h3>
+                            <p className="text-xs font-black text-indigo-400 uppercase tracking-[0.2em] mb-3">Participants</p>
+                            <h3 className="text-4xl font-black">{week.users.length} <span className="text-lg text-slate-600">Users</span></h3>
                         </div>
                         <div className="p-10 rounded-[3rem] bg-emerald-500/5 border border-emerald-500/10">
-                            <p className="text-xs font-black text-emerald-400 uppercase tracking-[0.2em] mb-3">Group Volume</p>
-                            <h3 className="text-5xl font-black">{week.users.reduce((acc: number, u: any) => acc + u.stats.runs, 0)} <span className="text-xl text-slate-600">Runs</span></h3>
+                            <p className="text-xs font-black text-emerald-400 uppercase tracking-[0.2em] mb-3">Platform Turnover</p>
+                            <h3 className="text-4xl font-black">₹{week.totalTurnover.toLocaleString()}</h3>
+                        </div>
+                        <div className="p-10 rounded-[3rem] bg-amber-500/5 border border-amber-500/10">
+                            <p className="text-xs font-black text-amber-500 uppercase tracking-[0.2em] mb-3">Admin Yield</p>
+                            <h3 className="text-4xl font-black">₹{week.totalAdminYield.toLocaleString()}</h3>
                         </div>
                         <div className="p-10 rounded-[3rem] bg-purple-500/5 border border-purple-500/10">
-                            <p className="text-xs font-black text-purple-400 uppercase tracking-[0.2em] mb-3">Settlement Status</p>
-                            <h3 className="text-5xl font-black">VERIFIED</h3>
+                            <p className="text-xs font-black text-purple-400 uppercase tracking-[0.2em] mb-3">Sub-Admin Net</p>
+                            <h3 className="text-4xl font-black">₹{week.subAdminRevenue.toLocaleString()}</h3>
                         </div>
                     </div>
                 </div>
 
                 <div className="mt-20 flex-1">
+                    <h2 className="text-3xl font-black uppercase tracking-widest flex items-center gap-4 mb-8">
+                        <FileText className="w-8 h-8 text-indigo-500" />
+                        Match Financial Audit Log
+                    </h2>
                     <table className="w-full border-collapse">
                         <thead>
-                            <tr className="border-b border-white/10 text-left">
-                                <th className="py-8 text-sm font-black text-slate-500 uppercase tracking-widest">Rank</th>
-                                <th className="py-8 text-sm font-black text-slate-500 uppercase tracking-widest">Player</th>
-                                <th className="py-8 text-sm font-black text-slate-500 uppercase tracking-widest">Total Runs</th>
-                                <th className="py-8 text-sm font-black text-slate-500 uppercase tracking-widest text-right">Net Settlement</th>
+                            <tr className="border-b border-white/10 text-left bg-white/5">
+                                <th className="py-8 px-6 text-sm font-black text-slate-500 uppercase tracking-widest">Match Identity</th>
+                                <th className="py-8 px-6 text-sm font-black text-slate-500 uppercase tracking-widest">Enrolled</th>
+                                <th className="py-8 px-6 text-sm font-black text-slate-500 uppercase tracking-widest">Gross Turnover</th>
+                                <th className="py-8 px-6 text-sm font-black text-slate-500 uppercase tracking-widest text-right">Admin Take</th>
+                                <th className="py-8 px-6 text-sm font-black text-slate-500 uppercase tracking-widest text-right">Sub-Admin Cut</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {week.matchReports?.map((m: any, i: number) => (
+                                <tr key={i} className="border-b border-white/5">
+                                    <td className="py-8 px-6">
+                                        <p className="text-2xl font-black uppercase tracking-tighter italic">{m.name}</p>
+                                        <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mt-1">{new Date(m.date).toLocaleDateString()}</p>
+                                    </td>
+                                    <td className="py-8 px-6 text-xl font-black text-slate-400">{m.enrolled} Slots</td>
+                                    <td className="py-8 px-6 text-xl font-black">₹{m.turnover.toLocaleString()}</td>
+                                    <td className="py-8 px-6 text-right text-2xl font-black text-emerald-400">₹{m.adminTake.toLocaleString()}</td>
+                                    <td className="py-8 px-6 text-right text-2xl font-black text-purple-400">₹{m.subAdminCut.toLocaleString()}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div className="mt-32">
+                    <h2 className="text-3xl font-black uppercase tracking-widest flex items-center gap-4 mb-8">
+                        <Users className="w-8 h-8 text-indigo-500" />
+                        Player Breakdown Index
+                    </h2>
+                    <table className="w-full border-collapse">
+                        <thead>
+                            <tr className="border-b border-white/10 text-left bg-white/5">
+                                <th className="py-8 px-6 text-sm font-black text-slate-500 uppercase tracking-widest">Rank</th>
+                                <th className="py-8 px-6 text-sm font-black text-slate-500 uppercase tracking-widest">Operational Identity</th>
+                                <th className="py-8 px-6 text-sm font-black text-slate-500 uppercase tracking-widest">Match Turnover</th>
+                                <th className="py-8 px-6 text-sm font-black text-slate-500 uppercase tracking-widest text-right">Net Settlement</th>
                             </tr>
                         </thead>
                         <tbody>
                             {week.users.map((u: any, i: number) => (
                                 <tr key={i} className="border-b border-white/5">
-                                    <td className="py-8 text-xl font-black text-slate-700">#{i + 1}</td>
-                                    <td className="py-8 flex items-center gap-6">
+                                    <td className="py-8 px-6 text-xl font-black text-slate-700">#{i + 1}</td>
+                                    <td className="py-8 px-6 flex items-center gap-6">
                                         <span className="text-2xl font-black uppercase tracking-tighter italic">{u.name}</span>
                                     </td>
-                                    <td className="py-8 text-xl font-black">{u.stats.runs}</td>
-                                    <td className="py-8 text-right text-3xl font-black" style={{ color: u.stats.netWorth >= 0 ? '#10b981' : '#f43f5e' }}>
-                                        {u.stats.netWorth >= 0 ? '+' : ''}{u.stats.netWorth}
+                                    <td className="py-8 px-6 text-xl font-black">₹{u.stats.turnover.toLocaleString()}</td>
+                                    <td className="py-8 px-6 text-right text-3xl font-black" style={{ color: u.stats.netWorth >= 0 ? '#10b981' : '#f43f5e' }}>
+                                        {u.stats.netWorth >= 0 ? '+' : ''}₹{u.stats.netWorth.toLocaleString()}
                                     </td>
                                 </tr>
                             ))}
@@ -127,7 +169,7 @@ const MasterReportTemplate = React.forwardRef<HTMLDivElement, { week: any }>((({
                 </div>
 
                 <div className="pt-20 border-t border-white/10 flex justify-between items-center opacity-30 mt-auto">
-                    <p className="text-sm font-black uppercase tracking-widest italic">Confidential Performance Analytics</p>
+                    <p className="text-sm font-black uppercase tracking-widest italic">Confidential Financial Analytics</p>
                     <p className="text-sm font-black uppercase tracking-widest">Page 1 of {week.users.length + 1}</p>
                 </div>
             </div>
@@ -143,14 +185,14 @@ const MasterReportTemplate = React.forwardRef<HTMLDivElement, { week: any }>((({
                             <div>
                                 <h2 className="text-6xl font-black tracking-tighter uppercase italic">{u.name}</h2>
                                 <div className="flex items-center gap-4 mt-2">
-                                    <span className="px-4 py-1 bg-indigo-500 rounded-full text-xs font-black uppercase tracking-widest">Player Insights</span>
-                                    <span className="text-slate-500 font-bold uppercase tracking-widest text-sm">Ranked #{i + 1} globally</span>
+                                    <span className="px-4 py-1 bg-indigo-500 rounded-full text-xs font-black uppercase tracking-widest">Financial Identity</span>
+                                    <span className="text-slate-500 font-bold uppercase tracking-widest text-sm">Wealth Index Rank #{i + 1}</span>
                                 </div>
                             </div>
                         </div>
                         <div className="text-right">
                             <span className="text-6xl font-black tracking-tighter" style={{ color: u.stats.netWorth >= 0 ? '#10b981' : '#f43f5e' }}>
-                                {u.stats.netWorth >= 0 ? '+' : ''}{u.stats.netWorth}
+                                {u.stats.netWorth >= 0 ? '+' : ''}₹{u.stats.netWorth.toLocaleString()}
                             </span>
                             <p className="text-sm font-black text-slate-500 uppercase tracking-widest mt-2">{u.stats.netWorth >= 0 ? 'Profit Result' : 'Loss Result'}</p>
                         </div>
@@ -163,12 +205,12 @@ const MasterReportTemplate = React.forwardRef<HTMLDivElement, { week: any }>((({
                                 {u.matches.map((m: any, mi: number) => (
                                     <div key={mi} className="flex items-center justify-between p-6 bg-white/5 rounded-3xl border border-white/5">
                                         <div>
-                                            <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">{new Date(m.date).toLocaleDateString([], { month: 'short', day: 'numeric' })}</p>
+                                            <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">{new Date(m.date).toLocaleDateString([], { month: 'short', day: 'numeric' })} &middot; {m.venue}</p>
                                             <p className="font-black text-lg">{m.runs} Runs <span className="text-slate-500 text-sm font-normal">({m.balls} balls)</span></p>
                                         </div>
                                         <div className="text-right">
-                                            <p className={`font-black ${m.pnl >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>{m.pnl >= 0 ? '+' : ''}{m.pnl}</p>
-                                            <p className="text-[10px] font-black uppercase text-slate-600">{m.venue}</p>
+                                            <p className="text-[10px] font-black uppercase text-slate-600 mb-1">{m.outcome}</p>
+                                            <p className="font-black text-lg text-slate-400">Turnover Context Prepared</p>
                                         </div>
                                     </div>
                                 ))}
@@ -176,26 +218,22 @@ const MasterReportTemplate = React.forwardRef<HTMLDivElement, { week: any }>((({
                         </div>
 
                         <div className="space-y-12">
-                            <h3 className="text-xl font-black uppercase tracking-[0.3em] text-indigo-400">Settlement Ledger</h3>
-                            <div className="space-y-4">
-                                {u.ledger.map((l: any, li: number) => (
-                                    <div key={li} className="flex items-center justify-between p-6 bg-white/5 rounded-3xl border border-white/5">
-                                        <div className="flex items-center gap-4">
-                                            <div className="w-2 h-2 rounded-full bg-slate-500" />
-                                            <span className="font-black text-lg uppercase tracking-tighter">{l.name}</span>
-                                        </div>
-                                        <span className={`font-black text-lg ${l.amount >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                                            {l.amount >= 0 ? 'Receive ' : 'Pay '}{Math.abs(l.amount)}
-                                        </span>
-                                    </div>
-                                ))}
-                                {u.ledger.length === 0 && <p className="text-slate-600 font-black uppercase tracking-widest text-xs italic">No financial settlements recorded</p>}
+                            <h3 className="text-xl font-black uppercase tracking-[0.3em] text-indigo-400">Performance Metrics</h3>
+                            <div className="grid grid-cols-2 gap-6">
+                                <div className="p-8 bg-white/5 rounded-3xl border border-white/5">
+                                    <p className="text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Weekly Turnover</p>
+                                    <p className="text-3xl font-black">₹{u.stats.turnover.toLocaleString()}</p>
+                                </div>
+                                <div className="p-8 bg-white/5 rounded-3xl border border-white/5">
+                                    <p className="text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Win Rate</p>
+                                    <p className="text-3xl font-black">{Math.round((u.stats.wins / u.matches.length) * 100)}%</p>
+                                </div>
                             </div>
                         </div>
                     </div>
 
                     <div className="pt-20 border-t border-white/10 flex justify-between items-center opacity-30 mt-auto">
-                        <p className="text-sm font-black uppercase tracking-widest italic">Proprietary Performance Log</p>
+                        <p className="text-sm font-black uppercase tracking-widest italic">Proprietary Financial Statement</p>
                         <p className="text-sm font-black uppercase tracking-widest">Page {i + 2} of {week.users.length + 1}</p>
                     </div>
                 </div>
@@ -354,7 +392,7 @@ export default function AdminReportsPage() {
                 </div>
 
                 {/* Master Stats Row */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
                     <div className="p-8 rounded-[2rem] bg-indigo-500/5 border border-indigo-500/10 backdrop-blur-xl relative overflow-hidden group">
                         <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:scale-110 transition-transform">
                             <Users className="w-12 h-12 text-indigo-400" />
@@ -366,27 +404,113 @@ export default function AdminReportsPage() {
                         <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:scale-110 transition-transform">
                             <TrendingUp className="w-12 h-12 text-emerald-400" />
                         </div>
-                        <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-2">Total Runs</p>
-                        <h2 className="text-4xl font-black">{currentWeek.users.reduce((acc: number, u: any) => acc + u.stats.runs, 0)}</h2>
+                        <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-2">Platform Turnover</p>
+                        <h2 className="text-4xl font-black">₹{currentWeek.totalTurnover.toLocaleString()}</h2>
                     </div>
-                    <div className="p-8 rounded-[2rem] bg-amber-500/5 border border-amber-500/10 backdrop-blur-xl relative overflow-hidden group">
+                    <div className="p-8 rounded-[2rem] bg-indigo-500/5 border border-indigo-500/10 backdrop-blur-xl relative overflow-hidden group">
                         <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:scale-110 transition-transform">
-                            <Activity className="w-12 h-12 text-amber-400" />
+                            <Wallet className="w-12 h-12 text-indigo-400" />
                         </div>
-                        <p className="text-[10px] font-black text-amber-400 uppercase tracking-widest mb-2">Total Balls</p>
-                        <h2 className="text-4xl font-black">{currentWeek.users.reduce((acc: number, u: any) => acc + u.stats.balls, 0)}</h2>
+                        <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-2">Admin Capital Yield</p>
+                        <h2 className="text-4xl font-black text-emerald-400">₹{currentWeek.totalAdminYield.toLocaleString()}</h2>
                     </div>
                     <div className="p-8 rounded-[2rem] bg-purple-500/5 border border-purple-500/10 backdrop-blur-xl relative overflow-hidden group">
                         <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:scale-110 transition-transform">
-                            <Trophy className="w-12 h-12 text-purple-400" />
+                            <Zap className="w-12 h-12 text-purple-400" />
                         </div>
-                        <p className="text-[10px] font-black text-purple-400 uppercase tracking-widest mb-2">Top Performer</p>
+                        <p className="text-[10px] font-black text-purple-400 uppercase tracking-widest mb-2">Sub-Admin Net Yield</p>
+                        <h2 className="text-4xl font-black text-purple-400">₹{currentWeek.subAdminRevenue.toLocaleString()}</h2>
+                    </div>
+                    <div className="p-8 rounded-[2rem] bg-amber-500/5 border border-amber-500/10 backdrop-blur-xl relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:scale-110 transition-transform">
+                            <Trophy className="w-12 h-12 text-amber-400" />
+                        </div>
+                        <p className="text-[10px] font-black text-amber-400 uppercase tracking-widest mb-2">Elite Earner</p>
                         <h2 className="text-2xl font-black whitespace-nowrap overflow-hidden text-ellipsis italic">
-                            {currentWeek.users.reduce((prev: any, current: any) => (prev.stats.runs > current.stats.runs) ? prev : current).name}
+                            {currentWeek.users[0]?.name || 'N/A'}
                         </h2>
                         <p className="text-[8px] font-bold text-slate-500 uppercase tracking-widest mt-1">
-                            {currentWeek.users.reduce((prev: any, current: any) => (prev.stats.runs > current.stats.runs) ? prev : current).stats.runs} Runs Scored
+                            ₹{currentWeek.users[0]?.stats.netWorth.toLocaleString() || 0} Net Profit
                         </p>
+                    </div>
+                </div>
+
+                {/* Match Financial Audit Log */}
+                <div className="space-y-6">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                            <div className="p-3 rounded-2xl bg-indigo-500/10 border border-indigo-500/20">
+                                <FileText className="w-6 h-6 text-indigo-400" />
+                            </div>
+                            <div>
+                                <h3 className="text-2xl font-black italic tracking-tighter uppercase mb-0.5">Match Financial Audit</h3>
+                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Match-by-Match Revenue Attribution</p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <div className="px-4 py-1.5 rounded-full bg-white/5 border border-white/5 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                                {currentWeek.matchReports?.length || 0} Matches Audited
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="rounded-[2.5rem] border border-white/5 bg-slate-900/50 backdrop-blur-3xl overflow-hidden">
+                        <div className="overflow-x-auto min-w-full inline-block align-middle">
+                            <table className="w-full text-left">
+                                <thead>
+                                    <tr className="border-b border-white/5 bg-slate-950/20">
+                                        <th className="px-8 py-6 text-[10px] font-black text-slate-500 uppercase tracking-widest">Match Identity</th>
+                                        <th className="px-8 py-6 text-[10px] font-black text-slate-500 uppercase tracking-widest">Enrolled</th>
+                                        <th className="px-8 py-6 text-[10px] font-black text-slate-500 uppercase tracking-widest">Gross Turnover</th>
+                                        <th className="px-8 py-6 text-[10px] font-black text-slate-500 uppercase tracking-widest text-right">Admin Take (Net)</th>
+                                        <th className="px-8 py-6 text-[10px] font-black text-slate-500 uppercase tracking-widest text-right">Sub-Admin Cut</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {currentWeek.matchReports?.map((m: any, i: number) => (
+                                        <motion.tr
+                                            key={m.id}
+                                            initial={{ opacity: 0, x: -10 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            transition={{ delay: i * 0.05 }}
+                                            className="border-b border-white/5 hover:bg-white/[0.02] transition-colors group"
+                                        >
+                                            <td className="px-8 py-6">
+                                                <div>
+                                                    <div className="font-black text-lg group-hover:text-indigo-400 transition-colors uppercase tracking-tighter italic whitespace-nowrap">{m.name}</div>
+                                                    <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                                                        {new Date(m.date).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })} &middot; {m.venue}
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td className="px-8 py-6">
+                                                <div className="inline-flex items-center px-3 py-1 rounded-full bg-slate-950/50 border border-white/5 font-black text-xs text-slate-400 italic">
+                                                    {m.enrolled} Slots
+                                                </div>
+                                            </td>
+                                            <td className="px-8 py-6">
+                                                <div className="font-black text-xl text-white tracking-tighter">₹{m.turnover.toLocaleString()}</div>
+                                            </td>
+                                            <td className="px-8 py-6 text-right">
+                                                <div className="font-black text-xl text-emerald-400 tracking-tighter">₹{m.adminTake.toLocaleString()}</div>
+                                                <p className="text-[8px] font-bold text-slate-600 uppercase tracking-widest mt-0.5">Platform Yield</p>
+                                            </td>
+                                            <td className="px-8 py-6 text-right">
+                                                <div className="font-black text-xl text-purple-400 tracking-tighter">₹{m.subAdminCut.toLocaleString()}</div>
+                                                <p className="text-[8px] font-bold text-slate-600 uppercase tracking-widest mt-0.5">Network Allocation</p>
+                                            </td>
+                                        </motion.tr>
+                                    ))}
+                                    {(!currentWeek.matchReports || currentWeek.matchReports.length === 0) && (
+                                        <tr>
+                                            <td colSpan={5} className="py-20 text-center opacity-20">
+                                                <p className="text-sm font-black uppercase tracking-[0.5em]">No Match Activity Recorded</p>
+                                            </td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
 
@@ -407,9 +531,9 @@ export default function AdminReportsPage() {
                             <thead>
                                 <tr className="border-b border-white/5 bg-slate-950/20">
                                     <th className="px-8 py-6 text-[10px] font-black text-slate-500 uppercase tracking-widest">Rank</th>
-                                    <th className="px-8 py-6 text-[10px] font-black text-slate-500 uppercase tracking-widest">Player</th>
-                                    <th className="px-8 py-6 text-[10px] font-black text-slate-500 uppercase tracking-widest">Stats</th>
-                                    <th className="px-8 py-6 text-[10px] font-black text-slate-500 uppercase tracking-widest text-right">Settlement (P&L)</th>
+                                    <th className="px-8 py-6 text-[10px] font-black text-slate-500 uppercase tracking-widest">Operational Identity</th>
+                                    <th className="px-8 py-6 text-[10px] font-black text-slate-500 uppercase tracking-widest">Economic Activity</th>
+                                    <th className="px-8 py-6 text-[10px] font-black text-slate-500 uppercase tracking-widest text-right">Net Weekly Earnings</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -427,7 +551,7 @@ export default function AdminReportsPage() {
                                                     className={`border-b border-white/5 hover:bg-white/[0.03] transition-colors group cursor-pointer ${isExpanded ? 'bg-white/[0.05]' : ''}`}
                                                 >
                                                     <td className="px-8 py-6">
-                                                        <div className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-900 border border-white/5 font-black text-xs text-slate-500 group-hover:border-white/20 transition-all">
+                                                        <div className={`flex items-center justify-center w-8 h-8 rounded-full bg-slate-900 border font-black text-xs transition-all ${i < 3 ? 'text-amber-500 border-amber-500/20' : 'text-slate-500 border-white/5 group-hover:border-white/20'}`}>
                                                             {i + 1}
                                                         </div>
                                                     </td>
@@ -438,19 +562,19 @@ export default function AdminReportsPage() {
                                                             </div>
                                                             <div>
                                                                 <div className="font-black text-lg group-hover:text-indigo-400 transition-colors uppercase tracking-tighter italic">{u.name}</div>
-                                                                <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{u.matches.length} Match Cycle</div>
+                                                                <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{u.email}</div>
                                                             </div>
                                                         </div>
                                                     </td>
                                                     <td className="px-8 py-6">
                                                         <div className="flex items-center gap-6">
                                                             <div>
-                                                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Runs</p>
-                                                                <p className="text-xl font-black text-white">{u.stats.runs}</p>
+                                                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Turnover</p>
+                                                                <p className="text-xl font-black text-white">₹{u.stats.turnover.toLocaleString()}</p>
                                                             </div>
                                                             <div className="w-px h-8 bg-white/5" />
                                                             <div>
-                                                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Outcome</p>
+                                                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Efficiency</p>
                                                                 <p className="text-sm font-black whitespace-nowrap">
                                                                     <span className="text-emerald-500">{u.stats.wins}W</span>
                                                                     <span className="text-slate-500 mx-1">/</span>
@@ -463,10 +587,10 @@ export default function AdminReportsPage() {
                                                         <div className="inline-flex items-center gap-6">
                                                             <div className="inline-flex flex-col items-end">
                                                                 <span className={`text-2xl font-black tracking-tighter ${u.stats.netWorth >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                                                                    {u.stats.netWorth >= 0 ? '+' : ''}{u.stats.netWorth}
+                                                                    {u.stats.netWorth >= 0 ? '+' : ''}₹{u.stats.netWorth.toLocaleString()}
                                                                 </span>
                                                                 <div className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border ${u.stats.netWorth >= 0 ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500' : 'bg-rose-500/10 border-rose-500/20 text-rose-500'}`}>
-                                                                    {u.stats.netWorth >= 0 ? 'Net Profit' : 'Net Loss'}
+                                                                    {u.stats.netWorth >= 0 ? 'Gross Profit' : 'Gross Loss'}
                                                                 </div>
                                                             </div>
                                                             <div className={`p-2 rounded-xl bg-white/5 border border-white/5 transition-transform ${isExpanded ? 'rotate-180 text-indigo-400' : 'text-slate-500 group-hover:text-white'}`}>
@@ -491,9 +615,9 @@ export default function AdminReportsPage() {
                                                                     <div className="space-y-6">
                                                                         <div className="flex items-center justify-between">
                                                                             <h4 className="text-xs font-black uppercase tracking-[0.3em] text-indigo-400 flex items-center gap-2">
-                                                                                <Activity className="w-3 h-3" /> Match Evidence
+                                                                                <Activity className="w-3 h-3" /> Match Activity Log
                                                                             </h4>
-                                                                            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{u.matches.length} Matches Found</span>
+                                                                            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{u.matches.length} Operations Found</span>
                                                                         </div>
                                                                         <div className="space-y-3">
                                                                             {u.matches.map((m: any, mi: number) => (
@@ -507,45 +631,37 @@ export default function AdminReportsPage() {
                                                                                         </p>
                                                                                     </div>
                                                                                     <div className="text-right">
-                                                                                        <p className={`font-black text-sm ${m.pnl >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                                                                                            {m.pnl >= 0 ? '+' : ''}{m.pnl}
-                                                                                        </p>
-                                                                                        <p className="text-[8px] font-black uppercase text-slate-600 tracking-widest">{m.outcome}</p>
+                                                                                        <p className="font-black text-[10px] text-slate-500 uppercase tracking-widest mb-1">{m.outcome}</p>
+                                                                                        <div className="px-2 py-0.5 rounded-md bg-white/5 border border-white/5 text-[7px] font-black uppercase text-indigo-400 tracking-widest">
+                                                                                            Turnover Audited
+                                                                                        </div>
                                                                                     </div>
                                                                                 </div>
                                                                             ))}
                                                                         </div>
                                                                     </div>
 
-                                                                    {/* Settlement Ledger */}
+                                                                    {/* Net Wealth Movement */}
                                                                     <div className="space-y-6">
                                                                         <div className="flex items-center justify-between">
                                                                             <h4 className="text-xs font-black uppercase tracking-[0.3em] text-indigo-400 flex items-center gap-2">
-                                                                                <TrendingUp className="w-3 h-3" /> Settlement Ledger
+                                                                                <TrendingUp className="w-3 h-3" /> Net Wealth Movement
                                                                             </h4>
-                                                                            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{u.ledger.length} Records</span>
+                                                                            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Aggregate Calculated</span>
                                                                         </div>
                                                                         <div className="space-y-3">
-                                                                            {u.ledger.map((l: any, li: number) => (
-                                                                                <div key={li} className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5 hover:border-white/10 transition-colors">
-                                                                                    <div className="flex items-center gap-3">
-                                                                                        <div className="w-1.5 h-1.5 rounded-full bg-indigo-500/50" />
-                                                                                        <span className="font-black text-sm uppercase tracking-tighter text-slate-300">{l.name}</span>
-                                                                                    </div>
-                                                                                    <div className="flex items-center gap-2">
-                                                                                        <span className={`font-black text-sm ${l.amount >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                                                                                            {l.amount >= 0 ? '+' : ''}{l.amount}
-                                                                                        </span>
-                                                                                        <ArrowUpRight className={`w-3 h-3 opacity-30 ${l.amount >= 0 ? 'text-emerald-500' : 'text-rose-500 rotate-90'}`} />
-                                                                                    </div>
+                                                                            <div className="p-10 bg-indigo-500/5 rounded-[2.5rem] border border-indigo-500/10 flex flex-col items-center text-center">
+                                                                                <div className="w-16 h-16 rounded-3xl bg-indigo-500/10 flex items-center justify-center mb-6">
+                                                                                    <Wallet className="w-8 h-8 text-indigo-400" />
                                                                                 </div>
-                                                                            ))}
-                                                                            {u.ledger.length === 0 && (
-                                                                                <div className="py-12 flex flex-col items-center justify-center opacity-20">
-                                                                                    <Activity className="w-8 h-8 mb-4" />
-                                                                                    <p className="text-[10px] font-black uppercase tracking-[0.3em]">No Recorded Movement</p>
-                                                                                </div>
-                                                                            )}
+                                                                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] mb-3">Total Weekly P&L</p>
+                                                                                <h5 className={`text-5xl font-black italic tracking-tighter ${u.stats.netWorth >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                                                                                    {u.stats.netWorth >= 0 ? '+' : ''}₹{u.stats.netWorth.toLocaleString()}
+                                                                                </h5>
+                                                                                <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest mt-4 italic">
+                                                                                    Based on all tournament transactions in this cycle
+                                                                                </p>
+                                                                            </div>
                                                                         </div>
                                                                     </div>
                                                                 </div>

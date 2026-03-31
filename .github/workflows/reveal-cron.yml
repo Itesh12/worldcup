@@ -1,0 +1,14 @@
+name: Match Reveal Cron
+on:
+  schedule:
+    - cron: '*/5 * * * *' # Every 5 minutes (standard for free GitHub Actions)
+  workflow_dispatch: # Allows you to run it manually from the Actions tab
+
+jobs:
+  reveal:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Reveal API
+        run: |
+          curl -X GET "https://worldcup-sand-eight.vercel.app/api/cron/reveal" \
+          -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"

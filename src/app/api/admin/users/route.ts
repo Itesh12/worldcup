@@ -7,13 +7,24 @@ import { authOptions } from "../../auth/[...nextauth]/route";
 export async function GET(req: NextRequest) {
     try {
         const session = await getServerSession(authOptions);
-        if (!session || (session.user as any).role !== 'admin') {
+        const user = session?.user as any;
+        if (!session || (user.role !== 'admin' && user.role !== 'subadmin')) {
             return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
         }
 
         await connectDB();
+        
+        let query: any = { role: 'user' };
+        
+        // Role-Based Scoping: Sub-admins only see their assigned users
+        if (user.role === 'subadmin') {
+            query = { ...query, assignedSubAdminId: user.id };
+        }
+
         // Exclude password, only fetch regular users
-        const users = await User.find({ role: 'user' }).select('name email');
+        const users = await User.find(query)
+            .select('name email walletBalance createdAt')
+            .sort({ createdAt: -1 });
 
         return NextResponse.json(users);
     } catch (error: any) {

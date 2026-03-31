@@ -6,7 +6,7 @@ const TournamentSchema = new mongoose.Schema({
     cricbuzzSlug: { type: String, required: true },
     isActive: { type: Boolean, default: false },
     commissionPercentage: { type: Number, default: 0 },
-    entryFee: { type: Number, default: 50 },
+    entryFee: { type: Number }, // No longer strictly required or default 50
     startDate: { type: Date },
     endDate: { type: Date }
 }, { timestamps: true });

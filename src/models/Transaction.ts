@@ -5,7 +5,7 @@ const TransactionSchema = new mongoose.Schema({
     amount: { type: Number, required: true }, // positive for credits, negative for debits
     type: { 
         type: String, 
-        enum: ['deposit', 'withdrawal', 'bet_placed', 'winnings', 'refund', 'bonus'], 
+        enum: ['deposit', 'withdrawal', 'bet_placed', 'winnings', 'refund', 'bonus', 'commission'], 
         required: true 
     },
     description: { type: String, required: true },

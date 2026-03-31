@@ -4,6 +4,8 @@ import { useEffect, useState, useMemo } from "react";
 import { RefreshCcw, Calendar, MapPin, Activity, Swords, Zap, ChevronRight, Globe, Lock, Clock, CheckCircle, ArrowLeft, Settings, DollarSign, Percent, X, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { AdminContextSwitcher } from "@/components/admin/AdminContextSwitcher";
+import { AnimatePresence } from "framer-motion";
+import ArenaManager from "@/components/shared/ArenaManager";
 
 interface Match {
     _id: string;
@@ -28,6 +30,7 @@ export default function AdminMatchesPage() {
     const [tempEntryFee, setTempEntryFee] = useState<string>("");
     const [tempCommission, setTempCommission] = useState<string>("");
     const [updating, setUpdating] = useState(false);
+    const [selectedMatchForArena, setSelectedMatchForArena] = useState<Match | null>(null);
 
     useEffect(() => {
         if (selectedTournament) fetchMatches(selectedTournament);
@@ -259,7 +262,6 @@ export default function AdminMatchesPage() {
                                         </div>
                                     </div>
                                 </div>
- 
                                 <div className="flex gap-4 relative z-10 px-1">
                                     <button
                                         onClick={() => {
@@ -272,11 +274,18 @@ export default function AdminMatchesPage() {
                                         <Settings className="w-3.5 h-3.5" />
                                         Pricing
                                     </button>
+                                    <button
+                                        onClick={() => setSelectedMatchForArena(match)}
+                                        className="flex-1 flex items-center justify-center gap-2 py-4 bg-indigo-600/10 hover:bg-indigo-600 text-white rounded-[18px] md:rounded-[20px] text-[10px] md:text-xs font-black transition-all duration-300 border border-indigo-500/20 hover:border-indigo-400 uppercase tracking-widest"
+                                    >
+                                        <Swords className="w-3.5 h-3.5" />
+                                        Arenas
+                                    </button>
                                     <Link
                                         href={`/admin/matches/${match._id}/slots`}
-                                        className="flex-[2] flex items-center justify-center gap-2 py-4 bg-indigo-600/10 hover:bg-indigo-600 text-white rounded-[18px] md:rounded-[20px] text-[10px] md:text-xs font-black transition-all duration-300 border border-indigo-500/20 hover:border-indigo-400 uppercase tracking-widest text-center"
+                                        className="flex-1 flex items-center justify-center gap-2 py-4 bg-white/5 hover:bg-slate-800 text-slate-300 rounded-[18px] md:rounded-[20px] text-[10px] md:text-xs font-black transition-all duration-300 border border-white/10 uppercase tracking-widest text-center"
                                     >
-                                        Manage Slots
+                                        Slots
                                         <ChevronRight className="w-4 h-4" />
                                     </Link>
                                 </div>
@@ -285,6 +294,17 @@ export default function AdminMatchesPage() {
                     </div>
                 )}
             </div>
+
+            <AnimatePresence>
+                {selectedMatchForArena && (
+                    <ArenaManager
+                        matchId={selectedMatchForArena._id}
+                        matchName={`${selectedMatchForArena.teams[0].shortName} VS ${selectedMatchForArena.teams[1].shortName}`}
+                        userRole="admin"
+                        onClose={() => setSelectedMatchForArena(null)}
+                    />
+                )}
+            </AnimatePresence>
 
             {/* Pricing Override Modal */}
             {selectedMatchPricing && (

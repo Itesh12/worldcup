@@ -17,6 +17,7 @@ import { TransactionList } from "@/components/TransactionList";
 import { toast, Toaster } from "react-hot-toast";
 import { useRouter } from "next/navigation";
 import { Spinner } from "@/components/ui/Spinner";
+import { ArenaSelectionDialog } from "@/components/ArenaSelectionDialog";
 
 interface Match {
   _id: string;
@@ -46,6 +47,14 @@ export default function UserMatchesPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
   const { tournamentId, setTournamentId } = useTournament();
+
+  const [isArenaDialogOpen, setIsArenaDialogOpen] = useState(false);
+  const [selectedMatchId, setSelectedMatchId] = useState<string>("");
+  const [selectedMatchName, setSelectedMatchName] = useState<string>("");
+
+  const handleMatchClick = (match: Match) => {
+    router.push(`/matches/${match._id}`);
+  };
 
   const handleRefresh = async (isInitial = false) => {
     if (refreshing || !tournamentId) return;
@@ -257,6 +266,14 @@ export default function UserMatchesPage() {
         balance={walletData?.balance || 0} 
       />
 
+      <ArenaSelectionDialog 
+        isOpen={isArenaDialogOpen}
+        onClose={() => setIsArenaDialogOpen(false)}
+        matchId={selectedMatchId}
+        matchName={selectedMatchName}
+        onJoinSuccess={() => handleRefresh(false)}
+      />
+
       {isInitializing ? (
         null
       ) : (
@@ -355,7 +372,7 @@ export default function UserMatchesPage() {
             <div className="flex overflow-x-auto snap-x snap-mandatory gap-6 pb-6 -mx-4 px-4 scrollbar-hide">
               {heroMatches.map((match) => (
                 <div key={match._id} className="snap-center shrink-0 w-full md:w-[600px]">
-                  <HeroMatchCard match={match} />
+                  <HeroMatchCard match={match} onMatchClick={handleMatchClick} />
                 </div>
               ))}
             </div>
@@ -388,7 +405,7 @@ export default function UserMatchesPage() {
                 upcomingMatches.length > 0 ? (
                   upcomingMatches.map(match => (
                     <div key={match._id} className="min-w-[85vw] md:min-w-[45vw] lg:min-w-0 snap-center shrink-0 lg:shrink">
-                      <StandardMatchCard match={match} />
+                      <StandardMatchCard match={match} onMatchClick={handleMatchClick} />
                     </div>
                   ))
                 ) : (
@@ -400,7 +417,7 @@ export default function UserMatchesPage() {
                 finishedMatches.length > 0 ? (
                   finishedMatches.map(match => (
                     <div key={match._id} className="min-w-[85vw] md:min-w-[45vw] lg:min-w-0 snap-center shrink-0 lg:shrink">
-                      <StandardMatchCard match={match} />
+                      <StandardMatchCard match={match} onMatchClick={handleMatchClick} />
                     </div>
                   ))
                 ) : (
@@ -531,11 +548,21 @@ function WinnersSection() {
 
   const fetchWinners = async () => {
     try {
-      const res = await fetch('/api/matches/winners');
+      setLoading(true);
+      const res = await fetch('/api/matches/winners', {
+        headers: { 'Accept': 'application/json' },
+        cache: 'no-store'
+      });
+
+      if (!res.ok) {
+        throw new Error(`Cloud Error: ${res.status}`);
+      }
+
       const data = await res.json();
-      if (res.ok) setWinners(data);
+      setWinners(Array.isArray(data) ? data : []);
     } catch (err) {
-      console.error("Failed to fetch winners", err);
+      console.error("Dashboard: Hall of Fame fetch failed", err);
+      setWinners([]); // Graceful fallback
     } finally {
       setLoading(false);
     }
@@ -620,7 +647,7 @@ function WinnersSection() {
 
 // --- Components ---
 
-function HeroMatchCard({ match }: { match: Match }) {
+function HeroMatchCard({ match, onMatchClick }: { match: Match, onMatchClick: (match: Match) => void }) {
   const isLive = match.status === 'live';
   const isFinished = match.status === 'finished' ||
     match.status === 'completed' ||
@@ -629,8 +656,10 @@ function HeroMatchCard({ match }: { match: Match }) {
   const date = new Date(match.startTime);
 
   return (
-    <Link href={`/matches/${match._id}`} className="group relative block w-full h-[200px] xs:h-[240px] md:h-[300px] rounded-3xl overflow-hidden shadow-2xl transition-all duration-500 hover:scale-[1.02] hover:shadow-indigo-500/10">
-      {/* Background with Gradient & Mesh */}
+    <div 
+      onClick={() => onMatchClick(match)}
+      className="group relative block w-full h-[200px] xs:h-[240px] md:h-[300px] rounded-3xl overflow-hidden shadow-2xl transition-all duration-500 hover:scale-[1.02] hover:shadow-indigo-500/10 cursor-pointer"
+    >      {/* Background with Gradient & Mesh */}
       <div className="absolute inset-0 bg-[#050B14]" />
       <div className="absolute inset-0 bg-gradient-to-br from-indigo-600/20 via-slate-900/40 to-purple-600/20 opacity-60 group-hover:opacity-80 transition-opacity" />
       <div className="absolute -top-24 -left-24 w-64 h-64 bg-indigo-500/10 blur-[80px] rounded-full group-hover:bg-indigo-500/20 transition-all duration-700" />
@@ -709,11 +738,11 @@ function HeroMatchCard({ match }: { match: Match }) {
           <div className="w-1 h-1 rounded-full bg-indigo-500 shadow-[0_0_10px_#6366f1]" />
         </div>
       </div>
-    </Link>
+    </div>
   );
 }
 
-function StandardMatchCard({ match }: { match: Match }) {
+function StandardMatchCard({ match, onMatchClick }: { match: Match, onMatchClick: (match: Match) => void }) {
   const date = new Date(match.startTime);
   const isFinished = match.status === 'finished' ||
     match.status === 'completed' ||
@@ -722,8 +751,10 @@ function StandardMatchCard({ match }: { match: Match }) {
   const isLive = match.status === 'live';
 
   return (
-    <Link href={`/matches/${match._id}`} className="group relative flex flex-col p-5 bg-slate-900/40 border border-white/5 rounded-3xl hover:bg-slate-800/60 hover:border-indigo-500/30 transition-all duration-500 overflow-hidden shadow-lg h-full">
-      {/* Background Glow */}
+    <div 
+      onClick={() => onMatchClick(match)}
+      className="group relative flex flex-col p-5 bg-slate-900/40 border border-white/5 rounded-3xl hover:bg-slate-800/60 hover:border-indigo-500/30 transition-all duration-500 overflow-hidden shadow-lg h-full cursor-pointer"
+    >      {/* Background Glow */}
       <div className="absolute -top-12 -right-12 w-24 h-24 bg-indigo-500/10 blur-[40px] rounded-full pointer-events-none group-hover:bg-indigo-500/20 transition-all" />
 
       {/* Top Section: Status & Time */}
@@ -778,7 +809,7 @@ function StandardMatchCard({ match }: { match: Match }) {
           <ChevronRight className="w-4 h-4 text-indigo-400 group-hover:text-white" />
         </div>
       </div>
-    </Link>
+    </div>
   );
 }
 

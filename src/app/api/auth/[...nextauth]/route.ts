@@ -34,12 +34,17 @@ export const authOptions: NextAuthOptions = {
                     throw new Error("Your account has been banned. Please contact support.");
                 }
 
+                // Update Last Login
+                user.lastLogin = new Date();
+                await user.save();
+
                 return {
                     id: user._id.toString(),
                     email: user.email,
                     name: user.name,
                     role: user.role,
                     image: user.image,
+                    lastLogin: user.lastLogin
                 };
             },
         }),

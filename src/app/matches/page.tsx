@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ArrowLeft, Calendar, Trophy, ChevronRight, Clock, Activity, Search, MapPin, RefreshCcw } from "lucide-react";
+import { ArrowLeft, Calendar, Trophy, ChevronRight, Clock, Activity, Search, MapPin, RefreshCcw, Swords } from "lucide-react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { UserContextSwitcher } from "@/components/UserContextSwitcher";
 import { useTournament } from "@/contexts/TournamentContext";
+import { AnimatePresence } from "framer-motion";
+import ArenaManager from "@/components/shared/ArenaManager";
 
 interface Match {
     _id: string;
@@ -24,6 +26,7 @@ export default function AllMatchesPage() {
     const [activeTab, setActiveTab] = useState<'upcoming' | 'finished'>('upcoming');
     const [searchQuery, setSearchQuery] = useState("");
     const [refreshing, setRefreshing] = useState(false);
+    const [selectedMatchForHost, setSelectedMatchForHost] = useState<Match | null>(null);
 
     const fetchMatches = async () => {
         try {
@@ -60,8 +63,6 @@ export default function AllMatchesPage() {
         fetchMatches();
     }, [tournamentId]);
 
-    const today = new Date().toDateString();
-
     const filteredMatches = matches.filter(m => {
         const teamNames = m.teams.map(t => t.name.toLowerCase() + t.shortName.toLowerCase()).join(" ");
         return teamNames.includes(searchQuery.toLowerCase());
@@ -82,10 +83,8 @@ export default function AllMatchesPage() {
 
     return (
         <div className="min-h-screen bg-[#050B14] pb-20 relative overflow-x-hidden">
-            {/* Ambient Backlight */}
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-indigo-600/5 blur-[120px] rounded-full pointer-events-none" />
 
-            {/* Header */}
             <header className="sticky top-0 z-40 bg-[#050B14]/80 backdrop-blur-xl border-b border-white/5">
                 <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between gap-4">
                     <div className="flex items-center gap-3 md:gap-6 min-w-0">
@@ -112,7 +111,6 @@ export default function AllMatchesPage() {
             </header>
 
             <main className="max-w-7xl mx-auto px-4 pt-10">
-                {/* Search & Tabs */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
                     <div className="flex items-center gap-6 border-b border-white/10 overflow-x-auto scrollbar-hide">
                         <button
@@ -143,14 +141,19 @@ export default function AllMatchesPage() {
                     </div>
                 </div>
 
-                {/* List - 2 Column Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-20">
                     {loading ? (
                         [1, 2, 3, 4, 5, 6].map(i => (
                             <div key={i} className="h-56 w-full bg-slate-900/30 rounded-3xl animate-pulse border border-white/5" />
                         ))
                     ) : displayMatches.length > 0 ? (
-                        displayMatches.map(match => <StandardMatchCard key={match._id} match={match} />)
+                        displayMatches.map(match => (
+                            <StandardMatchCard 
+                                key={match._id} 
+                                match={match} 
+                                onHost={(m) => setSelectedMatchForHost(m)}
+                            />
+                        ))
                     ) : (
                         <div className="col-span-full py-20 flex flex-col items-center justify-center text-center opacity-30">
                             <Calendar className="w-16 h-16 text-slate-500 mb-4" />
@@ -159,29 +162,35 @@ export default function AllMatchesPage() {
                     )}
                 </div>
             </main>
+
+            <AnimatePresence>
+                {selectedMatchForHost && (
+                    <ArenaManager
+                        matchId={selectedMatchForHost._id}
+                        matchName={`${selectedMatchForHost.teams[0].shortName} VS ${selectedMatchForHost.teams[1].shortName}`}
+                        userRole="user"
+                        onClose={() => setSelectedMatchForHost(null)}
+                    />
+                )}
+            </AnimatePresence>
         </div>
     );
 }
 
-function StandardMatchCard({ match }: { match: Match }) {
+function StandardMatchCard({ match, onHost }: { match: Match; onHost: (m: Match) => void }) {
     const date = new Date(match.startTime);
-    const isFinished = match.status === 'finished' ||
-        match.status === 'completed' ||
-        match.status === 'result' ||
-        match.status === 'settled';
+    const isFinished = match.status === 'finished' || match.status === 'completed' || match.status === 'result' || match.status === 'settled';
     const isLive = match.status === 'live';
 
     return (
-        <Link href={`/matches/${match._id}`} className="group relative flex flex-col p-6 bg-slate-900/40 border border-white/5 rounded-3xl hover:bg-slate-800/60 hover:border-indigo-500/30 transition-all duration-500 overflow-hidden shadow-lg h-full">
-            {/* Background Glow */}
+        <div className="group relative flex flex-col p-6 bg-slate-900/40 border border-white/5 rounded-3xl hover:bg-slate-800/60 hover:border-indigo-500/30 transition-all duration-500 overflow-hidden shadow-lg h-full">
+            {/* Make the main area clickable with a Link */}
+            <Link href={`/matches/${match._id}`} className="absolute inset-0 z-0" />
+            
             <div className="absolute -top-12 -right-12 w-24 h-24 bg-indigo-500/10 blur-[40px] rounded-full pointer-events-none group-hover:bg-indigo-500/20 transition-all" />
 
-            {/* Top Section: Status & Time */}
-            <div className="flex justify-between items-center mb-6">
-                <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-[10px] font-black uppercase tracking-widest ${isLive ? 'bg-red-500/10 border-red-500/20 text-red-500' :
-                    isFinished ? 'bg-slate-800 border-white/5 text-slate-500' :
-                        'bg-indigo-500/10 border-indigo-500/20 text-indigo-400'
-                    }`}>
+            <div className="relative z-10 flex justify-between items-center mb-6 pointer-events-none">
+                <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-[10px] font-black uppercase tracking-widest ${isLive ? 'bg-red-500/10 border-red-500/20 text-red-500' : isFinished ? 'bg-slate-800 border-white/5 text-slate-500' : 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400'}`}>
                     {isLive ? (
                         <span className="flex items-center gap-2">
                             <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
@@ -194,13 +203,13 @@ function StandardMatchCard({ match }: { match: Match }) {
                 </span>
             </div>
 
-            {/* Middle Section: Teams Grid */}
-            <div className="flex items-center justify-between gap-3 mb-8 px-1 md:px-2">
+            <div className="relative z-10 flex items-center justify-between gap-3 mb-8 px-1 md:px-2 pointer-events-none">
+                {/* Team 1 */}
                 <div className="flex-1 flex flex-col items-center gap-2.5">
                     <div className="w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-center group-hover:border-indigo-500/40 transition-all shadow-inner">
-                        <span className="text-xl md:text-2xl font-black text-white">{match.teams[0].shortName}</span>
+                        <span className="text-xl md:text-2xl font-black text-white">{match.teams[0]?.shortName || 'TBC'}</span>
                     </div>
-                    <span className="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-tight text-center truncate w-full">{match.teams[0].name}</span>
+                    <span className="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-tight text-center truncate w-full">{match.teams[0]?.name || 'TBC'}</span>
                 </div>
 
                 <div className="flex flex-col items-center">
@@ -208,26 +217,42 @@ function StandardMatchCard({ match }: { match: Match }) {
                     <div className="w-px h-8 md:h-10 bg-gradient-to-b from-transparent via-slate-700 to-transparent" />
                 </div>
 
+                {/* Team 2 */}
                 <div className="flex-1 flex flex-col items-center gap-2.5">
                     <div className="w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-center group-hover:border-indigo-500/40 transition-all shadow-inner">
-                        <span className="text-xl md:text-2xl font-black text-white">{match.teams[1].shortName}</span>
+                        <span className="text-xl md:text-2xl font-black text-white">{match.teams[1]?.shortName || 'TBC'}</span>
                     </div>
-                    <span className="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-tight text-center truncate w-full">{match.teams[1].name}</span>
+                    <span className="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-tight text-center truncate w-full">{match.teams[1]?.name || 'TBC'}</span>
                 </div>
             </div>
 
-            {/* Bottom Section: Venue */}
-            <div className="mt-auto flex items-center justify-between pt-5 border-t border-white/5">
-                <div className="flex items-center gap-2 text-slate-500">
-                    <MapPin className="w-4 h-4 text-slate-600" />
-                    <span className="text-[10px] font-bold uppercase tracking-wide truncate max-w-[200px]">
-                        {match.venue.split(',')[0]}
-                    </span>
+            <div className="relative z-20 mt-auto pt-5 border-t border-white/5 space-y-4">
+                <div className="flex items-center justify-between pointer-events-none">
+                    <div className="flex items-center gap-2 text-slate-500 min-w-0">
+                        <MapPin className="w-4 h-4 text-slate-600 shrink-0" />
+                        <span className="text-[10px] font-bold uppercase tracking-wide truncate">
+                            {match.venue?.split(',')[0] || 'TBC'}
+                        </span>
+                    </div>
                 </div>
-                <div className="w-8 h-8 rounded-xl bg-indigo-500/10 flex items-center justify-center group-hover:bg-indigo-600 transition-all">
-                    <ChevronRight className="w-5 h-5 text-indigo-400 group-hover:text-white" />
+                
+                <div className="flex gap-3">
+                    <button 
+                        onClick={() => onHost(match)}
+                        className="flex-1 flex items-center justify-center gap-2 py-3 bg-white/5 hover:bg-slate-800 text-slate-300 rounded-2xl text-[10px] font-black transition-all duration-300 border border-white/10 uppercase tracking-widest relative z-20"
+                    >
+                        <Swords className="w-3.5 h-3.5" />
+                        Host
+                    </button>
+                    <Link 
+                        href={`/matches/${match._id}`}
+                        className="flex-1 flex items-center justify-center gap-2 py-3 bg-indigo-600/10 hover:bg-indigo-600 text-white rounded-2xl text-[10px] font-black transition-all duration-300 border border-indigo-500/20 hover:border-indigo-400 uppercase tracking-widest text-center relative z-20"
+                    >
+                        Match Center
+                        <ChevronRight className="w-4 h-4" />
+                    </Link>
                 </div>
             </div>
-        </Link>
+        </div>
     );
 }

@@ -7,6 +7,7 @@ import SlotScore from "@/models/SlotScore";
 import UserMatchStats from "@/models/UserMatchStats";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../auth/[...nextauth]/route";
+import { performMatchSync } from "@/lib/matchSync";
 
 export async function POST(req: NextRequest) {
     try {
@@ -17,58 +18,63 @@ export async function POST(req: NextRequest) {
 
         await connectDB();
 
-        // 1. Create the default World Cup tournament if it doesn't exist
-        let defaultTournament = await Tournament.findOne({ name: "ICC Men's T20 World Cup 2026" });
-        if (!defaultTournament) {
-            defaultTournament = await Tournament.create({
-                name: "ICC Men's T20 World Cup 2026",
-                cricbuzzSeriesId: "11253", // Main tournament ID, 11515 was warmups
-                cricbuzzSlug: "icc-mens-t20-world-cup-2026",
-                isActive: true,
-            });
-            console.log("Created default tournament:", defaultTournament._id);
-        } else {
-            console.log("Default tournament already exists:", defaultTournament._id);
+        // 1. Find all active tournaments
+        const activeTournaments = await Tournament.find({ isActive: true });
+
+        if (activeTournaments.length === 0) {
+            return NextResponse.json({ message: "No active tournaments found. Please activate at least one tournament first." }, { status: 400 });
         }
 
-        const tId = defaultTournament._id;
+        console.log(`Migration - Syncing ${activeTournaments.length} active tournaments.`);
+        const syncResults = [];
 
-        // 2. Update all matches that don't have a tournamentId
-        const matchUpdateResult = await Match.updateMany(
-            { tournamentId: { $exists: false } },
-            { $set: { tournamentId: tId } }
-        );
-        console.log(`Updated ${matchUpdateResult.modifiedCount} matches`);
+        // 2. Perform intelligent sync for each active tournament
+        for (const t of activeTournaments) {
+            const result = await performMatchSync(t._id.toString());
+            syncResults.push({ name: t.name, ...result });
+        }
 
-        // 3. Update all UserBattingAssignments
-        const assignmentUpdateResult = await UserBattingAssignment.updateMany(
-            { tournamentId: { $exists: false } },
-            { $set: { tournamentId: tId } }
-        );
-        console.log(`Updated ${assignmentUpdateResult.modifiedCount} assignments`);
+        // 3. Intelligent Cleanup for orphaned data (Stats, Scores, Assignments)
+        // We link these to the correct tournament by looking up their parent Match
+        
+        let statsFixed = 0;
+        let scoresFixed = 0;
+        let assignmentsFixed = 0;
 
-        // 4. Update all SlotScores
-        const scoreUpdateResult = await SlotScore.updateMany(
-            { tournamentId: { $exists: false } },
-            { $set: { tournamentId: tId } }
-        );
-        console.log(`Updated ${scoreUpdateResult.modifiedCount} slot scores`);
+        const orphanedStats = await UserMatchStats.find({ tournamentId: { $exists: false } });
+        for (const stat of orphanedStats) {
+            const m = await Match.findById(stat.matchId);
+            if (m?.tournamentId) {
+                await UserMatchStats.findByIdAndUpdate(stat._id, { tournamentId: m.tournamentId });
+                statsFixed++;
+            }
+        }
 
-        // 5. Update all UserMatchStats
-        const statsUpdateResult = await UserMatchStats.updateMany(
-            { tournamentId: { $exists: false } },
-            { $set: { tournamentId: tId } }
-        );
-        console.log(`Updated ${statsUpdateResult.modifiedCount} user match stats`);
+        const orphanedScores = await SlotScore.find({ tournamentId: { $exists: false } });
+        for (const score of orphanedScores) {
+            const m = await Match.findById(score.matchId);
+            if (m?.tournamentId) {
+                await SlotScore.findByIdAndUpdate(score._id, { tournamentId: m.tournamentId });
+                scoresFixed++;
+            }
+        }
+
+        const orphanedAssignments = await UserBattingAssignment.find({ tournamentId: { $exists: false } });
+        for (const ass of orphanedAssignments) {
+            const m = await Match.findById(ass.matchId);
+            if (m?.tournamentId) {
+                await UserBattingAssignment.findByIdAndUpdate(ass._id, { tournamentId: m.tournamentId });
+                assignmentsFixed++;
+            }
+        }
 
         return NextResponse.json({
-            message: "Migration completed successfully",
-            results: {
-                tournamentId: tId,
-                matchesUpdated: matchUpdateResult.modifiedCount,
-                assignmentsUpdated: assignmentUpdateResult.modifiedCount,
-                scoresUpdated: scoreUpdateResult.modifiedCount,
-                statsUpdated: statsUpdateResult.modifiedCount
+            message: `Migration completed for ${activeTournaments.length} active tournaments.`,
+            syncResults,
+            cleanup: {
+                statsFixed,
+                scoresFixed,
+                assignmentsFixed
             }
         });
 

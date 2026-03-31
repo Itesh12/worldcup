@@ -28,17 +28,12 @@ export async function POST(req: NextRequest) {
         }
 
         const body = await req.json();
-        const { name, cricbuzzSeriesId, cricbuzzSlug, isActive, commissionPercentage, entryFee } = body;
+        const { name, cricbuzzSeriesId, cricbuzzSlug, isActive, commissionPercentage } = body;
 
         await connectDB();
 
-        if (isActive) {
-            // Unset active from all others if making this one active
-            await Tournament.updateMany({}, { $set: { isActive: false } });
-        }
-
         const tournament = await Tournament.create({
-            name, cricbuzzSeriesId, cricbuzzSlug, isActive, commissionPercentage, entryFee
+            name, cricbuzzSeriesId, cricbuzzSlug, isActive, commissionPercentage
         });
 
         return NextResponse.json(tournament, { status: 201 });
@@ -62,10 +57,6 @@ export async function PUT(req: NextRequest) {
         }
 
         await connectDB();
-
-        if (isActive) {
-            await Tournament.updateMany({}, { $set: { isActive: false } });
-        }
 
         const tournament = await Tournament.findByIdAndUpdate(id, { isActive }, { new: true });
 

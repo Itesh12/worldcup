@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CheckCircle, Circle, Plus, Trophy, Activity, Globe, Search, RefreshCw, ChevronDown, AlertTriangle } from "lucide-react";
+import { CheckCircle, Circle, Plus, Trophy, Activity, Globe, Search, RefreshCw, ChevronDown, AlertTriangle, X, XCircle } from "lucide-react";
 import { Spinner } from "@/components/ui/Spinner";
 
 interface Tournament {
@@ -28,7 +28,6 @@ export default function AdminTournamentsPage() {
     const [slug, setSlug] = useState("");
     const [isActive, setIsActive] = useState(false);
     const [commissionPercentage, setCommissionPercentage] = useState(5);
-    const [entryFee, setEntryFee] = useState(50);
     
     // Cricbuzz series fetching
     const [availableSeries, setAvailableSeries] = useState<{id: string, name: string, slug: string}[]>([]);
@@ -97,8 +96,7 @@ export default function AdminTournamentsPage() {
                     cricbuzzSeriesId: seriesId, 
                     cricbuzzSlug: slug, 
                     isActive,
-                    commissionPercentage,
-                    entryFee
+                    commissionPercentage
                 })
             });
             if (res.ok) {
@@ -108,7 +106,6 @@ export default function AdminTournamentsPage() {
                 setSlug("");
                 setIsActive(false);
                 setCommissionPercentage(5);
-                setEntryFee(50);
                 await fetchTournaments();
             }
         } catch (err) {
@@ -127,7 +124,10 @@ export default function AdminTournamentsPage() {
             const res = await fetch("/api/admin/migrate", { method: "POST" });
             const data = await res.json();
             if (res.ok) {
-                setMigrationStatus({ type: 'success', message: "Data migration completed successfully. Unlinked matches have been bound to the default tournament. Results: " + JSON.stringify(data.results) });
+                setMigrationStatus({ 
+                    type: 'success', 
+                    message: `Intelligent sync completed for ${data.syncResults?.length || 0} active tournaments. Matches were categorized and ${data.cleanup?.statsFixed || 0} orphaned records were stabilized.` 
+                });
                 await fetchTournaments();
             } else {
                 setMigrationStatus({ type: 'error', message: "Migration failed: " + data.message });
@@ -141,13 +141,11 @@ export default function AdminTournamentsPage() {
     };
 
     const handleToggleActive = async (id: string, currentStatus: boolean) => {
-        // Option to toggle it to true. If it's already true, maybe user shouldn't toggle to false offhand, 
-        // they should toggle another to true.
         try {
             const res = await fetch("/api/admin/tournaments", {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ id, isActive: true }) // Setting one active deactivates others
+                body: JSON.stringify({ id, isActive: !currentStatus }) // Toggle the current status
             });
             if (res.ok) {
                 await fetchTournaments();
@@ -166,9 +164,16 @@ export default function AdminTournamentsPage() {
                         <div className="w-16 h-16 rounded-full bg-amber-500/10 flex items-center justify-center mb-6 mx-auto border border-amber-500/20">
                             <AlertTriangle className="w-8 h-8 text-amber-500" />
                         </div>
-                        <h3 className="text-xl font-black text-white text-center mb-3 uppercase tracking-wide">Confirm Migration</h3>
+                        <h3 className="text-xl font-black text-white text-center mb-3 uppercase tracking-wide italic">Data Alignment Sync</h3>
                         <p className="text-sm font-medium text-slate-400 text-center mb-8 leading-relaxed">
-                            Are you sure you want to rigorously scan the database and link all orphaned match data to the currently active tournament context?
+                            This operation scans the platform for any unlinked match entries or scores and stabilizes them by binding them to the 
+                            <span className="text-indigo-400 font-bold"> {
+                                tournaments.filter(t => t.isActive).length > 1 
+                                ? `multiple active contexts (${tournaments.filter(t => t.isActive).map(t => t.name).join(", ")})` 
+                                : tournaments.find(t => t.isActive)?.name || "Latest Active Tournament"
+                            }</span>.
+                            <br/><br/>
+                            Matches will be intelligently categorized based on their real-world series IDs into the respective active tournaments above.
                         </p>
                         <div className="flex gap-3">
                             <button
@@ -236,9 +241,21 @@ export default function AdminTournamentsPage() {
                             </button>
                             <button 
                                 onClick={() => setShowNewForm(!showNewForm)}
-                                className="flex items-center justify-center gap-1.5 md:gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-4 md:px-6 py-2.5 md:py-3 rounded-xl md:rounded-2xl text-[10px] md:text-xs font-black transition-all shadow-lg shadow-indigo-600/20 uppercase tracking-widest whitespace-nowrap"
+                                className={`flex items-center justify-center gap-1.5 md:gap-2 px-4 md:px-6 py-2.5 md:py-3 rounded-xl md:rounded-2xl text-[10px] md:text-xs font-black transition-all shadow-lg uppercase tracking-widest whitespace-nowrap ${
+                                    showNewForm 
+                                    ? "bg-slate-800 hover:bg-slate-700 text-white border border-white/10" 
+                                    : "bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-600/20"
+                                }`}
                             >
-                                <Plus className="w-3.5 h-3.5 md:w-4 md:h-4 shrink-0" /> Add <span className="hidden xs:inline">Tournament</span>
+                                {showNewForm ? (
+                                    <>
+                                        <X className="w-3.5 h-3.5 md:w-4 md:h-4 shrink-0" /> Close <span className="hidden xs:inline">Form</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Plus className="w-3.5 h-3.5 md:w-4 md:h-4 shrink-0" /> Add <span className="hidden xs:inline">Tournament</span>
+                                    </>
+                                )}
                             </button>
                         </div>
                     </div>
@@ -347,16 +364,7 @@ export default function AdminTournamentsPage() {
                                     </label>
                                 </div>
                                 <div>
-                                    <label className="block text-slate-400 text-xs font-bold mb-2 uppercase tracking-wide text-indigo-400">Entry Fee (INR)</label>
-                                    <input 
-                                        type="number" required
-                                        value={entryFee} onChange={e => setEntryFee(Number(e.target.value))}
-                                        placeholder="50"
-                                        className="w-full bg-black/40 border border-indigo-500/20 rounded-xl px-4 py-2.5 text-white placeholder:text-slate-600 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-all font-medium text-sm"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-slate-400 text-xs font-bold mb-2 uppercase tracking-wide text-indigo-400">Admin Commission (%)</label>
+                                    <label className="block text-slate-400 text-xs font-bold mb-2 uppercase tracking-wide text-indigo-400">Platform Commission (%)</label>
                                     <input 
                                         type="number" required
                                         value={commissionPercentage} onChange={e => setCommissionPercentage(Number(e.target.value))}
@@ -399,20 +407,29 @@ export default function AdminTournamentsPage() {
                                             <span className="text-slate-500">ID: {t.cricbuzzSeriesId}</span>
                                         </div>
                                     </div>
-                                    {t.isActive ? (
-                                        <div className="flex items-center gap-1.5 px-3 py-1 bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 rounded-full text-[10px] font-black uppercase tracking-widest leading-none">
-                                            <Activity className="w-3 h-3 animate-pulse" /> Active
-                                        </div>
-                                    ) : (
                                         <button 
                                             onClick={() => handleToggleActive(t._id, t.isActive)}
-                                            className="group flex items-center gap-2 px-4 py-1.5 bg-white/5 hover:bg-indigo-600 border border-white/10 hover:border-indigo-500 rounded-full text-xs font-bold text-slate-300 hover:text-white transition-all"
+                                            className={`group flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold transition-all border ${
+                                                t.isActive 
+                                                ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-rose-500/10 hover:text-rose-500 hover:border-rose-500/30" 
+                                                : "bg-white/5 hover:bg-indigo-600 border border-white/10 hover:border-indigo-500 text-slate-300 hover:text-white"
+                                            }`}
                                         >
-                                            <Circle className="w-3.5 h-3.5 group-hover:hidden" />
-                                            <CheckCircle className="w-3.5 h-3.5 hidden group-hover:block" />
-                                            Set Active
+                                            {t.isActive ? (
+                                                <>
+                                                    <Activity className="w-3.5 h-3.5 animate-pulse group-hover:hidden" />
+                                                    <XCircle className="w-3.5 h-3.5 hidden group-hover:block" />
+                                                    <span className="group-hover:hidden tracking-widest uppercase text-[10px]">Active</span>
+                                                    <span className="hidden group-hover:block tracking-widest uppercase text-[10px]">Deactivate</span>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Circle className="w-3.5 h-3.5 group-hover:hidden" />
+                                                    <CheckCircle className="w-3.5 h-3.5 hidden group-hover:block" />
+                                                    <span className="tracking-widest uppercase text-[10px]">Set Active</span>
+                                                </>
+                                            )}
                                         </button>
-                                    )}
                                 </div>
 
                                 <div className="space-y-2">
@@ -422,11 +439,7 @@ export default function AdminTournamentsPage() {
                                     </div>
                                     <div className="flex gap-4 pt-2 border-t border-white/5 mt-2">
                                         <div className="text-xs text-slate-400">
-                                            <span className="font-bold text-slate-500 uppercase tracking-wide mr-2 text-[10px]">Entry Fee:</span> 
-                                            <span className="text-indigo-400">₹{t.entryFee}</span>
-                                        </div>
-                                        <div className="text-xs text-slate-400">
-                                            <span className="font-bold text-slate-500 uppercase tracking-wide mr-2 text-[10px]">Commission:</span> 
+                                            <span className="font-bold text-slate-500 uppercase tracking-wide mr-2 text-[10px]">Platform Fee:</span> 
                                             <span className="text-indigo-400">{t.commissionPercentage}%</span>
                                         </div>
                                     </div>

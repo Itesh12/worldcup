@@ -29,9 +29,15 @@ export async function deleteUser(userId: string) {
     }
 }
 
-export async function updateUser(userId: string, data: { name: string; role: string; email: string; image?: string }) {
+export async function updateUser(userId: string, data: { name: string; role: string; email: string; image?: string; assignedSubAdminId?: string }) {
     try {
         await connectDB();
+        
+        // Convert empty string back to undefined/null for MongoDB if cleared
+        if (data.assignedSubAdminId === "") {
+            (data as any).assignedSubAdminId = null;
+        }
+
         await User.findByIdAndUpdate(userId, data);
         revalidatePath("/admin/users");
         return { success: true };

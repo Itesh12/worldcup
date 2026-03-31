@@ -13,9 +13,13 @@ interface User {
     isBanned: boolean;
     image?: string;
     createdAt: string;
+    assignedSubAdminId?: {
+        _id: string;
+        name: string;
+    };
 }
 
-export function UserManagementView({ initialUsers }: { initialUsers: User[] }) {
+export function UserManagementView({ initialUsers, subAdmins }: { initialUsers: User[], subAdmins: any[] }) {
     const [searchQuery, setSearchQuery] = useState("");
 
     const filteredUsers = initialUsers.filter(user =>
@@ -86,9 +90,14 @@ export function UserManagementView({ initialUsers }: { initialUsers: User[] }) {
                             <div className="flex items-center justify-between pt-4 border-t border-white/5">
                                 <div className="flex flex-col">
                                     <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest">Registered At</span>
-                                    <span className="text-[10px] font-bold text-slate-400">{new Date(user.createdAt).toLocaleDateString()}</span>
+                                    <span 
+                                        className="text-[10px] font-bold text-slate-400"
+                                        suppressHydrationWarning
+                                    >
+                                        {new Date(user.createdAt).toLocaleDateString('en-GB')}
+                                    </span>
                                 </div>
-                                <UserManagementDialogs user={user} />
+                                <UserManagementDialogs user={user} subAdmins={subAdmins} />
                             </div>
                         </div>
                     ))}
@@ -101,6 +110,7 @@ export function UserManagementView({ initialUsers }: { initialUsers: User[] }) {
                             <tr className="bg-slate-950/40 border-b border-white/5">
                                 <th className="px-8 py-6 text-left text-[9px] font-black text-slate-500 uppercase tracking-[0.3em]">Identity Profile</th>
                                 <th className="px-8 py-6 text-left text-[9px] font-black text-slate-500 uppercase tracking-[0.3em]">Platform Access</th>
+                                <th className="px-8 py-6 text-left text-[9px] font-black text-slate-500 uppercase tracking-[0.3em]">Franchise</th>
                                 <th className="px-8 py-6 text-left text-[9px] font-black text-slate-500 uppercase tracking-[0.3em]">Persistence</th>
                                 <th className="px-8 py-6 text-right text-[9px] font-black text-slate-500 uppercase tracking-[0.3em]">Operational Actions</th>
                             </tr>
@@ -143,18 +153,33 @@ export function UserManagementView({ initialUsers }: { initialUsers: User[] }) {
                                         </div>
                                     </td>
                                     <td className="px-8 py-6">
+                                        {user.role === 'user' ? (
+                                            <div className="flex flex-col">
+                                                <span className="text-[10px] font-black text-white truncate">
+                                                    {user.assignedSubAdminId?.name || "Unassigned"}
+                                                </span>
+                                                <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Linked Sub-Admin</span>
+                                            </div>
+                                        ) : (
+                                            <span className="text-slate-600 text-[10px] font-bold">—</span>
+                                        )}
+                                    </td>
+                                    <td className="px-8 py-6">
                                         <div className="flex flex-col">
                                             <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest flex items-center gap-1.5 mb-1">
                                                 <Clock className="w-3 h-3 opacity-40" /> Established
                                             </span>
-                                            <span className="text-xs font-bold text-slate-400">
-                                                {new Date(user.createdAt).toLocaleDateString()}
+                                            <span 
+                                                className="text-xs font-bold text-slate-400"
+                                                suppressHydrationWarning
+                                            >
+                                                {new Date(user.createdAt).toLocaleDateString('en-GB')}
                                             </span>
                                         </div>
                                     </td>
                                     <td className="px-8 py-6 text-right">
                                         <div className="flex justify-end opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <UserManagementDialogs user={user} />
+                                            <UserManagementDialogs user={user} subAdmins={subAdmins} />
                                         </div>
                                     </td>
                                 </tr>
