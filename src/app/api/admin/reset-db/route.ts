@@ -9,6 +9,10 @@ import BattingResolution from "@/models/BattingResolution";
 import SlotScore from "@/models/SlotScore";
 import UserMatchStats from "@/models/UserMatchStats";
 import UserBattingAssignment from "@/models/UserBattingAssignment";
+import Arena from "@/models/Arena";
+import Tournament from "@/models/Tournament";
+import Transaction from "@/models/Transaction";
+import SubAdminConfig from "@/models/SubAdminConfig";
 
 export async function POST() {
     try {
@@ -29,6 +33,10 @@ export async function POST() {
             SlotScore.deleteMany({}),
             UserMatchStats.deleteMany({}),
             UserBattingAssignment.deleteMany({}),
+            Arena.deleteMany({}),
+            Tournament.deleteMany({}),
+            Transaction.deleteMany({}),
+            SubAdminConfig.deleteMany({}),
         ]);
 
         // 2. Clear Users (Except Admins)
