@@ -11,12 +11,12 @@ import mongoose from "mongoose";
 /**
  * Handle Arena Management (Delete/Cancel)
  */
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+    const { id: arenaId } = await params;
     const session = await getServerSession(authOptions);
     if (!session) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
 
     const user = session.user as any;
-    const arenaId = params.id;
 
     const mongooseSession = await mongoose.startSession();
     mongooseSession.startTransaction();
