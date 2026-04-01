@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSession } from "next-auth/react";
+import { useToast } from "@/contexts/ToastContext";
 
 interface Arena {
     _id: string;
@@ -47,6 +48,7 @@ interface ArenaManagerProps {
 
 export default function ArenaManager({ matchId, matchName, userRole, onClose }: ArenaManagerProps) {
     const { data: session } = useSession();
+    const { showToast } = useToast();
     const currentUser = session?.user as any;
     const [arenas, setArenas] = useState<Arena[]>([]);
     const [loading, setLoading] = useState(true);
@@ -71,6 +73,7 @@ export default function ArenaManager({ matchId, matchName, userRole, onClose }: 
             if (res.ok) setArenas(data);
         } catch (err) {
             console.error(err);
+            showToast("Failed to fetch arenas.", "error");
         } finally {
             setLoading(false);
         }
@@ -93,12 +96,17 @@ export default function ArenaManager({ matchId, matchName, userRole, onClose }: 
                 })
             });
             if (res.ok) {
+                showToast("Arena launched successfully!", "success");
                 setShowCreate(false);
                 setName("");
                 fetchArenas();
+            } else {
+                const error = await res.json();
+                showToast(error.message || "Failed to launch arena", "error");
             }
         } catch (err) {
             console.error(err);
+            showToast("Critical error during arena launch", "error");
         } finally {
             setSubmitting(false);
         }
@@ -113,14 +121,15 @@ export default function ArenaManager({ matchId, matchName, userRole, onClose }: 
                 method: "DELETE"
             });
             if (res.ok) {
+                showToast("Arena cancelled and refunds processed.", "success");
                 fetchArenas();
             } else {
                 const data = await res.json();
-                alert(data.message || "Failed to cancel arena");
+                showToast(data.message || "Failed to cancel arena", "error");
             }
         } catch (err) {
             console.error(err);
-            alert("An error occurred while cancelling the arena");
+            showToast("An error occurred while cancelling the arena", "error");
         } finally {
             setDeletingId(null);
         }

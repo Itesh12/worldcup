@@ -8,6 +8,7 @@ import { signOut, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { ImageUpload } from "./ImageUpload";
 import { updateProfile } from "@/app/actions/profile";
+import { useToast } from "@/contexts/ToastContext";
 
 interface ProfileDialogProps {
     isOpen: boolean;
@@ -22,6 +23,7 @@ interface ProfileDialogProps {
 
 export function ProfileDialog({ isOpen, onClose, user }: ProfileDialogProps) {
     const { update } = useSession(); // Get update function
+    const { showToast } = useToast();
     const [isEditing, setIsEditing] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [formData, setFormData] = useState({
@@ -43,15 +45,15 @@ export function ProfileDialog({ isOpen, onClose, user }: ProfileDialogProps) {
             if (res.success) {
                 // Update client session immediately
                 await update({ name: formData.name, image: formData.image });
-
+                showToast("Profile updated successfully!", "success");
                 router.refresh();
                 setIsEditing(false);
             } else {
-                alert(res.message || "Failed to update profile");
+                showToast(res.message || "Failed to update profile", "error");
             }
         } catch (error) {
             console.error(error);
-            alert("An error occurred");
+            showToast("An error occurred while updating profile", "error");
         } finally {
             setIsLoading(false);
         }

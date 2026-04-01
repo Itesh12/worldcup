@@ -6,18 +6,18 @@ import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Loader2, Mail, Lock, CheckCircle, Trophy, ArrowRight, User } from "lucide-react";
+import { useToast } from "@/contexts/ToastContext";
 
 export default function LoginPage() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
-    const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
+    const { showToast } = useToast();
     const router = useRouter();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
-        setError("");
 
         try {
             const res = await signIn("credentials", {
@@ -27,13 +27,14 @@ export default function LoginPage() {
             });
 
             if (res?.error) {
-                setError("Invalid email or password");
+                showToast("Invalid email or password", "error");
             } else {
+                showToast("Login successful!", "success");
                 router.push("/");
                 router.refresh();
             }
         } catch (err) {
-            setError("An error occurred. Please try again.");
+            showToast("An error occurred. Please try again.", "error");
         } finally {
             setLoading(false);
         }
@@ -98,12 +99,7 @@ export default function LoginPage() {
                         <p className="text-slate-400 text-sm">Enter your credentials to access your account.</p>
                     </div>
 
-                    {error && (
-                        <div className="p-4 mb-6 text-sm text-red-200 bg-red-900/30 border border-red-800/50 rounded-xl flex items-center gap-2 animate-in fade-in slide-in-from-top-2">
-                            <div className="w-1.5 h-1.5 rounded-full bg-red-400" />
-                            {error}
-                        </div>
-                    )}
+                    {/* Errors now handled by Premium Toasts */}
 
                     <form onSubmit={handleSubmit} className="space-y-5">
                         <div className="space-y-2">

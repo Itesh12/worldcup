@@ -3,6 +3,7 @@
 
 import { useState, ChangeEvent, useEffect } from "react";
 import { Upload, X, Loader2 } from "lucide-react";
+import { useToast } from "@/contexts/ToastContext";
 
 interface ImageUploadProps {
     value?: string;
@@ -11,6 +12,7 @@ interface ImageUploadProps {
 }
 
 export function ImageUpload({ value, onChange, label = "Profile Image" }: ImageUploadProps) {
+    const { showToast } = useToast();
     const [isLoading, setIsLoading] = useState(false);
     const [preview, setPreview] = useState(value);
 
@@ -46,7 +48,7 @@ export function ImageUpload({ value, onChange, label = "Profile Image" }: ImageU
             onChange(data.path);
         } catch (error) {
             console.error("Upload error:", error);
-            alert("Failed to upload image.");
+            showToast("Failed to upload image. Please try again.", "error");
             setPreview(value); // Revert to original value
         } finally {
             setIsLoading(false);

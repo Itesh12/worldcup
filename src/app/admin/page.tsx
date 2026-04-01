@@ -5,6 +5,7 @@ import { Users, Trophy, Activity, TrendingUp, ShieldCheck, Clock, CheckCircle, T
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { Spinner } from "@/components/ui/Spinner";
+import { useToast } from "@/contexts/ToastContext";
 
 interface AnalyticsData {
     users: {
@@ -39,6 +40,7 @@ interface AnalyticsData {
 export default function AdminDashboardPage() {
     const { data: session } = useSession();
     const [data, setData] = useState<AnalyticsData | null>(null);
+    const { showToast } = useToast();
     const [loading, setLoading] = useState(true);
 
     // Reset Modal State
@@ -72,15 +74,15 @@ export default function AdminDashboardPage() {
             const json = await res.json();
 
             if (res.ok) {
-                alert("Database Reset Successfully!\n\n" + JSON.stringify(json.details, null, 2));
+                showToast("Database Reset Successfully!", "success");
                 window.location.reload();
             } else {
-                alert("Failed: " + json.error);
+                showToast("Reset Failed: " + (json.error || "Unknown error"), "error");
                 setResetting(false);
             }
         } catch (error) {
             console.error(error);
-            alert("An error occurred.");
+            showToast("An error occurred during reset.", "error");
             setResetting(false);
         }
     };

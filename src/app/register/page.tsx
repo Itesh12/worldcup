@@ -6,20 +6,20 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Loader2, Mail, Lock, User, Sparkles, Trophy, CheckCircle, Upload } from "lucide-react";
 import { ImageUpload } from "@/components/ImageUpload";
+import { useToast } from "@/contexts/ToastContext";
 
 export default function RegisterPage() {
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [image, setImage] = useState("");
-    const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
+    const { showToast } = useToast();
     const router = useRouter();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
-        setError("");
 
         try {
             const res = await fetch("/api/auth/register", {
@@ -34,9 +34,10 @@ export default function RegisterPage() {
                 throw new Error(data.message || "Failed to register");
             }
 
+            showToast("Registration successful! Please login.", "success");
             router.push("/login");
         } catch (err: any) {
-            setError(err.message);
+            showToast(err.message, "error");
         } finally {
             setLoading(false);
         }
@@ -103,12 +104,7 @@ export default function RegisterPage() {
                         <p className="text-slate-400 text-sm">Join the platform to start competing in matches.</p>
                     </div>
 
-                    {error && (
-                        <div className="p-4 mb-6 text-sm text-red-200 bg-red-900/30 border border-red-800/50 rounded-xl flex items-center gap-2 animate-in fade-in slide-in-from-top-2">
-                            <div className="w-1.5 h-1.5 rounded-full bg-red-400" />
-                            {error}
-                        </div>
-                    )}
+                    {/* Errors now handled by Premium Toasts */}
 
                     <form onSubmit={handleSubmit} className="space-y-6">
                         <div className="flex flex-col md:flex-row gap-8">

@@ -7,6 +7,7 @@ import { useSession } from "next-auth/react";
 import { Spinner } from "@/components/ui/Spinner";
 import { ArenaSelectionDialog } from "@/components/ArenaSelectionDialog";
 import { Swords } from "lucide-react";
+import { useToast } from "@/contexts/ToastContext";
 
 interface SlotData {
     inningsNumber: number;
@@ -62,6 +63,7 @@ function RevealCountdown({ targetDate, onComplete }: { targetDate: string, onCom
 }
 
 export default function MatchDetailPage({ params }: { params: Promise<{ id: string }> }) {
+    const { showToast } = useToast();
     const { id: matchId } = use(params);
     const { data: session } = useSession();
     const [data, setData] = useState<any>(null);
@@ -84,6 +86,7 @@ export default function MatchDetailPage({ params }: { params: Promise<{ id: stri
             if (lbRes.ok) setLeaderboard(lbResult);
         } catch (err) {
             console.error("Error fetching leaderboard:", err);
+            showToast("Failed to update leaderboard.", "error");
         }
     };
 
@@ -106,9 +109,11 @@ export default function MatchDetailPage({ params }: { params: Promise<{ id: stri
                     fetchLeaderboard();
                 }
             } else {
+                showToast(result.message || "Failed to load match details", "error");
                 setError(result.message || "Failed to load match details");
             }
         } catch (err) {
+            showToast("Connectivity issue. Please try again.", "error");
             setError("Connectivity issue. Please try again.");
         } finally {
             setLoading(false);

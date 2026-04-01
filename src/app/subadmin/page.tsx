@@ -21,6 +21,7 @@ import {
 import Link from "next/link";
 import { Spinner } from "@/components/ui/Spinner";
 import { AnimatePresence } from "framer-motion";
+import { useToast } from "@/contexts/ToastContext";
 import ArenaManager from "@/components/shared/ArenaManager";
 
 interface Stats {
@@ -62,6 +63,7 @@ export default function SubAdminDashboard() {
     const [recentArenas, setRecentArenas] = useState<RecentArena[]>([]);
     const [commissions, setCommissions] = useState<Commission[]>([]);
     const [upcomingMatches, setUpcomingMatches] = useState<Match[]>([]);
+    const { showToast } = useToast();
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<'arenas' | 'commissions'>('arenas');
     const [selectedMatchForArena, setSelectedMatchForArena] = useState<Match | null>(null);
@@ -93,6 +95,7 @@ export default function SubAdminDashboard() {
             }
         } catch (error) {
             console.error("Failed to fetch stats", error);
+            showToast("Failed to refresh dashboard stats.", "error");
         } finally {
             setLoading(false);
         }

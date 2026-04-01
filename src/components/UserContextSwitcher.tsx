@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Trophy, ChevronDown, Check } from "lucide-react";
 import { useTournament } from "@/contexts/TournamentContext";
+import { useToast } from "@/contexts/ToastContext";
 
 interface Tournament {
     _id: string;
@@ -12,6 +13,7 @@ interface Tournament {
 
 export function UserContextSwitcher({ onSelect }: { onSelect?: (id: string | null) => void }) {
     const { tournamentId, setTournamentId } = useTournament();
+    const { showToast } = useToast();
     const [tournaments, setTournaments] = useState<Tournament[]>([]);
     const [isOpen, setIsOpen] = useState(false);
     const [loading, setLoading] = useState(true);
@@ -80,6 +82,7 @@ export function UserContextSwitcher({ onSelect }: { onSelect?: (id: string | nul
                                     onClick={() => {
                                         setTournamentId(t._id);
                                         if (onSelect) onSelect(t._id);
+                                        showToast(`Switched to ${t.name}`, "info");
                                         setIsOpen(false);
                                     }}
                                     className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-left transition-colors ${

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { CheckCircle, Circle, Plus, Trophy, Activity, Globe, Search, RefreshCw, ChevronDown, AlertTriangle, X, XCircle } from "lucide-react";
 import { Spinner } from "@/components/ui/Spinner";
+import { useToast } from "@/contexts/ToastContext";
 
 interface Tournament {
     _id: string;
@@ -20,7 +21,7 @@ export default function AdminTournamentsPage() {
     const [showNewForm, setShowNewForm] = useState(false);
     const [isMigrating, setIsMigrating] = useState(false);
     const [showMigrateConfirm, setShowMigrateConfirm] = useState(false);
-    const [migrationStatus, setMigrationStatus] = useState<{type: 'success' | 'error', message: string} | null>(null);
+    const { showToast } = useToast();
     
     // Form state
     const [name, setName] = useState("");
@@ -46,6 +47,7 @@ export default function AdminTournamentsPage() {
             if (res.ok) setTournaments(data);
         } catch (err) {
             console.error("Failed to fetch tournaments", err);
+            showToast("Failed to fetch tournaments.", "error");
         } finally {
             setLoading(false);
         }
@@ -59,6 +61,7 @@ export default function AdminTournamentsPage() {
             if (res.ok) setAvailableSeries(data);
         } catch (err) {
             console.error("Failed to fetch Cricbuzz series", err);
+            showToast("Failed to fetch Available Series from Cricbuzz.", "error");
         } finally {
             setFetchingSeries(false);
         }
@@ -106,7 +109,11 @@ export default function AdminTournamentsPage() {
                 setSlug("");
                 setIsActive(false);
                 setCommissionPercentage(5);
+                showToast("Tournament created successfully!", "success");
                 await fetchTournaments();
+            } else {
+                const error = await res.json();
+                showToast(error.message || "Failed to create tournament", "error");
             }
         } catch (err) {
             console.error("Failed to create tournament", err);
@@ -124,17 +131,14 @@ export default function AdminTournamentsPage() {
             const res = await fetch("/api/admin/migrate", { method: "POST" });
             const data = await res.json();
             if (res.ok) {
-                setMigrationStatus({ 
-                    type: 'success', 
-                    message: `Intelligent sync completed for ${data.syncResults?.length || 0} active tournaments. Matches were categorized and ${data.cleanup?.statsFixed || 0} orphaned records were stabilized.` 
-                });
+                showToast(`Intelligent sync completed! Matches categorized and records stabilized.`, "success");
                 await fetchTournaments();
             } else {
-                setMigrationStatus({ type: 'error', message: "Migration failed: " + data.message });
+                showToast("Migration failed: " + data.message, "error");
             }
         } catch (err) {
             console.error("Migration error", err);
-            setMigrationStatus({ type: 'error', message: "A critical error occurred while attempting to migrate data." });
+            showToast("Migration critical error occurred.", "error");
         } finally {
             setIsMigrating(false);
         }
@@ -148,7 +152,10 @@ export default function AdminTournamentsPage() {
                 body: JSON.stringify({ id, isActive: !currentStatus }) // Toggle the current status
             });
             if (res.ok) {
+                showToast(`Tournament status updated!`, "success");
                 await fetchTournaments();
+            } else {
+                showToast("Failed to toggle tournament status.", "error");
             }
         } catch (err) {
             console.error("Failed to toggle tournament", err);
@@ -193,25 +200,7 @@ export default function AdminTournamentsPage() {
                 </div>
             )}
 
-            {migrationStatus && (
-                <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[#050B14]/80 backdrop-blur-md animate-in fade-in duration-300">
-                    <div className={`bg-slate-900 border rounded-[32px] p-6 max-w-sm w-full animate-in zoom-in-95 duration-300 ${migrationStatus.type === 'success' ? 'border-emerald-500/30 shadow-[0_0_50px_rgba(16,185,129,0.1)]' : 'border-red-500/30 shadow-[0_0_50px_rgba(239,68,68,0.1)]'}`}>
-                        <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-6 mx-auto border ${migrationStatus.type === 'success' ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-red-500/10 border-red-500/20'}`}>
-                            {migrationStatus.type === 'success' ? <CheckCircle className="w-8 h-8 text-emerald-500" /> : <AlertTriangle className="w-8 h-8 text-red-500" />}
-                        </div>
-                        <h3 className="text-xl font-black text-white text-center mb-3 uppercase tracking-wide">{migrationStatus.type === 'success' ? 'Sync Successful' : 'Sync Failed'}</h3>
-                        <div className="text-sm font-medium text-slate-400 text-center mb-8 leading-relaxed max-h-32 overflow-y-auto no-scrollbar">
-                            {migrationStatus.message}
-                        </div>
-                        <button
-                            onClick={() => setMigrationStatus(null)}
-                            className="w-full px-4 py-3.5 rounded-2xl bg-slate-800 hover:bg-slate-700 font-bold text-white text-sm transition-all border border-white/5 uppercase tracking-widest"
-                        >
-                            Dismiss
-                        </button>
-                    </div>
-                </div>
-            )}
+            {/* Migration Confirmation Modal remains for Safety */}
 
             {/* Standardized Premium Header */}
             <header className="sticky top-0 z-[60] bg-[#050B14]/80 backdrop-blur-xl border-b border-white/5">
