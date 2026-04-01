@@ -17,14 +17,12 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    const { arenaId, inningsNumber } = await req.json();
+    const { arenaId, matchId, inviteCode, inningsNumber } = await req.json();
     const userId = (session.user as any).id;
 
-    if (!arenaId || !inningsNumber) {
-        return NextResponse.json({ message: "Arena selection and Innings number are required" }, { status: 400 });
+    if ((!arenaId && (!matchId || !inviteCode)) || !inningsNumber) {
+        return NextResponse.json({ message: "Incomplete selection details" }, { status: 400 });
     }
-
-    const arenaObjectId = new mongoose.Types.ObjectId(arenaId);
 
     const mongooseSession = await mongoose.startSession();
     mongooseSession.startTransaction();
@@ -33,11 +31,25 @@ export async function POST(req: NextRequest) {
         await connectDB();
 
         // 1. Fetch Arena & User
-        const arena = await Arena.findById(arenaObjectId).session(mongooseSession);
+        let arena;
+        if (arenaId) {
+            arena = await Arena.findById(arenaId).session(mongooseSession);
+        } else {
+            arena = await Arena.findOne({ matchId, inviteCode: inviteCode.toUpperCase() }).session(mongooseSession);
+        }
+
         const user = await User.findById(userId).session(mongooseSession);
 
-        if (!arena) throw new Error("Arena not found");
+        if (!arena) throw new Error("Arena not found or invalid invite code");
         if (!user) throw new Error("User not found");
+
+        // 1.5 Private Contest Validation
+        if (arena.isPrivate) {
+            const isHost = arena.createdBy.toString() === userId;
+            if (!isHost && (!inviteCode || inviteCode.toUpperCase() !== arena.inviteCode)) {
+                throw new Error("Invalid or missing invite code for this private arena");
+            }
+        }
 
         // 2. Deadline & Space Check
         const now = new Date();
@@ -56,7 +68,7 @@ export async function POST(req: NextRequest) {
 
         // 4. Duplicate Check
         const existing = await UserBattingAssignment.findOne({
-            arenaId: arenaObjectId,
+            arenaId: arena._id,
             userId,
             inningsNumber
         }).session(mongooseSession);
@@ -76,14 +88,14 @@ export async function POST(req: NextRequest) {
             type: 'bet_placed', // Using 'bet_placed' as a proxy for contest_entry
             description: `Contest Entry: ${arena.name} (Innings ${inningsNumber})`,
             status: 'completed',
-            referenceId: arenaId.toString()
+            referenceId: arena._id.toString()
         }], { session: mongooseSession });
 
         // 7. Create Assignment Record (Position is NULL - Revealed at T-30)
         const assignment = await UserBattingAssignment.create([{
             tournamentId: arena.tournamentId,
             matchId: arena.matchId,
-            arenaId: arenaObjectId,
+            arenaId: arena._id,
             userId,
             inningsNumber: Number(inningsNumber),
             position: null

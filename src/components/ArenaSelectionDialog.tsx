@@ -55,6 +55,7 @@ export function ArenaSelectionDialog({
     const [loading, setLoading] = useState(true);
     const [joining, setJoining] = useState<string | null>(null);
     const [filter, setFilter] = useState<'all' | 'public' | 'private'>('all');
+    const [inviteCodes, setInviteCodes] = useState<Record<string, string>>({});
 
     useEffect(() => {
         if (isOpen && matchId) {
@@ -69,6 +70,19 @@ export function ArenaSelectionDialog({
             const data = await res.json();
             if (res.ok) {
                 setArenas(data);
+                
+                // Pre-fill if code exists in URL
+                const urlParams = new URLSearchParams(window.location.search);
+                const code = urlParams.get('code');
+                if (code) {
+                    const privateArenas = data.filter((a: any) => a.isPrivate && !a.hasJoined);
+                    if (privateArenas.length > 0) {
+                        const newCodes = { ...inviteCodes };
+                        privateArenas.forEach((a: any) => { newCodes[a._id] = code; });
+                        setInviteCodes(newCodes);
+                        setFilter('private');
+                    }
+                }
             }
         } catch (error) {
             showToast("Failed to load arenas", "error");
@@ -78,24 +92,34 @@ export function ArenaSelectionDialog({
     };
 
     const handleJoin = async (arenaId: string, inningsNumber: number) => {
+        const arena = arenas.find(a => a._id === arenaId);
+        if (arena?.isPrivate && !inviteCodes[arenaId]) {
+            showToast("Entering the invite code is mandatory for private contests.", "warning");
+            return;
+        }
+
         try {
             setJoining(arenaId);
             const res = await fetch("/api/arenas/join", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ arenaId, inningsNumber })
+                body: JSON.stringify({ 
+                    arenaId, 
+                    inningsNumber,
+                    inviteCode: arena?.isPrivate ? inviteCodes[arenaId] : undefined
+                })
             });
             const data = await res.json();
             
             if (res.ok) {
-                showToast("Joined successfully! Position hidden until T-30.", "success");
+                showToast("Joined successfully! Your position is secured.", "success");
                 onJoinSuccess();
                 onClose();
             } else {
                 showToast(data.message || "Failed to join arena", "error");
             }
         } catch (error) {
-            showToast("Connection error", "error");
+            showToast("Connectivity error. Please try again.", "error");
         } finally {
             setJoining(null);
         }
@@ -244,8 +268,20 @@ export function ArenaSelectionDialog({
                                             </div>
                                         </div>
 
-                                        <div className="flex items-center gap-2">
-                                            {/* We simplify for now to just joining Innings 1 */}
+                                        <div className="flex items-center gap-4">
+                                            {arena.isPrivate && !arena.hasJoined && (
+                                                <div className="flex flex-col gap-1.5 min-w-[120px]">
+                                                    <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest pl-1">ENTER CODE</span>
+                                                    <input 
+                                                        type="text"
+                                                        value={inviteCodes[arena._id] || ""}
+                                                        onChange={(e) => setInviteCodes({ ...inviteCodes, [arena._id]: e.target.value.toUpperCase() })}
+                                                        placeholder="INVITE CODE"
+                                                        maxLength={6}
+                                                        className="bg-slate-950 border border-white/5 focus:border-purple-500/50 rounded-xl px-4 py-3 text-xs font-black tracking-widest text-white outline-none transition-all placeholder:text-slate-800"
+                                                    />
+                                                </div>
+                                            )}
                                             <button 
                                                 onClick={() => !arena.hasJoined && handleJoin(arena._id, 1)}
                                                 disabled={joining !== null || arena.slotsCount >= arena.maxSlots || arena.hasJoined}
@@ -254,11 +290,11 @@ export function ArenaSelectionDialog({
                                                     ? "bg-indigo-500/10 text-indigo-400 border border-indigo-500/30 cursor-default"
                                                     : arena.slotsCount >= arena.maxSlots 
                                                     ? "bg-slate-800 text-slate-500 cursor-not-allowed"
-                                                    : "bg-purple-600 hover:bg-purple-500 text-white shadow-lg shadow-purple-600/20"
+                                                    : "bg-purple-600 hover:bg-purple-500 text-white shadow-lg shadow-purple-600/20 active:scale-95"
                                                 }`}
                                             >
                                                 {joining === arena._id ? (
-                                                    <RefreshCw className="w-4 h-4 animate-spin" />
+                                                    <RefreshCw className="w-4 h-4 animate-spin text-indigo-500" />
                                                 ) : arena.hasJoined ? (
                                                     <div className="flex items-center gap-2">
                                                         <ShieldCheck className="w-4 h-4 text-indigo-400" />

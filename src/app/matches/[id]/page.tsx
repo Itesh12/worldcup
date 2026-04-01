@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, use } from "react";
-import { ArrowLeft, User, Target, Zap, Info, Calendar, MapPin, Users, Activity, Trophy, X, Star, PartyPopper, RefreshCw, Ban, AlertCircle, Lock } from "lucide-react";
+import { ArrowLeft, User, Target, Zap, Info, Calendar, MapPin, Users, Activity, Trophy, X, Star, PartyPopper, RefreshCw, Ban, AlertCircle, Lock, Copy, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { Spinner } from "@/components/ui/Spinner";
@@ -63,6 +63,200 @@ function RevealCountdown({ targetDate, onComplete }: { targetDate: string, onCom
     );
 }
 
+function AuthBackdrop({ message }: { message: string }) {
+    return (
+        <div className="py-20 flex flex-col items-center justify-center text-center bg-slate-900/20 border border-white/5 rounded-[2.5rem] backdrop-blur-xl relative overflow-hidden">
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-64 bg-indigo-600/10 blur-[80px] rounded-full pointer-events-none" />
+            <div className="w-16 h-16 bg-slate-800 rounded-3xl flex items-center justify-center mb-6 border border-white/5 relative z-10">
+                <Trophy className="w-8 h-8 text-indigo-500/50" />
+            </div>
+            <p className="text-sm font-bold text-slate-400 uppercase tracking-[0.2em] mb-8 max-w-sm px-8 leading-loose relative z-10">
+                {message}
+            </p>
+            <Link href="/login" className="px-10 py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-black uppercase tracking-widest text-xs transition-all shadow-xl shadow-indigo-600/20 active:scale-95 relative z-10">
+                Sign In to View
+            </Link>
+        </div>
+    );
+}
+
+function SectionHeader({ title, icon: Icon, color }: { title: string; icon: any; color: string }) {
+    const colorMap: any = {
+        blue: 'text-blue-500',
+        indigo: 'text-indigo-500',
+        slate: 'text-slate-400',
+        purple: 'text-purple-500'
+    };
+    const underlineMap: any = {
+        blue: 'decoration-blue-600/30',
+        indigo: 'decoration-indigo-500/30',
+        purple: 'decoration-purple-500/30'
+    };
+    return (
+        <div className="flex items-center gap-3 md:gap-4 mb-6 md:mb-8">
+            <div className={`p-2.5 md:p-3 bg-[#0A0F1C] rounded-xl md:rounded-2xl border border-white/5 ${colorMap[color] || colorMap.indigo} shadow-lg shadow-indigo-500/5`}>
+                <Icon className="w-5 h-5 md:w-6 md:h-6" />
+            </div>
+            <h2 className={`text-xl md:text-3xl font-black text-white tracking-tight underline ${underlineMap[color] || underlineMap.indigo} underline-offset-4 md:underline-offset-8 decoration-2 md:decoration-4 uppercase md:normal-case`}>{title}</h2>
+        </div>
+    );
+}
+
+function StatItem({ label, value, primary = false }: { label: string; value: string | number; primary?: boolean }) {
+    return (
+        <div className="flex flex-col min-w-[40px]">
+            <span className="text-[8px] md:text-[10px] font-black text-slate-500 uppercase mb-1 md:mb-2 tracking-widest">{label}</span>
+            <span className={`text-xl md:text-3xl font-black ${primary ? 'text-indigo-500' : 'text-white'}`}>{value}</span>
+        </div>
+    );
+}
+
+function EmptyState({ message }: { message: string }) {
+    return (
+        <div className="bg-slate-900/50 border border-slate-800/80 border-dashed rounded-[2.5rem] p-16 text-center">
+            <Activity className="w-16 h-16 text-slate-800 mx-auto mb-6 opacity-50" />
+            <p className="text-slate-500 font-bold max-w-xs mx-auto text-lg leading-snug">{message}</p>
+        </div>
+    );
+}
+
+function InfoRow({ label, value }: { label: string; value: string }) {
+    if (!value) return null;
+    return (
+        <div className="flex justify-between items-center p-6 px-8 hover:bg-slate-800/30 transition-colors">
+            <span className="text-xs font-black text-slate-500 uppercase tracking-widest">{label}</span>
+            <span className="text-sm font-bold text-white text-right max-w-[60%]">{value}</span>
+        </div>
+    );
+}
+
+function ScorecardInnings({ team, isFirst = false }: { team: any; isFirst?: boolean }) {
+    return (
+        <div className="bg-slate-900/50 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl">
+            <div className={`p-4 md:p-6 px-4 md:px-12 flex justify-between items-center border-b border-slate-800 ${isFirst ? 'bg-indigo-600/10' : 'bg-slate-800/20'}`}>
+                <h3 className="text-sm md:text-xl font-black text-white truncate mr-2">{team.name}</h3>
+                <span className="text-lg md:text-2xl font-black text-indigo-500 underline decoration-2 underline-offset-4 whitespace-nowrap">{team.score}</span>
+            </div>
+            <div className="overflow-x-auto scrollbar-hide">
+                <table className="w-full min-w-[500px]">
+                    <thead>
+                        <tr className="bg-slate-950/50 border-b border-slate-800">
+                            <th className="p-3 md:p-4 px-6 md:px-12 text-left text-[8px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest w-[40%]">Batter</th>
+                            <th className="p-3 md:p-4 text-center text-[8px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest w-[12%]">R</th>
+                            <th className="p-3 md:p-4 text-center text-[8px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest w-[12%]">B</th>
+                            <th className="p-3 md:p-4 text-center text-[8px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest w-[12%]">4s</th>
+                            <th className="p-3 md:p-4 text-center text-[8px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest w-[12%]">6s</th>
+                            <th className="p-3 md:p-4 text-center text-[8px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest w-[12%]">SR</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800/50">
+                        {team.batting.map((b: any, i: number) => (
+                            <tr key={i} className="hover:bg-slate-800/20 transition-colors group">
+                                <td className="p-4 px-6 md:px-12">
+                                    <div className="flex flex-col">
+                                        <span className="text-xs md:text-sm font-black text-white group-hover:text-indigo-500 transition-colors block mb-0.5">{b.name}</span>
+                                        <span className="text-[9px] md:text-[10px] font-medium text-slate-500 leading-tight italic">{b.outStatus}</span>
+                                    </div>
+                                </td>
+                                <td className="p-4 text-center font-black text-white text-xs md:text-base">{b.runs}</td>
+                                <td className="p-4 text-center text-[10px] md:text-sm font-bold text-slate-400">{b.balls}</td>
+                                <td className="p-4 text-center text-[10px] md:text-sm font-bold text-slate-400">{b.fours}</td>
+                                <td className="p-4 text-center text-[10px] md:text-sm font-bold text-slate-400">{b.sixes}</td>
+                                <td className="p-4 text-center text-[11px] md:text-sm font-black text-indigo-400/80">
+                                    {b.balls > 0 ? ((b.runs / b.balls) * 100).toFixed(1) : '0.0'}
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+
+            {/* Bowling Stats */}
+            <div className="overflow-x-auto scrollbar-hide border-t border-slate-800/50">
+                <table className="w-full min-w-[500px]">
+                    <thead>
+                        <tr className="bg-slate-950/50 border-b border-slate-800">
+                            <th className="p-4 px-6 md:px-12 text-left text-[8px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest w-[40%]">Bowler</th>
+                            <th className="p-4 text-center text-[8px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest w-[12%]">O</th>
+                            <th className="p-4 text-center text-[8px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest w-[12%]">M</th>
+                            <th className="p-4 text-center text-[8px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest w-[12%]">R</th>
+                            <th className="p-4 text-center text-[8px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest w-[12%]">W</th>
+                            <th className="p-4 text-center text-[8px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest w-[12%]">ECO</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800/50">
+                        {team.bowling && team.bowling.map((b: any, i: number) => (
+                            <tr key={i} className="hover:bg-slate-800/20 transition-colors group">
+                                <td className="p-4 px-6 md:px-12 font-black text-white group-hover:text-indigo-500 text-xs md:text-sm">{b.name}</td>
+                                <td className="p-4 text-center text-[10px] md:text-sm font-bold text-slate-400">{b.overs}</td>
+                                <td className="p-4 text-center text-[10px] md:text-sm font-bold text-slate-400">{b.maidens}</td>
+                                <td className="p-4 text-center text-[10px] md:text-sm font-black text-white">{b.runs}</td>
+                                <td className="p-4 text-center text-[10px] md:text-sm font-black text-indigo-500">{b.wickets}</td>
+                                <td className="p-4 text-center text-[10px] md:text-sm font-bold text-slate-400">{b.economy}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+
+            {/* FOW */}
+            {team.fow && team.fow.length > 0 && (
+                <div className="bg-slate-950/30 p-4 md:p-6 px-6 md:px-12 border-t border-slate-800/50">
+                    <p className="text-[8px] md:text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1 md:mb-2 text-center md:text-left">Fall of Wickets</p>
+                    <p className="text-[9px] md:text-xs font-medium text-slate-400 leading-relaxed text-center md:text-left italic">{team.fow.join(', ')}</p>
+                </div>
+            )}
+        </div>
+    );
+}
+
+function TeamSquad({ team, color }: { team: any; color: string }) {
+    const glowMap: any = {
+        indigo: 'shadow-indigo-600/10',
+        purple: 'shadow-purple-600/10'
+    };
+    return (
+        <div className={`flex flex-col gap-6 bg-slate-900/30 p-8 rounded-[2.5rem] border border-slate-800/80 ${glowMap[color]} shadow-2xl`}>
+            <h3 className="text-2xl font-black text-white mb-4 border-l-4 border-indigo-600 pl-4">{team.name}</h3>
+            <div className="space-y-4">
+                <p className="text-[10px] font-black text-indigo-500 uppercase tracking-[3px]">Playing XI</p>
+                <div className="grid gap-3">
+                    {team.playingXI.map((p: any, i: number) => (
+                        <div key={i} className="flex justify-between items-center bg-slate-950/50 p-4 rounded-2xl border border-slate-800/50 hover:bg-slate-900 transition-colors">
+                            <div className="flex items-center gap-3">
+                                <span className="text-sm font-black text-white">{p.name}</span>
+                                {p.isCaptain && <span className="px-2 py-0.5 bg-indigo-600 text-[8px] font-black text-white rounded-md uppercase">C</span>}
+                                {p.isWK && <span className="px-2 py-0.5 bg-slate-700 text-[8px] font-black text-white rounded-md uppercase">WK</span>}
+                            </div>
+                            <span className="text-[10px] font-bold text-slate-600 uppercase tracking-tighter">{p.role}</span>
+                        </div>
+                    ))}
+                </div>
+            </div>
+
+            {/* Bench */}
+            {team.bench && team.bench.length > 0 && (
+                <div className="space-y-4 pt-6 border-t border-slate-800/50">
+                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-[3px]">Bench</p>
+                    <div className="grid gap-3">
+                        {team.bench.map((p: any, i: number) => (
+                            <div key={i} className="flex justify-between items-center bg-slate-950/30 p-4 rounded-2xl border border-slate-800/30 hover:bg-slate-900 transition-colors opacity-75 hover:opacity-100">
+                                <div className="flex items-center gap-3">
+                                    <span className="text-sm font-bold text-slate-300">{p.name}</span>
+                                    {p.isCaptain && <span className="px-2 py-0.5 bg-indigo-600 text-[8px] font-black text-white rounded-md uppercase">C</span>}
+                                    {p.isWK && <span className="px-2 py-0.5 bg-slate-700 text-[8px] font-black text-white rounded-md uppercase">WK</span>}
+                                </div>
+                                <span className="text-[10px] font-bold text-slate-600 uppercase tracking-tighter">{p.role}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
+
 export default function MatchDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { showToast } = useToast();
     const { id: matchId } = use(params);
@@ -70,7 +264,7 @@ export default function MatchDetailPage({ params }: { params: Promise<{ id: stri
     const [data, setData] = useState<any>(null);
     const [leaderboard, setLeaderboard] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState<'slots' | 'scorecard' | 'leaderboard' | 'squads' | 'info'>('slots');
+    const [activeTab, setActiveTab] = useState<'hosted' | 'slots' | 'scorecard' | 'leaderboard' | 'squads' | 'info'>('slots');
     const [error, setError] = useState<string | null>(null);
     const [refreshing, setRefreshing] = useState(false);
     const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
@@ -80,6 +274,9 @@ export default function MatchDetailPage({ params }: { params: Promise<{ id: stri
     const [hasShownPopup, setHasShownPopup] = useState(false);
     const [isArenaDialogOpen, setIsArenaDialogOpen] = useState(false);
     const [matchForHosting, setMatchForHosting] = useState<any>(null);
+    const [hostedArenas, setHostedArenas] = useState<any[]>([]);
+    const [loadingHosted, setLoadingHosted] = useState(false);
+    const [copiedId, setCopiedId] = useState<string | null>(null);
 
     const fetchLeaderboard = async () => {
         try {
@@ -89,6 +286,20 @@ export default function MatchDetailPage({ params }: { params: Promise<{ id: stri
         } catch (err) {
             console.error("Error fetching leaderboard:", err);
             showToast("Failed to update leaderboard.", "error");
+        }
+    };
+
+    const fetchHostedArenas = async () => {
+        if (!session) return;
+        setLoadingHosted(true);
+        try {
+            const res = await fetch(`/api/arenas?matchId=${matchId}&filter=hosted`);
+            const result = await res.json();
+            if (res.ok) setHostedArenas(result);
+        } catch (err) {
+            console.error("Error fetching hosted arenas:", err);
+        } finally {
+            setLoadingHosted(false);
         }
     };
 
@@ -109,6 +320,10 @@ export default function MatchDetailPage({ params }: { params: Promise<{ id: stri
                 // Also update leaderboard if on that tab or initially (restricted to session)
                 if (session && (activeTab === 'leaderboard' || !leaderboard.length)) {
                     fetchLeaderboard();
+                }
+                // Fetch hosted arenas if on that tab
+                if (session && activeTab === 'hosted') {
+                    fetchHostedArenas();
                 }
             } else {
                 showToast(result.message || "Failed to load match details", "error");
@@ -143,6 +358,22 @@ export default function MatchDetailPage({ params }: { params: Promise<{ id: stri
             setHasShownPopup(true);
         }
     }, [data?.match?.status, leaderboard, hasShownPopup]);
+
+    // Handle Direct URL Joining via Invite Code
+    useEffect(() => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const code = urlParams.get('code');
+        if (code && session && data) {
+            // Trigger joining dialog or direct join logic
+            setIsArenaDialogOpen(true);
+        }
+    }, [session, data]);
+
+    useEffect(() => {
+        if (activeTab === 'hosted') {
+            fetchHostedArenas();
+        }
+    }, [activeTab]);
 
     if (loading) return (
         <div className="min-h-screen bg-[#050810] flex items-center justify-center">
@@ -191,6 +422,7 @@ export default function MatchDetailPage({ params }: { params: Promise<{ id: stri
     };
 
     const tabs = [
+        { id: 'hosted', label: 'My Arenas', icon: Swords },
         { id: 'slots', label: 'My Slots', icon: Target },
         { id: 'leaderboard', label: 'Leaderboard', icon: Trophy },
         { id: 'scorecard', label: 'Scorecard', icon: Activity },
@@ -240,7 +472,6 @@ export default function MatchDetailPage({ params }: { params: Promise<{ id: stri
                 </div>
             </header>
 
-            {/* Hero Section */}
             {/* Hero Section */}
             <div className="pt-24 pb-10 md:pb-12 px-4 border-b border-slate-900">
                 <div className="max-w-7xl mx-auto">
@@ -310,6 +541,93 @@ export default function MatchDetailPage({ params }: { params: Promise<{ id: stri
                 </div>
 
                 {/* Tab Content */}
+                {activeTab === 'hosted' && (
+                    <div className="space-y-10 animate-in fade-in slide-in-from-bottom-5 duration-700">
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                            <SectionHeader title="Your Hosted Arenas" icon={Swords} color="purple" />
+                            {session && (
+                                <button 
+                                    onClick={() => setMatchForHosting(match)}
+                                    className="flex items-center gap-3 px-8 py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl text-xs font-black italic uppercase tracking-widest transition-all shadow-lg shadow-indigo-600/20 active:scale-95"
+                                >
+                                    <Swords className="w-4 h-4" />
+                                    Host New Arena
+                                </button>
+                            )}
+                        </div>
+
+                        {!session ? (
+                            <AuthBackdrop message="Sign in to view and manage your hosted arenas." />
+                        ) : loadingHosted ? (
+                            <div className="py-20 flex justify-center">
+                                <Spinner />
+                            </div>
+                        ) : hostedArenas.length === 0 ? (
+                            <EmptyState message="You haven't hosted any arenas for this match yet." />
+                        ) : (
+                            <div className="grid gap-6">
+                                {hostedArenas.map((arena: any) => (
+                                    <div key={arena._id} className="relative overflow-hidden bg-[#0A0F1C]/60 border border-white/5 rounded-[2rem] p-6 md:p-8 backdrop-blur-3xl group hover:border-purple-500/30 transition-all shadow-2xl">
+                                        <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/5 blur-[50px] rounded-full pointer-events-none" />
+                                        
+                                        <div className="flex flex-col md:flex-row gap-6 md:gap-10 items-start md:items-center justify-between relative z-10">
+                                            <div className="flex-1">
+                                                <div className="flex items-center gap-3 mb-2">
+                                                    <h3 className="text-xl md:text-2xl font-black text-white tracking-tight uppercase">{arena.name}</h3>
+                                                    {arena.isPrivate && (
+                                                        <span className="px-2.5 py-1 bg-amber-500/10 text-amber-500 border border-amber-500/20 rounded-lg text-[9px] font-black uppercase tracking-widest">
+                                                            Private
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <div className="flex items-center gap-4 text-slate-500">
+                                                    <div className="flex items-center gap-2">
+                                                        <Users className="w-4 h-4" />
+                                                        <span className="text-xs font-bold uppercase tracking-widest">{arena.slotsCount} / {arena.maxSlots} Slots</span>
+                                                    </div>
+                                                    <div className="w-1 h-1 rounded-full bg-slate-800" />
+                                                    <div className="flex items-center gap-2">
+                                                        <Activity className="w-4 h-4" />
+                                                        <span className="text-xs font-bold uppercase tracking-widest">{arena.status}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
+                                                {arena.isPrivate && arena.inviteCode && (
+                                                    <div className="flex flex-col items-end gap-1.5">
+                                                        <span className="text-[9px] font-black text-slate-600 uppercase tracking-[0.2em]">Invite Code</span>
+                                                        <button 
+                                                            onClick={() => {
+                                                                navigator.clipboard.writeText(arena.inviteCode);
+                                                                setCopiedId(arena._id);
+                                                                setTimeout(() => setCopiedId(null), 2000);
+                                                            }}
+                                                            className="flex items-center gap-3 px-5 py-2.5 bg-slate-900 border border-white/10 rounded-xl hover:border-purple-500/50 transition-all group"
+                                                        >
+                                                            <span className="text-lg font-black text-white tracking-widest">{arena.inviteCode}</span>
+                                                            {copiedId === arena._id ? (
+                                                                <CheckCircle2 className="w-4 h-4 text-green-500" />
+                                                            ) : (
+                                                                <Copy className="w-4 h-4 text-slate-500 group-hover:text-purple-400" />
+                                                            )}
+                                                        </button>
+                                                    </div>
+                                                )}
+                                                
+                                                <div className="flex flex-col items-end gap-1.5 ml-auto md:ml-0 px-6 border-l border-white/5">
+                                                    <span className="text-[9px] font-black text-slate-600 uppercase tracking-[0.2em]">Entry Fee</span>
+                                                    <span className="text-2xl font-black text-indigo-400">₹{arena.entryFee}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
+
                 {activeTab === 'slots' && (
                     <div className="space-y-10 animate-in fade-in slide-in-from-bottom-5 duration-700">
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -683,199 +1001,6 @@ export default function MatchDetailPage({ params }: { params: Promise<{ id: stri
                     matchName={`${match.teams[0].shortName} vs ${match.teams[1].shortName}`}
                     onSuccess={() => fetchMatchData(true)}
                 />
-            )}
-        </div>
-    );
-}
-
-function AuthBackdrop({ message }: { message: string }) {
-    return (
-        <div className="py-20 flex flex-col items-center justify-center text-center bg-slate-900/20 border border-white/5 rounded-[2.5rem] backdrop-blur-xl relative overflow-hidden">
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-64 bg-indigo-600/10 blur-[80px] rounded-full pointer-events-none" />
-            <div className="w-16 h-16 bg-slate-800 rounded-3xl flex items-center justify-center mb-6 border border-white/5 relative z-10">
-                <Trophy className="w-8 h-8 text-indigo-500/50" />
-            </div>
-            <p className="text-sm font-bold text-slate-400 uppercase tracking-[0.2em] mb-8 max-w-sm px-8 leading-loose relative z-10">
-                {message}
-            </p>
-            <Link href="/login" className="px-10 py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-black uppercase tracking-widest text-xs transition-all shadow-xl shadow-indigo-600/20 active:scale-95 relative z-10">
-                Sign In to View
-            </Link>
-        </div>
-    );
-}
-
-function SectionHeader({ title, icon: Icon, color }: { title: string; icon: any; color: string }) {
-    const colorMap: any = {
-        blue: 'text-blue-500',
-        indigo: 'text-indigo-500',
-        slate: 'text-slate-400',
-        purple: 'text-purple-500'
-    };
-    const underlineMap: any = {
-        blue: 'decoration-blue-600/30',
-        indigo: 'decoration-indigo-500/30',
-        purple: 'decoration-purple-500/30'
-    };
-    return (
-        <div className="flex items-center gap-3 md:gap-4 mb-6 md:mb-8">
-            <div className={`p-2.5 md:p-3 bg-[#0A0F1C] rounded-xl md:rounded-2xl border border-white/5 ${colorMap[color] || colorMap.indigo} shadow-lg shadow-indigo-500/5`}>
-                <Icon className="w-5 h-5 md:w-6 md:h-6" />
-            </div>
-            <h2 className={`text-xl md:text-3xl font-black text-white tracking-tight underline ${underlineMap[color] || underlineMap.indigo} underline-offset-4 md:underline-offset-8 decoration-2 md:decoration-4 uppercase md:normal-case`}>{title}</h2>
-        </div>
-    );
-}
-
-function StatItem({ label, value, primary = false }: { label: string; value: string | number; primary?: boolean }) {
-    return (
-        <div className="flex flex-col min-w-[40px]">
-            <span className="text-[8px] md:text-[10px] font-black text-slate-500 uppercase mb-1 md:mb-2 tracking-widest">{label}</span>
-            <span className={`text-xl md:text-3xl font-black ${primary ? 'text-indigo-500' : 'text-white'}`}>{value}</span>
-        </div>
-    );
-}
-
-function EmptyState({ message }: { message: string }) {
-    return (
-        <div className="bg-slate-900/50 border border-slate-800/80 border-dashed rounded-[2.5rem] p-16 text-center">
-            <Activity className="w-16 h-16 text-slate-800 mx-auto mb-6 opacity-50" />
-            <p className="text-slate-500 font-bold max-w-xs mx-auto text-lg leading-snug">{message}</p>
-        </div>
-    );
-}
-
-function InfoRow({ label, value }: { label: string; value: string }) {
-    if (!value) return null;
-    return (
-        <div className="flex justify-between items-center p-6 px-8 hover:bg-slate-800/30 transition-colors">
-            <span className="text-xs font-black text-slate-500 uppercase tracking-widest">{label}</span>
-            <span className="text-sm font-bold text-white text-right max-w-[60%]">{value}</span>
-        </div>
-    );
-}
-
-function ScorecardInnings({ team, isFirst = false }: { team: any; isFirst?: boolean }) {
-    return (
-        <div className="bg-slate-900/50 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl">
-            <div className={`p-4 md:p-6 px-4 md:px-12 flex justify-between items-center border-b border-slate-800 ${isFirst ? 'bg-indigo-600/10' : 'bg-slate-800/20'}`}>
-                <h3 className="text-sm md:text-xl font-black text-white truncate mr-2">{team.name}</h3>
-                <span className="text-lg md:text-2xl font-black text-indigo-500 underline decoration-2 underline-offset-4 whitespace-nowrap">{team.score}</span>
-            </div>
-            <div className="overflow-x-auto scrollbar-hide">
-                <table className="w-full min-w-[500px]">
-                    <thead>
-                        <tr className="bg-slate-950/50 border-b border-slate-800">
-                            <th className="p-3 md:p-4 px-6 md:px-12 text-left text-[8px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest w-[40%]">Batter</th>
-                            <th className="p-3 md:p-4 text-center text-[8px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest w-[12%]">R</th>
-                            <th className="p-3 md:p-4 text-center text-[8px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest w-[12%]">B</th>
-                            <th className="p-3 md:p-4 text-center text-[8px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest w-[12%]">4s</th>
-                            <th className="p-3 md:p-4 text-center text-[8px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest w-[12%]">6s</th>
-                            <th className="p-3 md:p-4 text-center text-[8px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest w-[12%]">SR</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-800/50">
-                        {team.batting.map((b: any, i: number) => (
-                            <tr key={i} className="hover:bg-slate-800/20 transition-colors group">
-                                <td className="p-4 px-6 md:px-12">
-                                    <div className="flex flex-col">
-                                        <span className="text-xs md:text-sm font-black text-white group-hover:text-indigo-500 transition-colors block mb-0.5">{b.name}</span>
-                                        <span className="text-[9px] md:text-[10px] font-medium text-slate-500 leading-tight italic">{b.outStatus}</span>
-                                    </div>
-                                </td>
-                                <td className="p-4 text-center font-black text-white text-xs md:text-base">{b.runs}</td>
-                                <td className="p-4 text-center text-[10px] md:text-sm font-bold text-slate-400">{b.balls}</td>
-                                <td className="p-4 text-center text-[10px] md:text-sm font-bold text-slate-400">{b.fours}</td>
-                                <td className="p-4 text-center text-[10px] md:text-sm font-bold text-slate-400">{b.sixes}</td>
-                                <td className="p-4 text-center text-[11px] md:text-sm font-black text-indigo-400/80">
-                                    {b.balls > 0 ? ((b.runs / b.balls) * 100).toFixed(1) : '0.0'}
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-
-            {/* Bowling Stats */}
-            <div className="overflow-x-auto scrollbar-hide border-t border-slate-800/50">
-                <table className="w-full min-w-[500px]">
-                    <thead>
-                        <tr className="bg-slate-950/50 border-b border-slate-800">
-                            <th className="p-4 px-6 md:px-12 text-left text-[8px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest w-[40%]">Bowler</th>
-                            <th className="p-4 text-center text-[8px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest w-[12%]">O</th>
-                            <th className="p-4 text-center text-[8px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest w-[12%]">M</th>
-                            <th className="p-4 text-center text-[8px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest w-[12%]">R</th>
-                            <th className="p-4 text-center text-[8px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest w-[12%]">W</th>
-                            <th className="p-4 text-center text-[8px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest w-[12%]">ECO</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-800/50">
-                        {team.bowling && team.bowling.map((b: any, i: number) => (
-                            <tr key={i} className="hover:bg-slate-800/20 transition-colors group">
-                                <td className="p-4 px-6 md:px-12 font-black text-white group-hover:text-indigo-500 text-xs md:text-sm">{b.name}</td>
-                                <td className="p-4 text-center text-[10px] md:text-sm font-bold text-slate-400">{b.overs}</td>
-                                <td className="p-4 text-center text-[10px] md:text-sm font-bold text-slate-400">{b.maidens}</td>
-                                <td className="p-4 text-center text-[10px] md:text-sm font-black text-white">{b.runs}</td>
-                                <td className="p-4 text-center text-[10px] md:text-sm font-black text-indigo-500">{b.wickets}</td>
-                                <td className="p-4 text-center text-[10px] md:text-sm font-bold text-slate-400">{b.economy}</td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-
-            {/* FOW */}
-            {team.fow && team.fow.length > 0 && (
-                <div className="bg-slate-950/30 p-4 md:p-6 px-6 md:px-12 border-t border-slate-800/50">
-                    <p className="text-[8px] md:text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1 md:mb-2 text-center md:text-left">Fall of Wickets</p>
-                    <p className="text-[9px] md:text-xs font-medium text-slate-400 leading-relaxed text-center md:text-left italic">{team.fow.join(', ')}</p>
-                </div>
-            )}
-        </div>
-    );
-}
-
-function TeamSquad({ team, color }: { team: any; color: string }) {
-    const glowMap: any = {
-        indigo: 'shadow-indigo-600/10',
-        purple: 'shadow-purple-600/10'
-    };
-    return (
-        <div className={`flex flex-col gap-6 bg-slate-900/30 p-8 rounded-[2.5rem] border border-slate-800/80 ${glowMap[color]} shadow-2xl`}>
-            <h3 className="text-2xl font-black text-white mb-4 border-l-4 border-indigo-600 pl-4">{team.name}</h3>
-            <div className="space-y-4">
-                <p className="text-[10px] font-black text-indigo-500 uppercase tracking-[3px]">Playing XI</p>
-                <div className="grid gap-3">
-                    {team.playingXI.map((p: any, i: number) => (
-                        <div key={i} className="flex justify-between items-center bg-slate-950/50 p-4 rounded-2xl border border-slate-800/50 hover:bg-slate-900 transition-colors">
-                            <div className="flex items-center gap-3">
-                                <span className="text-sm font-black text-white">{p.name}</span>
-                                {p.isCaptain && <span className="px-2 py-0.5 bg-indigo-600 text-[8px] font-black text-white rounded-md uppercase">C</span>}
-                                {p.isWK && <span className="px-2 py-0.5 bg-slate-700 text-[8px] font-black text-white rounded-md uppercase">WK</span>}
-                            </div>
-                            <span className="text-[10px] font-bold text-slate-600 uppercase tracking-tighter">{p.role}</span>
-                        </div>
-                    ))}
-                </div>
-            </div>
-
-            {/* Bench */}
-            {team.bench && team.bench.length > 0 && (
-                <div className="space-y-4 pt-6 border-t border-slate-800/50">
-                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-[3px]">Bench</p>
-                    <div className="grid gap-3">
-                        {team.bench.map((p: any, i: number) => (
-                            <div key={i} className="flex justify-between items-center bg-slate-950/30 p-4 rounded-2xl border border-slate-800/30 hover:bg-slate-900 transition-colors opacity-75 hover:opacity-100">
-                                <div className="flex items-center gap-3">
-                                    <span className="text-sm font-bold text-slate-300">{p.name}</span>
-                                    {p.isCaptain && <span className="px-2 py-0.5 bg-indigo-600 text-[8px] font-black text-white rounded-md uppercase">C</span>}
-                                    {p.isWK && <span className="px-2 py-0.5 bg-slate-700 text-[8px] font-black text-white rounded-md uppercase">WK</span>}
-                                </div>
-                                <span className="text-[10px] font-bold text-slate-600 uppercase tracking-tighter">{p.role}</span>
-                            </div>
-                        ))}
-                    </div>
-                </div>
             )}
         </div>
     );
