@@ -12,6 +12,8 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useToast } from "@/contexts/ToastContext";
+import { useSession } from "next-auth/react";
+import { Globe } from "lucide-react";
 
 interface CreateArenaModalProps {
     isOpen: boolean;
@@ -35,6 +37,11 @@ export function CreateArenaModal({
     const [name, setName] = useState("");
     const [entryFee, setEntryFee] = useState<number>(50);
     const [maxSlots, setMaxSlots] = useState<number>(8);
+    const [isPrivate, setIsPrivate] = useState(true);
+
+    const { data: session } = useSession();
+    const userRole = (session?.user as any)?.role || 'user';
+    const isAdmin = userRole === 'admin' || userRole === 'subadmin';
 
     const slotOptions = [2, 3, 4, 6, 8, 10];
 
@@ -52,8 +59,8 @@ export function CreateArenaModal({
                     name: name || `${matchName} Private`,
                     entryFee,
                     maxSlots,
-                    isPrivate: true, // Players can only create private arenas
-                    description: `User created private contest for ${matchName}`
+                    isPrivate: isAdmin ? isPrivate : true,
+                    description: `${userRole.toUpperCase()} created contest for ${matchName}`
                 })
             });
 
@@ -165,16 +172,38 @@ export function CreateArenaModal({
                                 </div>
                             </div>
 
-                            {/* Privacy Notice */}
-                            <div className="p-4 bg-amber-500/5 rounded-[20px] border border-amber-500/10 flex items-start gap-4">
-                                <Lock className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
-                                <div>
-                                    <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest mb-1">Invite Only</p>
-                                    <p className="text-[11px] font-medium text-slate-400 leading-relaxed">
-                                        This arena will be <span className="text-white">private</span>. Only users with your unique invite code can join.
-                                    </p>
+                            {/* Privacy Toggle (Only for Admin/Sub) */}
+                            {isAdmin ? (
+                                <div className="p-6 bg-white/5 rounded-3xl border border-white/5 flex items-center justify-between">
+                                    <div className="flex items-center gap-4">
+                                        <div className={`p-3 rounded-2xl ${isPrivate ? 'bg-purple-500/10 text-purple-400' : 'bg-amber-500/10 text-amber-400'}`}>
+                                            {isPrivate ? <Lock className="w-5 h-5" /> : <Globe className="w-5 h-5" />}
+                                        </div>
+                                        <div>
+                                            <p className="font-black text-white uppercase tracking-tighter text-sm">{isPrivate ? 'Private Network' : 'Global Public'}</p>
+                                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{isPrivate ? 'Requires Invite Code' : 'Visible to All Players'}</p>
+                                        </div>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsPrivate(!isPrivate)}
+                                        className={`w-12 h-6 rounded-full relative transition-colors ${isPrivate ? 'bg-purple-600' : 'bg-slate-800'}`}
+                                    >
+                                        <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${isPrivate ? 'left-7' : 'left-1'}`} />
+                                    </button>
                                 </div>
-                            </div>
+                            ) : (
+                                /* Privacy Notice for Players */
+                                <div className="p-4 bg-amber-500/5 rounded-[20px] border border-amber-500/10 flex items-start gap-4">
+                                    <Lock className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                                    <div>
+                                        <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest mb-1">Invite Only</p>
+                                        <p className="text-[11px] font-medium text-slate-400 leading-relaxed">
+                                            This arena will be <span className="text-white">private</span>. Only users with your unique invite code can join.
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         {/* Submit */}

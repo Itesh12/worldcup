@@ -25,7 +25,10 @@ export async function GET(req: NextRequest) {
         // Fetch open public arenas for this match
         const arenas = await Arena.find({ 
             matchId, 
-            isPrivate: false,
+            $or: [
+                { isPrivate: false },
+                { createdBy: userId }
+            ],
             status: { $in: ['open', 'full'] }
         })
         .populate('createdBy', 'name')

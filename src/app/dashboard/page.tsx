@@ -173,7 +173,7 @@ function UserMatchesContent() {
   };
 
   const handleMatchClick = (match: Match) => {
-    setSelectedMatchForArena(match);
+    router.push(`/matches/${match._id}`);
   };
 
   // --- Logic for Sections ---

@@ -65,7 +65,7 @@ export function BottomNavbar() {
   if (isManagementPage && !pathname.includes("view=player")) return null;
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-[100]">
+    <nav className="fixed bottom-0 left-0 right-0 z-[100] md:hidden">
       {/* Glassmorphism Background */}
       <div className="absolute inset-0 bg-[#050B14]/80 backdrop-blur-3xl border-t border-white/5" />
       
