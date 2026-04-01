@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, use } from "react";
+import { useEffect, useState, use, Suspense } from "react";
 import { ArrowLeft, User, Target, Zap, Info, Calendar, MapPin, Users, Activity, Trophy, X, Star, PartyPopper, RefreshCw, Ban, AlertCircle, Lock, Copy, CheckCircle2, Share2 } from "lucide-react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
@@ -262,7 +262,7 @@ function TeamSquad({ team, color }: { team: any; color: string }) {
 }
 
 
-export default function MatchDetailPage({ params }: { params: Promise<{ id: string }> }) {
+function MatchDetailContent({ params }: { params: Promise<{ id: string }> }) {
     const { showToast } = useToast();
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -1044,5 +1044,17 @@ export default function MatchDetailPage({ params }: { params: Promise<{ id: stri
                 />
             )}
         </div>
+    );
+}
+
+export default function MatchDetailPage(props: any) {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen bg-[#050810] flex items-center justify-center">
+                <Spinner />
+            </div>
+        }>
+            <MatchDetailContent {...props} />
+        </Suspense>
     );
 }
