@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { Spinner } from "@/components/ui/Spinner";
 import { ArenaSelectionDialog } from "@/components/ArenaSelectionDialog";
+import { CreateArenaModal } from "@/components/dashboard/CreateArenaModal";
 import { Swords } from "lucide-react";
 import { useToast } from "@/contexts/ToastContext";
 
@@ -78,6 +79,7 @@ export default function MatchDetailPage({ params }: { params: Promise<{ id: stri
     const [winnerData, setWinnerData] = useState<any>(null);
     const [hasShownPopup, setHasShownPopup] = useState(false);
     const [isArenaDialogOpen, setIsArenaDialogOpen] = useState(false);
+    const [matchForHosting, setMatchForHosting] = useState<any>(null);
 
     const fetchLeaderboard = async () => {
         try {
@@ -670,7 +672,18 @@ export default function MatchDetailPage({ params }: { params: Promise<{ id: stri
                 matchId={matchId}
                 matchName={`${match.teams[0].shortName} VS ${match.teams[1].shortName}`}
                 onJoinSuccess={() => fetchMatchData(true)}
+                onHostClick={() => setMatchForHosting(match)}
             />
+
+            {matchForHosting && (
+                <CreateArenaModal
+                    isOpen={!!matchForHosting}
+                    onClose={() => setMatchForHosting(null)}
+                    matchId={matchId}
+                    matchName={`${match.teams[0].shortName} vs ${match.teams[1].shortName}`}
+                    onSuccess={() => fetchMatchData(true)}
+                />
+            )}
         </div>
     );
 }

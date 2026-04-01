@@ -50,14 +50,24 @@ export function BottomNavbar() {
     }
   ];
 
-  // If admin/subadmin, maybe show different items or just dashboard?
-  // Let's stick to player experience for now as requested.
-  if (isAdmin && !pathname.includes("view=player")) return null;
+  // If admin/subadmin, add Admin icon at the end
+  if (isAdmin) {
+    navItems.push({
+      label: "Admin",
+      icon: LayoutDashboard,
+      href: "/admin",
+      active: pathname.startsWith("/admin")
+    });
+  }
+
+  // Hide ONLY on specific admin/subadmin pages if NOT in player view
+  const isManagementPage = pathname.startsWith("/admin") || pathname.startsWith("/subadmin");
+  if (isManagementPage && !pathname.includes("view=player")) return null;
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-[100] lg:hidden">
+    <nav className="fixed bottom-0 left-0 right-0 z-[100]">
       {/* Glassmorphism Background */}
-      <div className="absolute inset-0 bg-[#050B14]/80 backdrop-blur-2xl border-t border-white/5" />
+      <div className="absolute inset-0 bg-[#050B14]/80 backdrop-blur-3xl border-t border-white/5" />
       
       {/* Safe Area Padding for iOS */}
       <div className="relative pb-safe pt-2 px-6 flex items-center justify-between h-20">

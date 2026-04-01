@@ -17,6 +17,7 @@ import { AddFundsDialog } from "@/components/AddFundsDialog";
 import { WithdrawDialog } from "@/components/WithdrawDialog";
 import { Spinner } from "@/components/ui/Spinner";
 import { ArenaSelectionDialog } from "@/components/ArenaSelectionDialog";
+import { CreateArenaModal } from "@/components/dashboard/CreateArenaModal";
 import { PlayerStatsHeader } from "@/components/dashboard/PlayerStatsHeader";
 import { MatchHeroSection } from "@/components/dashboard/MatchHeroSection";
 import { MatchListTabs } from "@/components/dashboard/MatchListTabs";
@@ -61,6 +62,7 @@ function UserMatchesContent() {
   const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
   const [selectedMatchForArena, setSelectedMatchForArena] = useState<Match | null>(null);
+  const [matchForHosting, setMatchForHosting] = useState<Match | null>(null);
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -106,7 +108,7 @@ function UserMatchesContent() {
     } catch (err) {
       console.error(err);
     } finally {
-      if (!silent) setStatsLoading(false);
+      setStatsLoading(false);
     }
   };
 
@@ -119,7 +121,7 @@ function UserMatchesContent() {
     } catch (err) {
       console.error("Failed to fetch weekly reports", err);
     } finally {
-      if (!silent) setWeeklyLoading(false);
+      setWeeklyLoading(false);
     }
   };
 
@@ -132,7 +134,7 @@ function UserMatchesContent() {
     } catch (err) {
       console.error("Failed to fetch wallet data", err);
     } finally {
-      if (!silent) setWalletLoading(false);
+      setWalletLoading(false);
     }
   };
 
@@ -200,45 +202,63 @@ function UserMatchesContent() {
 
       {/* Header / Nav */}
       <header className="sticky top-0 z-50 bg-[#050B14]/80 backdrop-blur-xl border-b border-white/5">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-2 md:gap-3 min-w-0">
-            <Trophy className="w-5 h-5 md:w-8 md:h-8 text-indigo-500 shrink-0" />
-            <div className="min-w-0">
-              <h1 className="text-sm md:text-xl font-black text-white tracking-tight leading-none uppercase italic">WORLD CUP <span className="text-indigo-500">HUB</span></h1>
-              <p className="text-[8px] md:text-[10px] text-slate-500 font-bold uppercase tracking-widest hidden xs:block mt-1">Official Player Portal</p>
+        <div className="max-w-7xl mx-auto px-4 md:px-6">
+          {/* Main Top Row */}
+          <div className="flex items-center justify-between gap-4 py-3 md:py-4">
+            <div className="flex items-center gap-2 md:gap-3 min-w-0 font-bold">
+              <Trophy className="w-5 h-5 md:w-8 md:h-8 text-indigo-500 shrink-0" />
+              <div className="min-w-0">
+                <h1 className="text-xs md:text-xl font-black text-white tracking-tight leading-none uppercase italic">WORLD CUP <span className="text-indigo-500">HUB</span></h1>
+                <p className="text-[8px] md:text-[10px] text-slate-500 font-bold uppercase tracking-widest hidden xs:block mt-0.5 md:mt-1">Official Player Portal</p>
+              </div>
+            </div>
+
+            {/* Desktop Switcher: Centered */}
+            <div className="hidden lg:flex items-center gap-1.5 w-[320px]">
+              <div className="flex-[4] min-w-0 scale-90 origin-right">
+                <UserContextSwitcher onSelect={(id) => setTournamentId(id || "")} />
+              </div>
+              <button
+                onClick={() => handleRefresh(false)}
+                disabled={refreshing}
+                className={`flex items-center justify-center w-10 h-10 rounded-xl bg-slate-800/40 border border-white/10 text-slate-400 hover:text-white hover:bg-slate-700/80 transition-all group ${refreshing ? 'cursor-not-allowed' : ''}`}
+              >
+                <RefreshCcw className={`w-4 h-4 ${refreshing ? 'animate-spin text-indigo-500' : 'group-hover:rotate-180 transition-transform duration-500'}`} />
+              </button>
+            </div>
+
+            <div className="flex items-center gap-2 md:gap-4 shrink-0">
+              {session?.user && (session.user as any).role === "admin" && (
+                <Link
+                  href="/admin"
+                  className="hidden lg:flex items-center gap-2 px-4 md:px-6 py-2 bg-slate-800 hover:bg-slate-700 text-white text-[10px] md:text-xs font-black uppercase tracking-widest rounded-xl transition-colors border border-white/5 shadow-lg shadow-black/20"
+                >
+                  <LayoutDashboard className="w-4 h-4 text-indigo-400 shrink-0" />
+                  <span className="hidden sm:inline">Admin Hub</span>
+                  <span className="sm:hidden">Admin</span>
+                </Link>
+              )}
             </div>
           </div>
 
-          <div className="flex items-center gap-2 md:gap-4 shrink-0">
-            {session?.user && (session.user as any).role === "admin" && (
-              <Link
-                href="/admin"
-                className="hidden lg:flex items-center gap-2 px-6 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold uppercase tracking-widest rounded-xl transition-colors border border-white/5 shadow-lg shadow-black/20"
-              >
-                <LayoutDashboard className="w-4 h-4 text-indigo-400" />
-                Admin
-              </Link>
-            )}
+          {/* Mobile Switcher Row: Integrated Sub-bar */}
+          <div className="lg:hidden pb-3">
+             <div className="flex items-stretch gap-1.5 w-full">
+                <div className="flex-[4] min-w-0">
+                  <UserContextSwitcher onSelect={(id) => setTournamentId(id || "")} />
+                </div>
+                <button
+                  onClick={() => handleRefresh(false)}
+                  disabled={refreshing}
+                  className={`flex-[1] max-w-[48px] flex items-center justify-center rounded-2xl bg-slate-800/40 border border-white/10 text-slate-400 hover:text-white hover:bg-slate-700/80 transition-all shadow-xl group ${refreshing ? 'cursor-not-allowed' : ''}`}
+                  title="Refresh Data"
+                >
+                  <RefreshCcw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin text-indigo-500' : 'group-hover:rotate-180 transition-transform duration-500'}`} />
+                </button>
+             </div>
           </div>
         </div>
       </header>
-
-      {/* Control Row (League Selection & Refresh) */}
-      <div className="max-w-7xl mx-auto px-2 md:px-4 pt-6">
-        <div className="flex items-stretch gap-1.5 max-w-md mx-auto min-w-0">
-          <div className="flex-[4] min-w-0">
-            <UserContextSwitcher onSelect={(id) => setTournamentId(id || "")} />
-          </div>
-          <button
-            onClick={() => handleRefresh(false)}
-            disabled={refreshing}
-            className={`flex-[1] max-w-[48px] md:max-w-[56px] flex items-center justify-center rounded-2xl bg-slate-800/60 border border-white/10 text-slate-400 hover:text-white hover:bg-slate-700/80 transition-all shadow-xl backdrop-blur-sm group ${refreshing ? 'cursor-not-allowed' : ''}`}
-            title="Refresh Data"
-          >
-            <RefreshCcw className={`w-3.5 h-3.5 md:w-5 md:h-5 ${refreshing ? 'animate-spin text-indigo-500' : 'group-hover:rotate-180 transition-transform duration-500'}`} />
-          </button>
-        </div>
-      </div>
 
       {/* Modals placed outside header */}
       <AddFundsDialog 
@@ -277,6 +297,7 @@ function UserMatchesContent() {
           <MatchHeroSection 
             matches={heroMatches} 
             onMatchClick={handleMatchClick} 
+            onHostClick={setMatchForHosting}
           />
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
@@ -285,6 +306,7 @@ function UserMatchesContent() {
                 upcomingMatches={upcomingMatches} 
                 finishedMatches={finishedMatches} 
                 onMatchClick={handleMatchClick} 
+                onHostClick={setMatchForHosting}
             />
 
             {/* Sidebar */}
@@ -361,6 +383,16 @@ function UserMatchesContent() {
           matchId={selectedMatchForArena._id}
           matchName={`${selectedMatchForArena.teams[0].shortName} vs ${selectedMatchForArena.teams[1].shortName}`}
           onJoinSuccess={() => handleRefresh(true)}
+          onHostClick={() => setMatchForHosting(selectedMatchForArena)}
+        />
+      )}
+      {matchForHosting && (
+        <CreateArenaModal
+          isOpen={!!matchForHosting}
+          onClose={() => setMatchForHosting(null)}
+          matchId={matchForHosting._id}
+          matchName={`${matchForHosting.teams[0].shortName} vs ${matchForHosting.teams[1].shortName}`}
+          onSuccess={() => handleRefresh(true)}
         />
       )}
     </div>

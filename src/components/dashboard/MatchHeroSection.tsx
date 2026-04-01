@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { ArrowRight, Clock } from "lucide-react";
+import { ArrowRight, Clock, Lock } from "lucide-react";
 
 interface Match {
     _id: string;
@@ -14,9 +14,10 @@ interface Match {
 interface MatchHeroSectionProps {
     matches: Match[];
     onMatchClick: (match: Match) => void;
+    onHostClick: (match: Match) => void;
 }
 
-export function MatchHeroSection({ matches, onMatchClick }: MatchHeroSectionProps) {
+export function MatchHeroSection({ matches, onMatchClick, onHostClick }: MatchHeroSectionProps) {
     if (matches.length === 0) return null;
 
     return (
@@ -38,7 +39,7 @@ export function MatchHeroSection({ matches, onMatchClick }: MatchHeroSectionProp
             <div className="flex overflow-x-auto snap-x snap-mandatory gap-6 pb-6 -mx-4 px-4 scrollbar-hide">
                 {matches.map((match) => (
                     <div key={match._id} className="snap-center shrink-0 w-full md:w-[600px]">
-                        <HeroMatchCard match={match} onMatchClick={onMatchClick} />
+                        <HeroMatchCard match={match} onMatchClick={onMatchClick} onHostClick={onHostClick} />
                     </div>
                 ))}
             </div>
@@ -46,10 +47,29 @@ export function MatchHeroSection({ matches, onMatchClick }: MatchHeroSectionProp
     );
 }
 
-function HeroMatchCard({ match, onMatchClick }: { match: Match, onMatchClick: (match: Match) => void }) {
+function HeroMatchCard({ 
+    match, 
+    onMatchClick, 
+    onHostClick 
+}: { 
+    match: Match, 
+    onMatchClick: (match: Match) => void,
+    onHostClick: (match: Match) => void
+}) {
     const isLive = match.status === 'live';
     const isFinished = ['finished', 'completed', 'result', 'settled'].includes(match.status);
     const date = new Date(match.startTime);
+    
+    // Check if match is today
+    const isToday = (dateStr: string) => {
+        const d = new Date(dateStr);
+        const today = new Date();
+        return d.getDate() === today.getDate() &&
+               d.getMonth() === today.getMonth() &&
+               d.getFullYear() === today.getFullYear();
+    };
+
+    const showHostButton = !isFinished && isToday(match.startTime);
 
     return (
         <div
@@ -58,6 +78,23 @@ function HeroMatchCard({ match, onMatchClick }: { match: Match, onMatchClick: (m
         >
             <div className="absolute inset-0 bg-[#050B14]" />
             <div className="absolute inset-0 bg-gradient-to-br from-indigo-600/20 via-slate-900/40 to-purple-600/20 opacity-60 group-hover:opacity-80 transition-opacity" />
+            
+            {/* Action Area - Responsive Position & Size */}
+            <div className="absolute bottom-4 right-4 md:bottom-6 md:right-6 z-20">
+                {showHostButton && (
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onHostClick(match);
+                        }}
+                        className="px-3 py-1.5 md:px-5 md:py-2.5 bg-amber-600/10 hover:bg-amber-600 text-amber-500 hover:text-white border border-amber-600/20 text-[8px] md:text-[10px] font-black uppercase tracking-widest rounded-xl md:rounded-2xl transition-all shadow-2xl active:scale-95 flex items-center gap-1.5 md:gap-2 group/host backdrop-blur-md"
+                    >
+                        <Lock className="w-2.5 h-2.5 md:w-3.5 md:h-3.5 opacity-50 group-hover/host:opacity-100 transition-opacity" />
+                        Host Private
+                    </button>
+                )}
+            </div>
+
             <div className="absolute -top-24 -left-24 w-64 h-64 bg-indigo-500/10 blur-[80px] rounded-full group-hover:bg-indigo-500/20 transition-all duration-700" />
             <div className="absolute -bottom-24 -right-24 w-64 h-64 bg-purple-600/10 blur-[80px] rounded-full group-hover:bg-purple-500/20 transition-all duration-700" />
             <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03] mix-blend-overlay" />

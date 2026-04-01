@@ -3,9 +3,9 @@
 import React from "react";
 import { AuthProvider } from "@/components/AuthProvider";
 import { LoadingProvider } from "@/contexts/LoadingContext";
+import { BottomNavbar } from "@/components/shared/BottomNavbar";
 import { TournamentProvider } from "@/contexts/TournamentContext";
 import GlobalLoader from "@/components/GlobalLoader";
-import { BottomNav } from "@/components/BottomNav";
 
 import { ToastProvider } from "@/contexts/ToastContext";
 
@@ -17,7 +17,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
                     <ToastProvider>
                         <GlobalLoader />
                         {children}
-                        <BottomNav />
+                        <BottomNavbar />
                     </ToastProvider>
                 </AuthProvider>
             </TournamentProvider>

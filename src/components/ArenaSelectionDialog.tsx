@@ -39,6 +39,7 @@ interface ArenaSelectionDialogProps {
     matchId: string;
     matchName: string;
     onJoinSuccess: () => void;
+    onHostClick: () => void;
 }
 
 export function ArenaSelectionDialog({ 
@@ -46,7 +47,8 @@ export function ArenaSelectionDialog({
     onClose, 
     matchId, 
     matchName, 
-    onJoinSuccess 
+    onJoinSuccess,
+    onHostClick
 }: ArenaSelectionDialogProps) {
     const { showToast } = useToast();
     const [arenas, setArenas] = useState<Arena[]>([]);
@@ -183,7 +185,17 @@ export function ArenaSelectionDialog({
                                 </div>
                                 <div className="text-center">
                                     <p className="text-slate-400 font-bold uppercase tracking-widest text-sm mb-2">No Arenas Found</p>
-                                    <p className="text-slate-600 text-xs">Be the first to launch a contest for this match!</p>
+                                    <p className="text-slate-600 text-xs mb-6">Be the first to launch a contest for this match!</p>
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            onClose();
+                                            onHostClick();
+                                        }}
+                                        className="px-8 py-4 bg-amber-600 hover:bg-amber-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-xl shadow-amber-600/20 active:scale-95 flex items-center gap-2 mx-auto"
+                                    >
+                                        Host Your Own Arena
+                                    </button>
                                 </div>
                             </div>
                         ) : (

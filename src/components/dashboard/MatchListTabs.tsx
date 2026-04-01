@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Calendar, ArrowRight, Clock } from "lucide-react";
+import { Calendar, ArrowRight, Clock, Lock } from "lucide-react";
 import Link from "next/link";
 
 interface Match {
@@ -16,9 +16,10 @@ interface MatchListTabsProps {
     upcomingMatches: Match[];
     finishedMatches: Match[];
     onMatchClick: (match: Match) => void;
+    onHostClick: (match: Match) => void;
 }
 
-export function MatchListTabs({ upcomingMatches, finishedMatches, onMatchClick }: MatchListTabsProps) {
+export function MatchListTabs({ upcomingMatches, finishedMatches, onMatchClick, onHostClick }: MatchListTabsProps) {
     const [activeTab, setActiveTab] = useState<'upcoming' | 'finished'>('upcoming');
 
     return (
@@ -45,7 +46,7 @@ export function MatchListTabs({ upcomingMatches, finishedMatches, onMatchClick }
                     upcomingMatches.length > 0 ? (
                         upcomingMatches.map(match => (
                             <div key={match._id} className="min-w-[85vw] md:min-w-[45vw] lg:min-w-0 snap-center shrink-0 lg:shrink">
-                                <StandardMatchCard match={match} onMatchClick={onMatchClick} />
+                                <StandardMatchCard match={match} onMatchClick={onMatchClick} onHostClick={onHostClick} />
                             </div>
                         ))
                     ) : (
@@ -57,7 +58,7 @@ export function MatchListTabs({ upcomingMatches, finishedMatches, onMatchClick }
                     finishedMatches.length > 0 ? (
                         finishedMatches.map(match => (
                             <div key={match._id} className="min-w-[85vw] md:min-w-[45vw] lg:min-w-0 snap-center shrink-0 lg:shrink">
-                                <StandardMatchCard match={match} onMatchClick={onMatchClick} />
+                                <StandardMatchCard match={match} onMatchClick={onMatchClick} onHostClick={onHostClick} />
                             </div>
                         ))
                     ) : (
@@ -80,10 +81,29 @@ export function MatchListTabs({ upcomingMatches, finishedMatches, onMatchClick }
     );
 }
 
-function StandardMatchCard({ match, onMatchClick }: { match: Match, onMatchClick: (match: Match) => void }) {
+function StandardMatchCard({ 
+    match, 
+    onMatchClick, 
+    onHostClick 
+}: { 
+    match: Match, 
+    onMatchClick: (match: Match) => void,
+    onHostClick: (match: Match) => void
+}) {
     const date = new Date(match.startTime);
     const isFinished = ['finished', 'completed', 'result', 'settled'].includes(match.status);
     const isLive = match.status === 'live';
+
+    // Check if match is today
+    const isToday = (dateStr: string) => {
+        const d = new Date(dateStr);
+        const today = new Date();
+        return d.getDate() === today.getDate() &&
+               d.getMonth() === today.getMonth() &&
+               d.getFullYear() === today.getFullYear();
+    };
+
+    const showHostButton = !isFinished && isToday(match.startTime);
 
     return (
         <div
@@ -104,6 +124,7 @@ function StandardMatchCard({ match, onMatchClick }: { match: Match, onMatchClick
                         </span>
                     ) : isFinished ? 'Completed' : 'Upcoming'}
                 </div>
+
                 <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
                     {date.toLocaleDateString([], { month: 'short', day: 'numeric' })} • {date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </span>
@@ -136,6 +157,22 @@ function StandardMatchCard({ match, onMatchClick }: { match: Match, onMatchClick
                     <span className="text-[8px] md:text-[9px] font-black uppercase tracking-widest truncate">{match.venue || "TBA"}</span>
                 </div>
             </div>
+
+            {/* Action Area - Floating Bottom Right (Responsive Size) */}
+            {showHostButton && (
+                <div className="absolute bottom-3 right-3 md:bottom-4 md:right-4 z-20">
+                     <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onHostClick(match);
+                        }}
+                        className="px-3 py-1 md:px-4 md:py-1.5 bg-amber-600/10 hover:bg-amber-600 text-amber-500 hover:text-white text-[7px] md:text-[8px] font-black uppercase tracking-widest rounded-full border border-amber-600/20 transition-all active:scale-95 z-20 flex items-center gap-1.5 group/host backdrop-blur-md"
+                    >
+                        <Lock className="w-2 md:w-2.5 h-2 md:h-2.5 opacity-50 group-hover/host:opacity-100 transition-opacity" />
+                        <span>Host Private</span>
+                    </button>
+                </div>
+            )}
         </div>
     );
 }
