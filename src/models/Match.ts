@@ -12,6 +12,14 @@ const MatchSchema = new mongoose.Schema({
     startTime: { type: Date, required: true },
     venue: { type: String },
     result: { type: String },
+    matchDesc: { type: String }, // e.g. "4th Match"
+    seriesName: { type: String }, // e.g. "IPL 2026"
+    liveScore: {
+        team1Score: { type: String },
+        team2Score: { type: String },
+        statusText: { type: String },
+        lastUpdated: { type: Date }
+    },
     adminCommissionEarned: { type: Number, default: 0 },
     entryFee: { type: Number },
     commissionPercentage: { type: Number }

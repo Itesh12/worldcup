@@ -56,6 +56,27 @@
       width: 100%;
     }
   }
+
+  @keyframes scan {
+    0% {
+      transform: translateY(-100%);
+    }
+    100% {
+      transform: translateY(100%);
+    }
+  }
+
+  @keyframes shimmer {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(100%);
+    }
+  }
+
+  --animate-scan: scan 3s linear infinite;
+  --animate-shimmer: shimmer 2s linear infinite;
 }
 
 @media (prefers-color-scheme: dark) {

@@ -1,101 +1,57 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { 
-    Users, 
-    Swords, 
-    IndianRupee, 
-    TrendingUp, 
-    Plus, 
-    LayoutDashboard, 
-    PieChart, 
-    RefreshCw, 
-    ChevronRight,
-    Trophy,
-    ArrowUpRight,
-    Users2,
-    Calendar,
-    Zap,
-    Activity
-} from "lucide-react";
+import { Users, Swords, IndianRupee, PieChart, RefreshCw, Trophy, ArrowUpRight, Zap, Target, Share2, AlertTriangle, Lightbulb, Copy, UserPlus, FileText, Clock, Database, TrendingUp } from "lucide-react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { Spinner } from "@/components/ui/Spinner";
-import { AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/contexts/ToastContext";
-import ArenaManager from "@/components/shared/ArenaManager";
+import { LiveScoreGrid } from "@/components/dashboard/LiveScoreGrid";
 
 interface Stats {
-    usersCount: number;
-    arenasCount: number;
-    commissionEarned: number;
-    brandName: string;
-    commissionPercentage: number;
-}
-
-interface RecentArena {
-    _id: string;
-    name: string;
-    entryFee: number;
-    slotsCount: number;
-    maxSlots: number;
-    status: string;
-    createdAt: string;
-}
-
-interface Commission {
-    _id: string;
-    amount: number;
-    description: string;
-    createdAt: string;
-    status: string;
-}
-
-interface Match {
-    _id: string;
-    teams: { name: string; shortName: string }[];
-    startTime: string;
-    venue: string;
-    status: string;
+    liveMatches: { _id: string; teams: any[]; startTime: string; status: string; liveScore?: any; matchDesc?: string; seriesName?: string }[];
+    gamification: {
+        brandName: string;
+        commissionPercentage: number;
+        totalCommissionEarned: number;
+        currentTier: string;
+        nextTierThreshold: number | null;
+    };
+    alerts: {
+        needsPromotion: { _id: string; name: string; entryFee: number; fillRate: number; hoursUntilStart: number }[];
+        missedOpportunities: { _id: string; teams: any[]; startTime: string }[];
+    };
+    intelligence: {
+        playerNetworkSize: number;
+        newPlayers7d: number;
+        networkVips: { _id: string; name: string; email: string; walletBalance: number; image?: string }[];
+        pendingPayoutPipeline: number;
+        bestEntryFee: number;
+        todayPerformance: { 
+            matchCount: number;
+            arenaCount: number;
+            totalSlots: number;
+            filledSlots: number;
+            projectedCommission: number;
+        };
+    };
+    recentArenas: any[];
 }
 
 export default function SubAdminDashboard() {
     const [stats, setStats] = useState<Stats | null>(null);
-    const [recentArenas, setRecentArenas] = useState<RecentArena[]>([]);
-    const [commissions, setCommissions] = useState<Commission[]>([]);
-    const [upcomingMatches, setUpcomingMatches] = useState<Match[]>([]);
     const { showToast } = useToast();
     const { data: session, status } = useSession();
     const router = useRouter();
     const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState<'arenas' | 'commissions'>('arenas');
-    const [selectedMatchForArena, setSelectedMatchForArena] = useState<Match | null>(null);
 
     const fetchStats = async () => {
         try {
-            setLoading(true);
-            const [statsRes, commRes] = await Promise.all([
-                fetch("/api/subadmin/stats"),
-                fetch("/api/subadmin/commissions")
-            ]);
-            
-            const statsData = await statsRes.json();
-            const commData = await commRes.json();
-
-            if (statsRes.ok) {
-                setStats(statsData.stats);
-                setRecentArenas(statsData.recentArenas);
-            }
-            if (commRes.ok) {
-                setCommissions(commData);
-            }
-
-            // Fetch upcoming matches for the "Match Center"
-            const matchRes = await fetch("/api/matches?status=upcoming");
-            const matchData = await matchRes.json();
-            if (matchRes.ok) {
-                setUpcomingMatches(matchData.slice(0, 4)); // Just top 4 for the dashboard
+            const res = await fetch("/api/subadmin/stats");
+            const data = await res.json();
+            if (res.ok) {
+                setStats(data);
             }
         } catch (error) {
             console.error("Failed to fetch stats", error);
@@ -110,36 +66,70 @@ export default function SubAdminDashboard() {
             router.push("/login");
             return;
         }
-        if (status === "authenticated" && (session?.user as any)?.role !== "subadmin") {
-            router.push("/dashboard");
-            return;
+        if (status === "authenticated") {
+            if ((session?.user as any)?.role !== "subadmin") {
+                router.push("/dashboard");
+                return;
+            }
+            // Only fetch once to prevent global dashboard reload flashes
+            if (!stats) {
+                fetchStats();
+            }
         }
-        fetchStats();
-    }, [status, session]);
+    }, [status, session, stats]);
+
+    const handleCopyPromo = (arena: any) => {
+        const message = `🔥 *${arena.name}* is starting in less than ${arena.hoursUntilStart} hours!\n\n💸 Entry Fee: ₹${arena.entryFee}\n⭐ Only ${100 - arena.fillRate}% spots left!\n\n👉 Join Now: ${window.location.origin}/dashboard`;
+        navigator.clipboard.writeText(message);
+        showToast("Promo Message Copied to Clipboard!", "success");
+    };
+
+    const handleCopyInviteLink = () => {
+        const inviteLink = `${window.location.origin}/register?ref=${(session?.user as any)?.id}`;
+        navigator.clipboard.writeText(inviteLink);
+        showToast("Personal Invitation Link Copied!", "success");
+    };
 
     if (loading) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
                 <Spinner />
-                <p className="text-slate-500 font-bold text-xs uppercase tracking-widest animate-pulse">Initializing Franchise Suite...</p>
+                <p className="text-slate-500 font-bold text-xs uppercase tracking-widest animate-pulse">Initializing Marketing Suite...</p>
             </div>
         );
     }
 
+    if (!stats) return null;
+
+    const { gamification, alerts, intelligence, recentArenas } = stats;
+
+    const tierColors = {
+        Bronze: "text-amber-600 bg-amber-600/10 border-amber-600/20 shadow-amber-600/20",
+        Silver: "text-slate-300 bg-slate-300/10 border-slate-300/20 shadow-slate-300/20",
+        Gold: "text-yellow-400 bg-yellow-400/10 border-yellow-400/20 shadow-yellow-400/20",
+        Diamond: "text-cyan-400 bg-cyan-400/10 border-cyan-400/20 shadow-cyan-400/20"
+    };
+
+    const activeColor = tierColors[gamification.currentTier as keyof typeof tierColors] || tierColors.Bronze;
+    const progressPercent = gamification.nextTierThreshold 
+        ? Math.min((gamification.totalCommissionEarned / gamification.nextTierThreshold) * 100, 100) 
+        : 100;
+
     return (
-        <div className="p-6 md:p-10 space-y-10">
+        <div className="p-4 md:p-10 space-y-10 max-w-[1600px] mx-auto pb-24 lg:pb-12 animate-in fade-in duration-700">
+            
             {/* Header Section */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-white/5">
                 <div>
-                    <h1 className="text-2xl md:text-4xl font-black text-white italic uppercase tracking-tighter leading-none mb-2">
-                        {stats?.brandName} <span className="text-purple-500">Dashboard</span>
+                    <h1 className="text-2xl md:text-3xl font-black text-white italic uppercase tracking-tighter leading-none mb-2">
+                        {gamification.brandName} <span className="text-indigo-500">Franchise</span>
                     </h1>
                     <div className="flex items-center gap-3">
-                        <div className="px-2 py-0.5 bg-purple-500/10 border border-purple-500/20 rounded text-[10px] font-black text-purple-400 uppercase tracking-widest">
-                            Sub-Admin Active
+                        <div className={`px-2 py-0.5 border rounded text-[9px] font-black uppercase tracking-widest ${activeColor}`}>
+                            {gamification.currentTier} Level
                         </div>
-                        <p className="text-slate-500 text-xs font-bold uppercase tracking-widest">
-                            Manage your franchise network and arenas
+                        <p className="text-slate-500 text-[9px] font-bold uppercase tracking-widest hidden sm:block">
+                            HQ • Marketing & Growth Analytics
                         </p>
                     </div>
                 </div>
@@ -153,296 +143,301 @@ export default function SubAdminDashboard() {
                     </button>
                     <Link 
                         href="/dashboard?view=player"
-                        className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-3 rounded-2xl text-[10px] font-black transition-all shadow-xl shadow-indigo-600/20 uppercase tracking-widest"
+                        className="hidden sm:flex items-center gap-2 bg-indigo-600/20 border border-indigo-500/30 hover:bg-indigo-600 hover:border-indigo-500 text-indigo-300 hover:text-white px-5 py-3 rounded-2xl text-[10px] font-black transition-all uppercase tracking-widest"
                     >
-                        <Trophy className="w-4 h-4" /> Player View
+                        Player View
                     </Link>
                     <Link 
                         href="/subadmin/arenas/new"
-                        className="flex items-center gap-2 bg-purple-600 hover:bg-purple-500 text-white px-6 py-3.5 rounded-2xl text-xs font-black transition-all shadow-xl shadow-purple-600/20 uppercase tracking-widest"
+                        className="flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:opacity-90 text-white px-6 py-3 rounded-2xl text-xs font-black transition-all shadow-xl shadow-indigo-600/20 uppercase tracking-widest"
                     >
-                        <Plus className="w-4 h-4" /> Create Arena
+                        Host Match
                     </Link>
                 </div>
             </div>
 
-            {/* Quick Stats Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                {[
-                    { label: "Revenue Share", value: stats?.commissionEarned?.toFixed(2), icon: IndianRupee, color: "emerald", prefix: "₹" },
-                    { label: "Active Players", value: stats?.usersCount, icon: Users2, color: "indigo" },
-                    { label: "My Arenas", value: stats?.arenasCount, icon: Swords, color: "purple" },
-                    { label: "Commission Rate", value: stats?.commissionPercentage, icon: PieChart, color: "orange", suffix: "%" }
-                ].map((item, idx) => (
-                    <div key={idx} className="bg-slate-900/40 border border-white/5 p-6 rounded-3xl backdrop-blur-xl group hover:border-purple-500/30 transition-all duration-300">
-                        <div className="flex justify-between items-start mb-4">
-                            <div className={`p-3 rounded-2xl bg-${item.color}-500/10 border border-${item.color}-500/20 group-hover:scale-110 transition-transform duration-300`}>
-                                <item.icon className={`w-5 h-5 text-${item.color}-400`} />
-                            </div>
-                            <TrendingUp className="w-4 h-4 text-slate-700" />
-                        </div>
-                        <h3 className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] mb-1">{item.label}</h3>
-                        <div className="flex items-baseline gap-1">
-                            <span className="text-2xl font-black text-white tracking-tighter">
-                                {item.prefix}{item.value}{item.suffix}
-                            </span>
-                        </div>
-                    </div>
-                ))}
-            </div>
+            {/* LIVE SCORES GRID */}
+            <LiveScoreGrid initialMatches={stats.liveMatches} role="subadmin" />
 
-            {/* Match Center Section */}
+            {/* Today's Focus Action Section */}
             <div className="space-y-6">
                 <div className="flex items-center justify-between px-2">
-                    <h2 className="text-xl font-black text-white italic uppercase tracking-tight flex items-center gap-3">
-                        <Zap className="w-6 h-6 text-indigo-400" /> Match <span className="text-indigo-400">Center</span>
+                    <h2 className="text-lg font-black text-white italic uppercase tracking-tight flex items-center gap-3">
+                        <Zap className="w-5 h-5 text-yellow-400" /> Today's <span className="text-yellow-400 font-black">Performance</span>
                     </h2>
-                    <Link href="/matches" className="text-[10px] font-black text-slate-500 hover:text-white uppercase tracking-widest transition-colors flex items-center gap-1">
-                        Full Schedule <ChevronRight className="w-3 h-3" />
-                    </Link>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    {upcomingMatches.map((match) => (
-                        <div key={match._id} className="bg-slate-900/40 border border-white/5 p-5 rounded-[2rem] backdrop-blur-xl relative overflow-hidden group hover:border-indigo-500/30 transition-all duration-500">
-                            <div className="absolute -top-10 -right-10 w-20 h-20 bg-indigo-500/10 blur-[30px] rounded-full" />
-                            
-                            <div className="flex justify-between items-center mb-4">
-                                <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
-                                    {new Date(match.startTime).toLocaleDateString([], { month: 'short', day: 'numeric' })}
-                                </div>
-                                <div className="px-2 py-0.5 rounded-md bg-indigo-500/10 border border-indigo-500/20 text-[8px] font-black text-indigo-400 uppercase tracking-[0.2em]">
-                                    Upcoming
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div className="bg-slate-900 border border-white/5 p-6 rounded-3xl backdrop-blur-xl group hover:border-indigo-500/30 transition-all">
+                        <h3 className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] mb-1">Today's Matches</h3>
+                        <div className="text-3xl font-black text-white tracking-tighter">
+                            {intelligence.todayPerformance.matchCount} 
+                            <span className="text-xs text-slate-500 uppercase ml-2">Total Events</span>
+                        </div>
+                    </div>
+
+                    <div className="bg-slate-900 border border-white/5 p-6 rounded-3xl backdrop-blur-xl group hover:border-purple-500/30 transition-all">
+                        <h3 className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] mb-1">My Active Arenas</h3>
+                        <div className="text-3xl font-black text-white tracking-tighter">
+                            {intelligence.todayPerformance.arenaCount}
+                            <span className="text-xs text-slate-500 uppercase ml-2">Hosted</span>
+                        </div>
+                    </div>
+
+                    <div className="bg-slate-900 border border-white/5 p-6 rounded-3xl backdrop-blur-xl group hover:border-emerald-500/30 transition-all flex flex-col justify-center">
+                        <div className="flex justify-between items-end mb-3">
+                            <h3 className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em]">Saturation</h3>
+                            <span className="text-xs font-black text-emerald-400">
+                                {intelligence.todayPerformance.totalSlots > 0 
+                                    ? ((intelligence.todayPerformance.filledSlots / intelligence.todayPerformance.totalSlots) * 100).toFixed(1)
+                                    : 0}%
+                            </span>
+                        </div>
+                        <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
+                            <div 
+                                className="h-full bg-emerald-500 rounded-full shadow-[0_0_10px_rgba(16,185,129,0.5)] transition-all duration-1000" 
+                                style={{ width: `${intelligence.todayPerformance.totalSlots > 0 ? (intelligence.todayPerformance.filledSlots / intelligence.todayPerformance.totalSlots) * 100 : 0}%` }}
+                            />
+                        </div>
+                    </div>
+
+                    <div className="bg-gradient-to-br from-indigo-600 to-indigo-800 p-6 rounded-3xl shadow-xl shadow-indigo-950/40 flex flex-col justify-between group hover:scale-[1.02] transition-all">
+                        <h3 className="text-indigo-100 text-[10px] font-black uppercase tracking-[0.2em] mb-1">Today's Payout</h3>
+                        <div className="text-4xl font-black text-white italic tracking-tighter">
+                            ₹{intelligence.todayPerformance.projectedCommission.toLocaleString()}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* 1. Gamification Hero */}
+                <div className="lg:col-span-2 relative overflow-hidden rounded-[32px] p-8 md:p-10 bg-slate-900 border border-white/10 shadow-2xl flex flex-col justify-center">
+                    <div className={`absolute -right-20 -bottom-20 w-64 h-64 blur-[100px] rounded-full pointer-events-none ${activeColor.split(' ')[1]}`} />
+                    
+                    <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 relative z-10 w-full mb-10">
+                        <div>
+                            <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full border text-[10px] font-black uppercase tracking-widest mb-4 shadow-lg ${activeColor}`}>
+                                <Target className="w-4 h-4" /> {gamification.currentTier} Level
+                            </span>
+                            <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">Total Earnings Generated</p>
+                            <h2 className="text-5xl md:text-7xl font-black text-white tracking-tighter tabular-nums mt-1 leading-none">
+                                ₹{gamification.totalCommissionEarned.toLocaleString()}
+                            </h2>
+                        </div>
+
+                        <div className="w-full md:w-auto text-left md:text-right">
+                            <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-1">Commission Rate</p>
+                            <div className="text-4xl font-black text-white tabular-nums">
+                                {gamification.commissionPercentage}<span className="text-indigo-400 text-2xl">%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="relative z-10 p-5 bg-black/40 border border-white/5 rounded-2xl backdrop-blur-md w-full">
+                        <div className="flex justify-between items-end mb-3">
+                            <div>
+                                <h4 className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Next Level Progress</h4>
+                                {gamification.nextTierThreshold ? (
+                                    <p className="text-[9px] font-bold text-slate-500 uppercase mt-1">
+                                        Bridge the <span className="text-indigo-400">₹{(gamification.nextTierThreshold - gamification.totalCommissionEarned).toLocaleString()}</span> gap to level up!
+                                    </p>
+                                ) : (
+                                    <p className="text-[9px] font-bold text-cyan-400 uppercase mt-1">Max Level Achieved</p>
+                                )}
+                            </div>
+                            <span className="text-xs font-black text-white">{progressPercent.toFixed(1)}%</span>
+                        </div>
+                        <div className="h-2 w-full bg-slate-800 rounded-full overflow-hidden">
+                            <div 
+                                className={`h-full rounded-full transition-all duration-1000 ${gamification.currentTier === 'Diamond' ? 'bg-cyan-400 shadow-[0_0_15px_#22d3ee]' : 'bg-indigo-500 shadow-[0_0_15px_#6366f1]'}`}
+                                style={{ width: `${progressPercent}%` }} 
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                {/* 2. Intelligence & Growth Panel */}
+                <div className="flex flex-col gap-6">
+                    <div className="flex-1 bg-slate-900 border border-white/5 rounded-[32px] p-6 relative overflow-hidden group">
+                        <div className="relative z-10">
+                            <div className="flex justify-between items-start mb-4">
+                                <h3 className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                                    <Users className="w-4 h-4" /> My Player Network
+                                </h3>
+                                <div className="text-[9px] font-black text-emerald-400 uppercase tracking-widest bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+                                    +{intelligence.newPlayers7d} (7D)
                                 </div>
                             </div>
-
-                            <div className="flex items-center justify-between gap-2 mb-6">
-                                <div className="flex-1 text-center">
-                                    <div className="text-lg font-black text-white uppercase tracking-tighter italic">{match.teams[0].shortName}</div>
-                                </div>
-                                <div className="text-[10px] font-black text-slate-700 italic">VS</div>
-                                <div className="flex-1 text-center">
-                                    <div className="text-lg font-black text-white uppercase tracking-tighter italic">{match.teams[1].shortName}</div>
-                                </div>
+                            <div className="text-5xl font-black text-white tracking-tighter tabular-nums mb-2">
+                                {intelligence.playerNetworkSize}
                             </div>
+                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest leading-relaxed">Network Growth is healthy.</p>
+                        </div>
+                    </div>
 
-                            <button 
-                                onClick={() => setSelectedMatchForArena(match)}
-                                className="w-full py-3 bg-white/5 hover:bg-indigo-600 text-slate-300 hover:text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border border-white/5 hover:border-indigo-500 flex items-center justify-center gap-2"
-                            >
-                                <Swords className="w-3 h-3" /> Host Arena
-                            </button>
+                    <button 
+                        onClick={handleCopyInviteLink}
+                        className="bg-indigo-600 hover:bg-indigo-500 rounded-[28px] p-6 text-left transition-all group flex flex-col gap-4 shadow-xl shadow-indigo-600/10"
+                    >
+                        <div className="flex justify-between items-center">
+                            <div className="p-2 bg-white/20 rounded-xl">
+                                <Copy className="w-5 h-5 text-white" />
+                            </div>
+                            <ArrowUpRight className="w-4 h-4 text-white/60 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+                        </div>
+                        <div>
+                            <h3 className="text-white text-sm font-black uppercase italic tracking-tight">Recruit New Players</h3>
+                            <p className="text-white/60 text-[9px] font-bold uppercase tracking-widest mt-1">Share your franchise link</p>
+                        </div>
+                    </button>
+                </div>
+            </div>
+
+            {/* Network VIPs (Phase 3) */}
+            <div className="space-y-6">
+                <h2 className="text-sm font-black text-white/50 uppercase tracking-[0.3em] px-2 flex items-center gap-2">
+                    <Trophy className="w-4 h-4" /> Franchise VIP Network
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {intelligence.networkVips?.map((vip, i) => (
+                        <div key={vip._id} className="bg-slate-900 border border-white/5 p-5 rounded-[24px] flex items-center gap-4 group hover:border-indigo-500/30 transition-all">
+                            <div className="w-12 h-12 rounded-full bg-slate-800 border border-white/5 flex items-center justify-center font-black text-indigo-400 text-sm group-hover:bg-indigo-500/10 transition-colors">
+                                {vip.name[0]}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <p className="text-sm font-bold text-white truncate">{vip.name}</p>
+                                <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest leading-none mt-1">Tier #{i+1} Asset</p>
+                            </div>
+                            <div className="text-right">
+                                <p className="text-sm font-black text-white tabular-nums">₹{vip.walletBalance.toLocaleString()}</p>
+                                <div className="text-[9px] font-black text-indigo-400 uppercase bg-indigo-500/10 px-2 py-0.5 rounded mt-1">Active Player</div>
+                            </div>
                         </div>
                     ))}
-                    {upcomingMatches.length === 0 && (
-                        <div className="col-span-full py-10 bg-white/5 border border-dashed border-white/10 rounded-3xl flex flex-center justify-center">
-                            <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">No matches available for hosting right now</p>
+                    {(!intelligence.networkVips || intelligence.networkVips.length === 0) && (
+                        <div className="lg:col-span-3 py-10 bg-slate-900/50 border border-white/5 border-dashed rounded-[24px] text-center text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                            No high-volume players detected yet.
                         </div>
                     )}
                 </div>
             </div>
 
-            {/* Main Content Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Recent Arenas Table */}
-                <div className="lg:col-span-2 space-y-6">
-                    <div className="flex items-center justify-between px-2">
-                        <div className="flex items-center gap-6">
-                            <button 
-                                onClick={() => setActiveTab('arenas')}
-                                className={`text-lg font-black italic uppercase tracking-tight flex items-center gap-3 transition-all ${activeTab === 'arenas' ? 'text-white' : 'text-slate-600 hover:text-slate-400'}`}
-                            >
-                                <Trophy className={`w-5 h-5 ${activeTab === 'arenas' ? 'text-purple-500' : 'text-slate-700'}`} /> 
-                                Recent <span className={activeTab === 'arenas' ? 'text-purple-500' : ''}>Arenas</span>
-                            </button>
-                            <button 
-                                onClick={() => setActiveTab('commissions')}
-                                className={`text-lg font-black italic uppercase tracking-tight flex items-center gap-3 transition-all ${activeTab === 'commissions' ? 'text-white' : 'text-slate-600 hover:text-slate-400'}`}
-                            >
-                                <IndianRupee className={`w-5 h-5 ${activeTab === 'commissions' ? 'text-emerald-500' : 'text-slate-700'}`} /> 
-                                Revenue <span className={activeTab === 'commissions' ? 'text-emerald-500' : ''}>Logs</span>
-                            </button>
-                        </div>
-                        <Link href={activeTab === 'arenas' ? "/subadmin/arenas" : "#"} className="text-[10px] font-black text-slate-500 hover:text-white uppercase tracking-widest transition-colors flex items-center gap-1">
-                            View All <ChevronRight className="w-3 h-3" />
-                        </Link>
+                {/* 3. Alerts & Promotion */}
+                <div className="lg:col-span-1 space-y-6">
+                    <div className="flex flex-col gap-2">
+                        <h2 className="text-lg font-black text-amber-500 italic uppercase tracking-tight flex items-center gap-3">
+                            <AlertTriangle className="w-5 h-5" /> Needs Promotion
+                        </h2>
                     </div>
 
-                    <div className="bg-slate-950/40 border border-white/5 rounded-3xl overflow-hidden backdrop-blur-xl">
-                        {activeTab === 'arenas' ? (
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-left">
-                                    <thead className="bg-white/5 border-b border-white/5">
-                                        <tr>
-                                            <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Arena Name</th>
-                                            <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Fee</th>
-                                            <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Fill Rate</th>
-                                            <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Status</th>
-                                            <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest"></th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-white/5">
-                                        {recentArenas.map((arena) => (
-                                            <tr key={arena._id} className="hover:bg-white/5 transition-colors group">
-                                                <td className="px-6 py-5">
-                                                    <div className="font-bold text-white text-sm uppercase italic tracking-tight">{arena.name}</div>
-                                                    <div className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{new Date(arena.createdAt).toLocaleDateString()}</div>
-                                                </td>
-                                                <td className="px-6 py-5">
-                                                    <div className="font-black text-emerald-400 text-sm">₹{arena.entryFee}</div>
-                                                </td>
-                                                <td className="px-6 py-5">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="flex-1 h-1.5 w-24 bg-white/5 rounded-full overflow-hidden">
-                                                            <div 
-                                                                className="h-full bg-purple-500 rounded-full shadow-[0_0_10px_rgba(168,85,247,0.5)]" 
-                                                                style={{ width: `${(arena.slotsCount / arena.maxSlots) * 100}%` }}
-                                                            />
-                                                        </div>
-                                                        <span className="text-[11px] font-black text-slate-400">{arena.slotsCount}/{arena.maxSlots}</span>
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-5">
-                                                    <span className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border ${
-                                                        arena.status === 'open' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' :
-                                                        arena.status === 'full' ? 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400' :
-                                                        'bg-slate-500/10 border-slate-500/20 text-slate-400'
-                                                    }`}>
-                                                        {arena.status}
-                                                    </span>
-                                                </td>
-                                                <td className="px-6 py-5 text-right">
-                                                    <button className="p-2 text-slate-600 group-hover:text-white transition-colors">
-                                                        <ArrowUpRight className="w-4 h-4" />
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                        {recentArenas.length === 0 && (
-                                            <tr>
-                                                <td colSpan={5} className="px-6 py-20 text-center">
-                                                    <div className="opacity-30 flex flex-col items-center gap-4">
-                                                        <Swords className="w-12 h-12 text-slate-600" />
-                                                        <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">No arenas created yet</p>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        )}
-                                    </tbody>
-                                </table>
-                            </div>
-                        ) : (
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-left">
-                                    <thead className="bg-white/5 border-b border-white/5">
-                                        <tr>
-                                            <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Description</th>
-                                            <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Amount</th>
-                                            <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Date</th>
-                                            <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Status</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-white/5">
-                                        {commissions.map((comm) => (
-                                            <tr key={comm._id} className="hover:bg-white/5 transition-colors group">
-                                                <td className="px-6 py-5">
-                                                    <div className="font-bold text-white text-sm uppercase tracking-tight">{comm.description}</div>
-                                                </td>
-                                                <td className="px-6 py-5">
-                                                    <div className="font-black text-emerald-400 text-base">+ ₹{comm.amount.toFixed(2)}</div>
-                                                </td>
-                                                <td className="px-6 py-5">
-                                                    <div className="text-[11px] text-slate-400 font-bold uppercase tracking-widest">
-                                                        {new Date(comm.createdAt).toLocaleDateString()} at {new Date(comm.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-5">
-                                                    <span className="px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-[9px] font-black uppercase text-emerald-400 tracking-widest">
-                                                        {comm.status}
-                                                    </span>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                        {commissions.length === 0 && (
-                                            <tr>
-                                                <td colSpan={4} className="px-6 py-20 text-center">
-                                                    <div className="opacity-30 flex flex-col items-center gap-4">
-                                                        <IndianRupee className="w-12 h-12 text-slate-600" />
-                                                        <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">No revenue recorded yet</p>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        )}
-                                    </tbody>
-                                </table>
-                            </div>
-                        )}
-                    </div>
+                    {alerts.needsPromotion.length > 0 ? (
+                        <div className="space-y-4">
+                            {alerts.needsPromotion.map((arena) => (
+                                <div key={arena._id} className="bg-slate-900 border border-white/10 p-5 rounded-2xl group hover:border-amber-500/30 transition-all">
+                                    <div className="flex justify-between items-start mb-3">
+                                        <div>
+                                            <h3 className="text-xs font-black text-white uppercase italic tracking-tight">{arena.name}</h3>
+                                            <span className="text-[9px] font-bold text-amber-400 uppercase tracking-widest flex items-center gap-1 mt-1">
+                                                <Clock className="w-3 h-3" /> {arena.hoursUntilStart} hrs left
+                                            </span>
+                                        </div>
+                                        <div className="px-2 py-1 bg-amber-500/10 rounded text-[9px] font-black text-amber-500 border border-amber-500/20">
+                                            {arena.fillRate}% Full
+                                        </div>
+                                    </div>
+                                    <button 
+                                        onClick={() => handleCopyPromo(arena)}
+                                        className="w-full py-2.5 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-[9px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2"
+                                    >
+                                        <Share2 className="w-3.5 h-3.5" /> 1-Click WhatsApp Copy
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="bg-slate-900/50 border border-white/5 border-dashed p-8 rounded-2xl flex flex-col items-center justify-center text-center gap-3 h-48">
+                            <Trophy className="w-6 h-6 text-slate-700" />
+                            <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest leading-relaxed">No critical promos needed.</p>
+                        </div>
+                    )}
+
+                    {/* Missed Opportunities Section */}
+                    {alerts.missedOpportunities?.length > 0 && (
+                        <div className="bg-red-500/5 border border-red-500/20 p-5 rounded-2xl">
+                             <h4 className="text-[10px] font-black text-red-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                <AlertTriangle className="w-4 h-4" /> Unhosted Matches Today
+                             </h4>
+                             <div className="space-y-3">
+                                {alerts.missedOpportunities.map(m => (
+                                    <div key={m._id} className="flex justify-between items-center">
+                                        <div className="text-[10px] font-bold text-white uppercase truncate max-w-[150px]">
+                                            {m.teams[0]?.name} vs {m.teams[1]?.name}
+                                        </div>
+                                        <Link 
+                                            href={`/subadmin/arenas/new?matchId=${m._id}`}
+                                            className="text-[9px] font-black text-indigo-400 hover:text-indigo-300 uppercase underline"
+                                        >
+                                            Host Now
+                                        </Link>
+                                    </div>
+                                ))}
+                             </div>
+                        </div>
+                    )}
                 </div>
 
-                {/* Performance Chart Column */}
-                <div className="space-y-6">
-                    <h2 className="text-lg font-black text-white italic uppercase tracking-tight flex items-center gap-3">
-                        <Users className="w-5 h-5 text-purple-500" /> Franchise <span className="text-purple-500">Context</span>
-                    </h2>
-                    
-                    <div className="bg-gradient-to-br from-purple-600 to-indigo-700 p-8 rounded-[32px] shadow-2xl relative overflow-hidden group">
-                        <div className="absolute top-0 right-0 p-4 opacity-20 transform translate-x-4 -translate-y-4 group-hover:translate-x-2 group-hover:-translate-y-2 transition-transform duration-500">
-                            <PieChart className="w-32 h-32 text-white" />
-                        </div>
-                        
-                        <div className="relative z-10 space-y-6">
-                            <div>
-                                <h3 className="text-white/60 text-[10px] font-black uppercase tracking-[0.2em] mb-1">Lifetime Earnings</h3>
-                                <div className="text-4xl font-black text-white tracking-tighter italic leading-none">
-                                    ₹{(stats?.commissionEarned || 0).toLocaleString()}
-                                </div>
-                            </div>
-                            
-                            <div className="bg-black/20 backdrop-blur-md rounded-2xl p-4 border border-white/10">
-                                <p className="text-[10px] text-white/60 font-black uppercase tracking-widest mb-3">Goal Progress</p>
-                                <div className="flex justify-between items-end mb-2">
-                                    <span className="text-xs font-black text-white italic">Level 1 Bronze</span>
-                                    <span className="text-[10px] font-black text-white/50 uppercase">75%</span>
-                                </div>
-                                <div className="h-2 w-full bg-white/10 rounded-full overflow-hidden">
-                                    <div className="h-full w-[75%] bg-white rounded-full shadow-[0_0_15px_#fff]" />
-                                </div>
-                            </div>
-                            
-                            <button className="w-full py-4 bg-white text-purple-700 font-black text-xs uppercase tracking-widest rounded-2xl shadow-xl hover:scale-[1.02] transition-all">
-                                Withdraw Commissions
-                            </button>
-                        </div>
+                {/* 4. Franchise Earnings Table */}
+                <div className="lg:col-span-2 space-y-6">
+                    <div className="flex flex-col gap-2">
+                        <h2 className="text-lg font-black text-white italic uppercase tracking-tight flex items-center gap-3">
+                            <FileText className="w-5 h-5 text-indigo-400" /> Recent Arenas <span className="text-indigo-400">Ledger</span>
+                        </h2>
                     </div>
 
-                    {/* Quick Access List */}
-                    <div className="bg-slate-900/40 border border-white/5 rounded-3xl p-6 space-y-4 backdrop-blur-xl">
-                        <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Network Tools</h4>
-                        <div className="grid grid-cols-2 gap-3">
-                            <button className="flex flex-col items-center justify-center gap-3 p-4 bg-white/5 rounded-2xl border border-white/5 hover:border-purple-500/30 transition-all group">
-                                <Users2 className="w-5 h-5 text-slate-400 group-hover:text-purple-400" />
-                                <span className="text-[10px] font-bold text-slate-400 group-hover:text-white uppercase">Invite</span>
-                            </button>
-                            <button className="flex flex-col items-center justify-center gap-3 p-4 bg-white/5 rounded-2xl border border-white/5 hover:border-purple-500/30 transition-all group">
-                                <LayoutDashboard className="w-5 h-5 text-slate-400 group-hover:text-purple-400" />
-                                <span className="text-[10px] font-bold text-slate-400 group-hover:text-white uppercase">Rules</span>
-                            </button>
+                    <div className="bg-slate-900 border border-white/10 rounded-[28px] overflow-hidden shadow-2xl">
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left">
+                                <thead className="bg-white/5 border-b border-white/10">
+                                    <tr>
+                                        <th className="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-widest">Arena / Match</th>
+                                        <th className="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-widest">Metrics</th>
+                                        <th className="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-widest">Potential</th>
+                                        <th className="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-widest">State</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-white/5">
+                                    {recentArenas.map((arena) => (
+                                        <tr key={arena._id} className="hover:bg-white/5 transition-colors">
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <div className="text-xs font-black text-white uppercase italic tracking-tight">{arena.name}</div>
+                                                <div className="text-[9px] font-bold text-slate-500 uppercase mt-1">{new Date(arena.createdAt).toLocaleDateString()}</div>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <div className="text-[10px] font-black text-slate-300">{arena.slotsCount}/{arena.maxSlots} <span className="text-slate-500 ml-1">SLOTS</span></div>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <div className="text-xs font-black text-emerald-400 tracking-wider">
+                                                    +₹{((arena.slotsCount * arena.entryFee) * (gamification.commissionPercentage / 100)).toFixed(2)}
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest ${
+                                                    arena.status === 'open' ? 'text-indigo-400 bg-indigo-500/10' :
+                                                    arena.status === 'full' ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-500 bg-white/5'
+                                                }`}>
+                                                    {arena.status}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
             </div>
-
-            <AnimatePresence>
-                {selectedMatchForArena && (
-                    <ArenaManager
-                        matchId={selectedMatchForArena._id}
-                        matchName={`${selectedMatchForArena.teams[0].shortName} VS ${selectedMatchForArena.teams[1].shortName}`}
-                        userRole="subadmin"
-                        onClose={() => setSelectedMatchForArena(null)}
-                    />
-                )}
-            </AnimatePresence>
         </div>
     );
 }

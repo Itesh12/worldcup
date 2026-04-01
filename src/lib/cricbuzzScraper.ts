@@ -18,6 +18,8 @@ export interface ScrapedMatch {
     status: 'live' | 'upcoming' | 'finished';
     startTime?: Date;
     venue?: string;
+    matchDesc?: string;
+    seriesName?: string;
 }
 
 export interface MatchInfo {
@@ -69,6 +71,7 @@ export interface FullScorecard {
         bowling: BowlingEntry[];
         fow: string[];
     };
+    liveStatus?: string;
 }
 
 export interface SquadPlayer {
@@ -201,7 +204,9 @@ export const getCricbuzzMatches = async (seriesId: string, slug: string): Promis
                     team2,
                     status,
                     venue: slug.split('-').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' '),
-                    startTime: startDate
+                    startTime: startDate,
+                    matchDesc: matchDesc.replace(/\\/g, ''),
+                    seriesName: slug.split('-').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' ')
                 });
             }
 
@@ -384,7 +389,11 @@ export const getCricbuzzFullScorecard = async (matchId: string): Promise<FullSco
         const innings1 = finalInnings[0] || { name: 'Innings 1', score: '', batting: [], bowling: [], fow: [] };
         const innings2 = finalInnings[1] || { name: 'Innings 2', score: '', batting: [], bowling: [], fow: [] };
 
-        return { team1: innings1, team2: innings2 };
+        // Real live status message (e.g. "GT opt to bat")
+        const liveStatus = $('.cb-col-100.cb-col-rt.cb-font-18').first().text().trim() || 
+                           $('.cb-text-live, .cb-text-complete, .cb-text-stumps').first().text().trim();
+
+        return { team1: innings1, team2: innings2, liveStatus };
     } catch (error) {
         console.error("Cricbuzz Scraper Error (FullScorecard):", error);
         return null;

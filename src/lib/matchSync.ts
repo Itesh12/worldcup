@@ -46,7 +46,9 @@ export async function performMatchSync(requestTournamentId?: string) {
                 ],
                 status: m.status,
                 startTime: validStartTime,
-                venue: m.venue || "N/A"
+                venue: m.venue || "N/A",
+                matchDesc: m.matchDesc,
+                seriesName: m.seriesName
             };
         });
 

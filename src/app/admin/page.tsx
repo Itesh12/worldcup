@@ -1,41 +1,37 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Users, Trophy, Activity, TrendingUp, ShieldCheck, Clock, CheckCircle, Ticket, Medal, Flame, ArrowLeft, Trash2, AlertTriangle, X, FileText, ArrowUpRight, IndianRupee } from "lucide-react";
+import { Users, Trophy, Activity, TrendingUp, AlertTriangle, X, ArrowUpRight, IndianRupee, Clock, Search, ShieldAlert, BarChart3, Radio, Database, Trash2, ArrowRight, Swords } from "lucide-react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Spinner } from "@/components/ui/Spinner";
 import { useToast } from "@/contexts/ToastContext";
+import { LiveScoreGrid } from "@/components/dashboard/LiveScoreGrid";
 
 interface AnalyticsData {
-    users: {
-        total: number;
-        active: number;
-        banned: number;
-        admins: number;
+    actionDesk: {
+        pendingWithdrawals: { count: number; amount: number };
+        liveMatches: { _id: string; teams: any[]; startTime: string; status: string; liveScore?: any; matchDesc?: string; seriesName?: string }[];
+        dailyFinancials: { deposits: number; withdrawals: number };
+        todayMatchStats: { matchCount: number; arenaCount: number; totalSlots: number; filledSlots: number };
     };
-    matches: {
-        total: number;
-        live: number;
-        upcoming: number;
-        finished: number;
+    financialRisk: {
+        totalSystemLiability: number;
+        whales: { _id: string; name: string; email: string; walletBalance: number; image?: string }[];
+        highValueInteractions: any[];
+        liquidityScore: number;
     };
-    engagement: {
-        totalAssignments: number;
-        activeAssignments: number;
+    ecosystem: {
+        topSubAdmins: { _id: string; totalCommissionEarned: number; subAdminId: { name: string; email: string } }[];
+        globalFillRate: number;
+        totalUsers: number;
+        growth: { reg24h: number; reg7d: number };
     };
-    revenue: {
-        total: number;
+    intelligence: {
+        tournamentStats: { name: string; matchCount: number; userCount: number }[];
     };
-    performance: {
-        totalRuns: number;
-        topPlayers: {
-            name: string;
-            image?: string;
-            totalRuns: number;
-        }[];
-    };
+    auditFeed: any[];
 }
 
 export default function AdminDashboardPage() {
@@ -45,7 +41,7 @@ export default function AdminDashboardPage() {
     const { showToast } = useToast();
     const [loading, setLoading] = useState(true);
 
-    // Reset Modal State
+    // Reset Modal
     const [showResetModal, setShowResetModal] = useState(false);
     const [resetConfirmation, setResetConfirmation] = useState("");
     const [resetting, setResetting] = useState(false);
@@ -55,19 +51,23 @@ export default function AdminDashboardPage() {
             router.push("/login");
             return;
         }
-        if (status === "authenticated" && (session?.user as any)?.role !== "admin") {
-            router.push("/dashboard");
-            return;
+        if (status === "authenticated") {
+            if ((session?.user as any)?.role !== "admin") {
+                router.push("/dashboard");
+                return;
+            }
+            // Only fetch once or if data is missing to prevent flickers on session refresh
+            if (!data) {
+                fetchAnalytics();
+            }
         }
-        fetchAnalytics();
-    }, [status, session]);
+    }, [status, session, data]);
 
     const fetchAnalytics = async () => {
         try {
             const res = await fetch("/api/admin/analytics");
             if (res.ok) {
                 const json = await res.json();
-                console.log("Admin Analytics Data:", json);
                 setData(json);
             }
         } catch (error) {
@@ -99,8 +99,9 @@ export default function AdminDashboardPage() {
 
     if (loading) {
         return (
-            <div className="flex h-[50vh] items-center justify-center">
+            <div className="flex flex-col h-[60vh] items-center justify-center gap-4">
                 <Spinner />
+                <p className="text-slate-500 font-bold text-xs uppercase tracking-widest animate-pulse">Initializing Command Center...</p>
             </div>
         );
     }
@@ -109,12 +110,11 @@ export default function AdminDashboardPage() {
 
     return (
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 relative">
-            {/* Reset Confirmation Modal */}
+            {/* Database Reset Modal */}
             {showResetModal && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setShowResetModal(false)} />
                     <div className="relative w-full max-w-lg bg-[#0f172a] border border-red-500/30 rounded-[2rem] p-8 shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
-                        {/* Background Effects */}
                         <div className="absolute top-0 right-0 w-64 h-64 bg-red-500/10 blur-[80px] rounded-full pointer-events-none" />
                         <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-red-600 via-orange-500 to-red-600" />
 
@@ -132,14 +132,11 @@ export default function AdminDashboardPage() {
 
                             <h2 className="text-2xl font-black text-white uppercase tracking-tight mb-2">Nuclear Option</h2>
                             <p className="text-slate-400 text-sm font-medium leading-relaxed max-w-sm mb-8">
-                                You are about to wipe the entire database. This deletes
-                                <span className="text-red-400 font-bold"> matches, user stats, and assignments</span>.
-                                <br />Admin accounts will be preserved.
+                                You are about to wipe the entire database. This deletes matches, user stats, and assignments. Admin accounts will be preserved.
                             </p>
 
-                            <div className="w-full bg-red-950/20 border border-red-500/20 rounded-xl p-4 mb-6 relative overflow-hidden">
-                                <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10 mix-blend-overlay pointer-events-none" />
-                                <label className="block text-[10px] font-black text-red-400 uppercase tracking-widest mb-2 text-left relative z-10">
+                            <div className="w-full bg-red-950/20 border border-red-500/20 rounded-xl p-4 mb-6">
+                                <label className="block text-[10px] font-black text-red-400 uppercase tracking-widest mb-2 text-left">
                                     Type "RESET" to confirm
                                 </label>
                                 <input
@@ -147,7 +144,7 @@ export default function AdminDashboardPage() {
                                     value={resetConfirmation}
                                     onChange={(e) => setResetConfirmation(e.target.value.toUpperCase())}
                                     placeholder="RESET"
-                                    className="w-full bg-slate-900 border border-red-500/30 rounded-lg px-4 py-3 text-white font-black tracking-[0.2em] placeholder:text-slate-700 focus:outline-none focus:border-red-500 transition-all text-center uppercase relative z-10"
+                                    className="w-full bg-slate-900 border border-red-500/30 rounded-lg px-4 py-3 text-white font-black tracking-[0.2em] placeholder:text-slate-700 focus:outline-none focus:border-red-500 text-center uppercase"
                                 />
                             </div>
 
@@ -163,17 +160,7 @@ export default function AdminDashboardPage() {
                                     disabled={resetConfirmation !== "RESET" || resetting}
                                     className="flex-1 py-4 rounded-xl bg-red-600 text-white font-black hover:bg-red-500 transition-all uppercase tracking-wider text-xs shadow-lg shadow-red-600/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                                 >
-                                    {resetting ? (
-                                        <>
-                                            <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                            Wiping...
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Trash2 className="w-4 h-4" />
-                                            Confirm Wipe
-                                        </>
-                                    )}
+                                    {resetting ? "Wiping..." : "Confirm Wipe"}
                                 </button>
                             </div>
                         </div>
@@ -181,391 +168,391 @@ export default function AdminDashboardPage() {
                 </div>
             )}
 
-            {/* Premium Dashboard Header */}
+            {/* Header */}
             <header className="sticky top-0 z-50 bg-[#050B14]/80 backdrop-blur-xl border-b border-white/5 py-4 md:py-6">
-                <div className="max-w-7xl mx-auto px-4 md:px-6 flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-6">
+                <div className="max-w-[1600px] mx-auto px-4 md:px-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
-                        <h1 className="text-2xl md:text-4xl font-black text-white tracking-tight">
-                            Platform <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">Intelligence</span>
+                        <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight uppercase italic flex items-center gap-3">
+                            <Radio className="w-6 h-6 text-indigo-500" /> Command <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">Center</span>
                         </h1>
-                        <p className="text-slate-500 mt-1 md:mt-2 text-[10px] md:text-sm font-medium tracking-wide uppercase">
-                            Real-time analytics and monitoring
-                        </p>
                     </div>
-                    <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-3 bg-indigo-500/5 border border-indigo-500/20 px-5 py-2.5 rounded-2xl backdrop-blur-md transition-all hover:bg-indigo-500/10">
-                            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse shadow-[0_0_10px_#22c55e]" />
-                            <span className="text-[10px] font-black text-white uppercase tracking-[0.2em]">System Live</span>
+                    <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-3 bg-red-500/10 border border-red-500/20 px-4 py-2 rounded-xl backdrop-blur-md transition-all">
+                            <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse shadow-[0_0_10px_#ef4444]" />
+                            <span className="text-[10px] font-black text-red-400 uppercase tracking-[0.2em]">Oversight Live</span>
                         </div>
-                        <div className="hidden sm:flex items-center gap-3 bg-white/5 border border-white/10 px-5 py-2.5 rounded-2xl backdrop-blur-md">
-                            <Clock className="w-4 h-4 text-slate-400" />
-                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                                {new Date().toLocaleDateString([], { month: 'long', day: 'numeric' })}
-                            </span>
+                        <div className="hidden lg:flex items-center gap-3 bg-purple-500/10 border border-purple-500/20 px-4 py-2 rounded-xl backdrop-blur-md transition-all">
+                            <div className="w-2 h-2 rounded-full bg-purple-500 animate-pulse shadow-[0_0_10px_#a855f7]" />
+                            <span className="text-[10px] font-black text-purple-400 uppercase tracking-[0.2em]">Crons Active</span>
                         </div>
                         <Link
                             href="/dashboard?view=player"
-                            className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-black uppercase tracking-widest rounded-2xl transition-all shadow-lg shadow-indigo-600/20"
+                            className="hidden sm:flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all"
                         >
-                            <Trophy className="w-4 h-4" />
                             Player View
                         </Link>
                     </div>
                 </div>
             </header>
 
-                <div className="max-w-7xl mx-auto px-4 md:px-6 space-y-6 md:space-y-10 py-6 md:py-10 pb-24 md:pb-20 relative z-10 text-white">
+            <div className="max-w-[1600px] mx-auto px-4 md:px-6 py-8 pb-24 lg:pb-12 space-y-8">
+                
+                {/* LIVE SCORES GRID */}
+                <LiveScoreGrid initialMatches={data.actionDesk.liveMatches} role="admin" />
 
-                {/* Row 1: Key Platform Stats */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 relative z-10">
-                    {/* Total Users */}
-                    <div className="relative overflow-hidden rounded-[2.5rem] p-6 md:p-8 bg-gradient-to-br from-indigo-950 via-slate-950 to-slate-950 border border-white/10 shadow-2xl group transition-all duration-500 hover:border-indigo-500/30">
-                        <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                        <div className="absolute -top-10 -right-10 w-40 h-40 bg-indigo-500/20 blur-[80px] rounded-full pointer-events-none" />
-                        <div className="absolute top-4 right-6 opacity-10 group-hover:opacity-30 group-hover:scale-110 transition-all duration-500">
-                            <Users className="w-12 h-12 text-indigo-400" />
-                        </div>
-                        <div className="relative z-10">
-                            <p className="text-[10px] font-black text-indigo-300/70 uppercase tracking-[0.2em] mb-2">Total Community</p>
-                            <h2 className="text-3xl md:text-5xl font-black text-white tracking-tighter">{data.users.total}</h2>
-                        </div>
-                        <div className="relative z-10 mt-6 flex items-center gap-3">
-                            <div className="flex flex-col">
-                                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Active</span>
-                                <span className="text-sm font-bold text-white">{data.users.active}</span>
-                            </div>
-                            <div className="w-px h-8 bg-white/10 mx-2" />
-                            <div className="flex flex-col">
-                                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Staff</span>
-                                <span className="text-sm font-bold text-white">{data.users.admins}</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Live Matches */}
-                    <div className="relative overflow-hidden rounded-[2.5rem] p-6 md:p-8 bg-gradient-to-br from-slate-900 via-red-950/20 to-slate-950 border border-white/10 shadow-2xl group transition-all duration-500 hover:border-red-500/30">
-                        <div className="absolute inset-0 bg-gradient-to-tr from-red-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                        <div className="absolute -top-10 -right-10 w-40 h-40 bg-red-500/10 blur-[80px] rounded-full pointer-events-none" />
-                        <div className="absolute top-4 right-6 opacity-10 group-hover:opacity-30 group-hover:scale-110 transition-all duration-500">
-                            <Activity className="w-12 h-12 text-red-400" />
-                        </div>
-                        <div className="relative z-10">
-                            <p className="text-[10px] font-black text-red-300/70 uppercase tracking-[0.2em] mb-2 flex items-center gap-2">
-                                Live Action
-                                {data.matches.live > 0 && <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse shadow-[0_0_15px_#ef4444]" />}
-                            </p>
-                            <h2 className="text-3xl md:text-5xl font-black text-white tracking-tighter">{data.matches.live}</h2>
-                        </div>
-                        <div className="relative z-10 mt-6">
-                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-500/10 border border-red-500/20">
-                                <span className="text-[10px] font-black text-red-400 uppercase tracking-wider">
-                                    {data.matches.live > 0 ? "Matches in Progress" : "Standby Mode"}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Total Matches */}
-                    <div className="relative overflow-hidden rounded-[2.5rem] p-6 md:p-8 bg-gradient-to-br from-slate-900 via-yellow-950/10 to-slate-950 border border-white/10 shadow-2xl group transition-all duration-500 hover:border-yellow-500/30">
-                        <div className="absolute inset-0 bg-gradient-to-tr from-yellow-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                        <div className="absolute -top-10 -right-10 w-40 h-40 bg-yellow-500/10 blur-[80px] rounded-full pointer-events-none" />
-                        <div className="absolute top-4 right-6 opacity-10 group-hover:opacity-30 group-hover:scale-110 transition-all duration-500">
-                            <Trophy className="w-12 h-12 text-yellow-500" />
-                        </div>
-                        <div className="relative z-10">
-                            <p className="text-[10px] font-black text-yellow-300/70 uppercase tracking-[0.2em] mb-2">Tournament Scale</p>
-                            <h2 className="text-3xl md:text-5xl font-black text-white tracking-tighter">{data.matches.total}</h2>
-                        </div>
-                        <div className="relative z-10 mt-6 flex items-center gap-4">
-                            <div className="flex flex-col">
-                                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Upcoming</span>
-                                <span className="text-sm font-bold text-yellow-500">{data.matches.upcoming}</span>
-                            </div>
-                            <div className="w-px h-8 bg-white/10 mx-2" />
-                            <div className="flex flex-col">
-                                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Completed</span>
-                                <span className="text-sm font-bold text-slate-400">{data.matches.finished}</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Platform Revenue */}
-                    <div className="relative overflow-hidden rounded-[2.5rem] p-6 md:p-8 bg-gradient-to-br from-emerald-950/20 via-slate-950 to-slate-950 border border-emerald-500/20 shadow-2xl group transition-all duration-500 hover:border-emerald-500/40">
-                        <div className="absolute inset-0 bg-gradient-to-tr from-emerald-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                        <div className="absolute -top-10 -right-10 w-40 h-40 bg-emerald-500/20 blur-[80px] rounded-full pointer-events-none" />
-                        <div className="absolute top-4 right-6 opacity-10 group-hover:opacity-30 group-hover:scale-110 transition-all duration-500">
-                            <TrendingUp className="w-12 h-12 text-emerald-400" />
-                        </div>
-                        <div className="relative z-10">
-                            <p className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.2em] mb-2">Platform Revenue</p>
-                            <h2 className="text-3xl md:text-5xl font-black text-white tracking-tighter">₹{data.revenue?.total.toLocaleString() ?? 0}</h2>
-                        </div>
-                        <div className="relative z-10 mt-6">
-                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20">
-                                <span className="text-[10px] font-black text-emerald-400 uppercase tracking-wider">
-                                    Commission Earned
-                                </span>
-                            </div>
-                        </div>
-                    </div>
+                <div className="flex items-center justify-between mb-2">
+                    <h2 className="text-sm font-black text-white/50 uppercase tracking-[0.3em]">Phase 1: Action Desk</h2>
                 </div>
 
-                {/* Weekly Intelligence Hub - Compact horizontal banner */}
-                <div className="relative group">
-                    <Link href="/admin/reports" className="block p-0.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-500 rounded-2xl transition-all duration-500 hover:shadow-[0_0_30px_rgba(99,102,241,0.2)]">
-                        <div className="relative overflow-hidden rounded-[1.9rem] p-4 md:p-8 bg-slate-950 flex flex-row items-center justify-between gap-4">
-                            <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 via-transparent to-purple-500/10 opacity-50 group-hover:opacity-80 transition-opacity" />
-                            <div className="relative z-10 flex items-center gap-3 md:gap-5 min-w-0">
-                                <div className="w-12 h-12 md:w-14 md:h-14 shrink-0 rounded-xl md:rounded-2xl bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20 group-hover:bg-indigo-500/20 transition-all duration-500">
-                                    <FileText className="w-6 h-6 md:w-7 md:h-7 text-indigo-400" />
+                {/* ACTION DESK - Top Tier Operations */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {/* Primary Action: Withdrawals */}
+                    <div className="relative overflow-hidden rounded-[24px] p-6 md:p-8 bg-gradient-to-br from-amber-950/50 via-slate-900 to-slate-950 border border-amber-500/30 shadow-2xl group hover:border-amber-400 transition-all flex flex-col justify-between">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 blur-[50px] rounded-full pointer-events-none" />
+                        <div>
+                            <div className="flex justify-between items-start mb-4">
+                                <div className="p-3 bg-amber-500/10 rounded-xl border border-amber-500/20">
+                                    <IndianRupee className="w-6 h-6 text-amber-500" />
                                 </div>
-                                <div className="min-w-0">
-                                    <h2 className="text-base md:text-2xl font-black text-white tracking-tight uppercase italic leading-tight">
-                                        Weekly Intelligence <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">Hub</span>
-                                    </h2>
-                                    <p className="text-slate-500 font-bold uppercase tracking-wide text-[8px] md:text-[10px] mt-0.5 truncate">
-                                        Monitor performance · verify settlements
-                                    </p>
-                                </div>
+                                {data.actionDesk.pendingWithdrawals.count > 0 && (
+                                    <span className="flex items-center gap-2 text-[10px] font-black text-amber-500 uppercase tracking-widest bg-amber-500/10 px-3 py-1 rounded-full border border-amber-500/20 animate-pulse">
+                                        Action Required
+                                    </span>
+                                )}
                             </div>
-                            <div className="relative z-10 shrink-0">
-                                <div className="flex items-center gap-1.5 px-4 py-2.5 md:px-6 md:py-3 rounded-xl bg-white/5 border border-white/10 group-hover:bg-indigo-500 group-hover:border-indigo-400 transition-all duration-500">
-                                    <span className="text-xs font-black text-white uppercase tracking-wider">Enter</span>
-                                    <ArrowUpRight className="w-4 h-4 text-white" />
-                                </div>
-                            </div>
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Pending Withdrawals Queue</p>
+                            <h2 className="text-4xl md:text-5xl font-black text-white tracking-tighter mb-2">
+                                {data.actionDesk.pendingWithdrawals.count} <span className="text-lg text-slate-500">Reqs</span>
+                            </h2>
+                            <p className="text-sm font-black text-amber-500 tabular-nums">Totaling ₹{data.actionDesk.pendingWithdrawals.amount.toLocaleString()}</p>
                         </div>
-                    </Link>
-                </div>
-
-                {/* Payout Management - Compact horizontal banner */}
-                <div className="relative group">
-                    <Link href="/admin/withdrawals" className="block p-0.5 bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 rounded-2xl transition-all duration-500 hover:shadow-[0_0_30px_rgba(245,158,11,0.2)]">
-                        <div className="relative overflow-hidden rounded-[1.9rem] p-4 md:p-8 bg-slate-950 flex flex-row items-center justify-between gap-4">
-                            <div className="absolute inset-0 bg-gradient-to-br from-amber-500/10 via-transparent to-orange-500/10 opacity-50 group-hover:opacity-80 transition-opacity" />
-                            <div className="relative z-10 flex items-center gap-3 md:gap-5 min-w-0">
-                                <div className="w-12 h-12 md:w-14 md:h-14 shrink-0 rounded-xl md:rounded-2xl bg-amber-500/10 flex items-center justify-center border border-amber-500/20 group-hover:bg-amber-500/20 transition-all duration-500">
-                                    <IndianRupee className="w-6 h-6 md:w-7 md:h-7 text-amber-500" />
-                                </div>
-                                <div className="min-w-0">
-                                    <h2 className="text-base md:text-2xl font-black text-white tracking-tight uppercase italic leading-tight">
-                                        Payout <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-400">Management</span>
-                                    </h2>
-                                    <p className="text-slate-500 font-bold uppercase tracking-wide text-[8px] md:text-[10px] mt-0.5 truncate">
-                                        Process withdrawals · manage settlements
-                                    </p>
-                                </div>
-                            </div>
-                            <div className="relative z-10 shrink-0">
-                                <div className="flex items-center gap-1.5 px-4 py-2.5 md:px-6 md:py-3 rounded-xl bg-white/5 border border-white/10 group-hover:bg-amber-600 group-hover:border-amber-500 transition-all duration-500">
-                                    <span className="text-xs font-black text-white uppercase tracking-wider">Manage</span>
-                                    <ArrowUpRight className="w-4 h-4 text-white" />
-                                </div>
-                            </div>
-                        </div>
-                    </Link>
-                </div>
-
-                {/* Row 2: Game Measurements */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 relative z-10">
-
-                    {/* Total Bookings / Slots */}
-                    <div className="relative overflow-hidden rounded-[32px] p-8 bg-gradient-to-br from-emerald-950 via-slate-950 to-slate-950 border border-white/5 shadow-2xl group transition-all duration-500 hover:border-emerald-500/30">
-                        <div className="absolute -top-20 -right-20 w-48 h-48 bg-emerald-500/10 blur-[80px] rounded-full pointer-events-none" />
-                        <div className="absolute top-6 right-8 opacity-5 group-hover:opacity-20 transition-opacity">
-                            <Ticket className="w-20 h-20 text-emerald-400" />
-                        </div>
-                        <div className="relative z-10">
-                            <div className="flex items-center gap-2 mb-3">
-                                <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
-                                    <Ticket className="w-4 h-4 text-emerald-400" />
-                                </div>
-                                <p className="text-xs font-black text-emerald-200/60 uppercase tracking-widest">Slot Engagements</p>
-                            </div>
-                            <h2 className="text-4xl font-black text-white tracking-tighter">{data?.engagement?.totalAssignments ?? 0}</h2>
-                            <div className="mt-4 flex items-center gap-2">
-                                <div className="h-1.5 w-full bg-emerald-950 rounded-full overflow-hidden border border-emerald-500/10">
-                                    <div className="h-full bg-emerald-500 rounded-full w-2/3 shadow-[0_0_10px_#10b981]" />
-                                </div>
-                                <span className="text-[10px] font-black text-emerald-400 whitespace-nowrap">{data?.engagement?.activeAssignments ?? 0} ACTIVE</span>
-                            </div>
-                        </div>
+                        <Link href="/admin/withdrawals" className="mt-8 flex items-center justify-between bg-white/5 hover:bg-amber-500/20 border border-white/10 hover:border-amber-500/30 px-5 py-3 rounded-xl transition-all group/btn">
+                            <span className="text-[10px] font-black text-white uppercase tracking-widest">Process Payouts</span>
+                            <ArrowRight className="w-4 h-4 text-white group-hover/btn:translate-x-1 transition-transform" />
+                        </Link>
                     </div>
 
-                    {/* Global Performance */}
-                    <div className="relative overflow-hidden rounded-[32px] p-8 bg-gradient-to-br from-orange-950 via-slate-950 to-slate-950 border border-white/5 shadow-2xl group transition-all duration-500 hover:border-orange-500/30">
-                        <div className="absolute -top-20 -right-20 w-48 h-48 bg-orange-500/10 blur-[80px] rounded-full pointer-events-none" />
-                        <div className="absolute top-6 right-8 opacity-5 group-hover:opacity-20 transition-opacity">
-                            <Flame className="w-20 h-20 text-orange-400" />
-                        </div>
-                        <div className="relative z-10">
-                            <div className="flex items-center gap-2 mb-3">
-                                <div className="w-8 h-8 rounded-lg bg-orange-500/10 flex items-center justify-center border border-orange-500/20">
-                                    <Flame className="w-4 h-4 text-orange-400" />
+                    {/* Secondary Action: Matches Oversights */}
+                    <div className="relative overflow-hidden rounded-[24px] p-6 md:p-8 bg-slate-900 border border-white/10 shadow-2xl flex flex-col justify-between">
+                        <div>
+                            <div className="flex justify-between items-start mb-4">
+                                <div className="p-3 bg-indigo-500/10 rounded-xl border border-indigo-500/20">
+                                    <Activity className="w-6 h-6 text-indigo-400" />
                                 </div>
-                                <p className="text-xs font-black text-orange-200/60 uppercase tracking-widest">Aggregate Score</p>
                             </div>
-                            <h2 className="text-4xl font-black text-white tracking-tighter">{(data?.performance?.totalRuns ?? 0).toLocaleString()}</h2>
-                            <p className="text-[10px] font-black text-orange-400/70 mt-4 uppercase tracking-[0.2em]">CUMULATIVE RUNS AWARDED</p>
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Live Match Control</p>
+                            {data.actionDesk.liveMatches.length > 0 ? (
+                                <h2 className="text-4xl md:text-5xl font-black text-white tracking-tighter mb-2">
+                                    {data.actionDesk.liveMatches.length} <span className="text-lg text-indigo-400">Live</span>
+                                </h2>
+                            ) : (
+                                <h2 className="text-3xl font-black text-slate-600 tracking-tighter mb-2 italic">Standby Mode</h2>
+                            )}
                         </div>
+                        <Link href="/admin/matches" className="mt-8 flex items-center justify-between bg-white/5 hover:bg-white/10 border border-white/10 px-5 py-3 rounded-xl transition-all group/btn">
+                            <span className="text-[10px] font-black text-white uppercase tracking-widest">Manage Calendar</span>
+                            <ArrowRight className="w-4 h-4 text-white group-hover/btn:translate-x-1 transition-transform" />
+                        </Link>
                     </div>
 
-                    {/* Top Performers (Mini List) */}
-                    <div className="rounded-[32px] p-8 bg-slate-950/40 border border-white/5 backdrop-blur-xl relative overflow-hidden flex flex-col justify-between">
-                        <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-transparent opacity-50" />
-                        <div className="relative z-10">
-                            <h3 className="text-xs font-black text-white uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
-                                <Medal className="w-4 h-4 text-yellow-500" /> Elite Rank
-                            </h3>
-                            <div className="space-y-4">
-                                {data?.performance?.topPlayers && data.performance.topPlayers.length > 0 ? (
-                                    data.performance.topPlayers.map((player, i) => (
-                                        <div key={i} className="flex items-center gap-4 group/item">
-                                            <div className="relative">
-                                                <div className="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center overflow-hidden border border-white/10 group-hover/item:border-indigo-500/50 transition-colors">
-                                                    {player.image ? (
-                                                        <img src={player.image} alt={player.name} className="w-full h-full object-cover" />
-                                                    ) : (
-                                                        <span className="text-xs font-black text-white">{player.name[0]}</span>
-                                                    )}
-                                                </div>
-                                                {i === 0 && <div className="absolute -top-2 -right-2 w-5 h-5 bg-yellow-500 rounded-full border-2 border-slate-950 flex items-center justify-center text-[10px] font-bold text-black">1</div>}
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <p className="text-xs font-bold text-white truncate group-hover/item:text-indigo-400 transition-colors">{player.name}</p>
-                                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-tighter">{player.totalRuns} Runs</p>
-                                            </div>
-                                            <div className="w-8 h-1 bg-white/5 rounded-full overflow-hidden">
-                                                <div className="h-full bg-indigo-500 rounded-full" style={{ width: `${100 - (i * 20)}%` }} />
-                                            </div>
-                                        </div>
-                                    ))
-                                ) : (
-                                    <div className="text-center py-6">
-                                        <p className="text-[10px] font-black text-slate-500 uppercase">Awaiting Competition Results</p>
+                    {/* Operational Awareness: Daily Flow */}
+                    <div className="relative overflow-hidden rounded-[24px] p-6 md:p-8 bg-slate-900 border border-white/10 shadow-2xl flex flex-col justify-between">
+                        <div>
+                            <div className="flex justify-between items-start mb-4">
+                                <div className="p-3 bg-emerald-500/10 rounded-xl border border-emerald-500/20">
+                                    <TrendingUp className="w-6 h-6 text-emerald-400" />
+                                </div>
+                                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-2 py-1 rounded bg-white/5">Today</span>
+                            </div>
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3">Today's Daily Flow</p>
+                            
+                            <div className="space-y-4 mt-4">
+                                <div>
+                                    <div className="flex justify-between text-xs font-black uppercase tracking-widest mb-1.5">
+                                        <span className="text-emerald-400">Deposits</span>
+                                        <span className="text-white tabular-nums">₹{data.actionDesk.dailyFinancials.deposits.toLocaleString()}</span>
                                     </div>
+                                    <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
+                                        <div className="h-full bg-emerald-500 rounded-full" style={{ width: '100%' }} />
+                                    </div>
+                                </div>
+                                <div>
+                                    <div className="flex justify-between text-xs font-black uppercase tracking-widest mb-1.5">
+                                        <span className="text-amber-400">Withdrawals</span>
+                                        <span className="text-white tabular-nums">₹{data.actionDesk.dailyFinancials.withdrawals.toLocaleString()}</span>
+                                    </div>
+                                    <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
+                                        <div className="h-full bg-amber-500 rounded-full" style={{ width: data.actionDesk.dailyFinancials.deposits > 0 ? `${Math.min((data.actionDesk.dailyFinancials.withdrawals / data.actionDesk.dailyFinancials.deposits) * 100, 100)}%` : '0%' }} />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="flex items-center justify-between mb-2 mt-10">
+                    <h2 className="text-sm font-black text-white/50 uppercase tracking-[0.3em]">Phase 1.5: Today's Match Operations</h2>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div className="bg-slate-900/50 border border-white/5 p-6 rounded-3xl backdrop-blur-xl">
+                        <div className="flex justify-between items-start mb-4">
+                            <div className="p-3 rounded-2xl bg-indigo-500/10 border border-indigo-500/20">
+                                <Database className="w-5 h-5 text-indigo-400" />
+                            </div>
+                        </div>
+                        <h3 className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] mb-1">Today's Matches</h3>
+                        <div className="text-2xl font-black text-white tracking-tighter">
+                            {data.actionDesk.todayMatchStats.matchCount} <span className="text-xs text-slate-500 uppercase">Scheduled</span>
+                        </div>
+                    </div>
+
+                    <div className="bg-slate-900/50 border border-white/5 p-6 rounded-3xl backdrop-blur-xl">
+                        <div className="flex justify-between items-start mb-4">
+                            <div className="p-3 rounded-2xl bg-purple-500/10 border border-purple-500/20">
+                                <Swords className="w-5 h-5 text-purple-400" />
+                            </div>
+                        </div>
+                        <h3 className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] mb-1">Active Arenas</h3>
+                        <div className="text-2xl font-black text-white tracking-tighter">
+                            {data.actionDesk.todayMatchStats.arenaCount} <span className="text-xs text-slate-500 uppercase">Live</span>
+                        </div>
+                    </div>
+
+                    <div className="lg:col-span-2 bg-slate-900/50 border border-white/5 p-6 rounded-3xl backdrop-blur-xl flex flex-col justify-center">
+                        <div className="flex justify-between items-end mb-3">
+                            <div>
+                                <h3 className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em]">Today's Saturation</h3>
+                                <p className="text-[10px] font-bold text-slate-500 uppercase mt-1">
+                                    {data.actionDesk.todayMatchStats.filledSlots} / {data.actionDesk.todayMatchStats.totalSlots} Slots Occupied
+                                </p>
+                            </div>
+                            <span className="text-xs font-black text-indigo-400">
+                                {data.actionDesk.todayMatchStats.totalSlots > 0 
+                                    ? ((data.actionDesk.todayMatchStats.filledSlots / data.actionDesk.todayMatchStats.totalSlots) * 100).toFixed(1)
+                                    : 0}%
+                            </span>
+                        </div>
+                        <div className="h-2 w-full bg-slate-800 rounded-full overflow-hidden">
+                            <div 
+                                className="h-full bg-indigo-500 rounded-full shadow-[0_0_10px_rgba(99,102,241,0.5)] transition-all duration-1000" 
+                                style={{ width: `${data.actionDesk.todayMatchStats.totalSlots > 0 ? (data.actionDesk.todayMatchStats.filledSlots / data.actionDesk.todayMatchStats.totalSlots) * 100 : 0}%` }}
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                <div className="h-px w-full bg-gradient-to-r from-transparent via-white/10 to-transparent my-10" />
+
+                <div className="flex items-center justify-between mb-4 mt-6">
+                    <h2 className="text-sm font-black text-white/50 uppercase tracking-[0.3em]">Phase 2: Risk & Ecosystem</h2>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    {/* Financial Liability (Massive Risk Metric) */}
+                    <div className="lg:col-span-1 rounded-[24px] bg-red-950/20 border border-red-500/20 p-6 md:p-8 flex flex-col justify-between relative overflow-hidden group">
+                        <div className="absolute inset-0 bg-gradient-to-br from-red-500/5 to-transparent pointer-events-none" />
+                        <div>
+                            <div className="flex items-center gap-3 mb-6">
+                                <ShieldAlert className="w-6 h-6 text-red-500" />
+                                <h3 className="text-sm font-black text-white tracking-widest uppercase">System Liability</h3>
+                            </div>
+                            <h2 className="text-4xl font-black text-white tracking-tighter tabular-nums truncate">₹{data.financialRisk.totalSystemLiability.toLocaleString()}</h2>
+                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-2 leading-relaxed">Total platform liability to users.</p>
+                            
+                            <div className="mt-6 pt-6 border-t border-white/5">
+                                <div className="flex justify-between items-end mb-2">
+                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Liquidity Coverage</span>
+                                    <span className={`text-[10px] font-black uppercase ${data.financialRisk.liquidityScore >= 1 ? 'text-emerald-400' : 'text-red-400'}`}>
+                                        {data.financialRisk.liquidityScore.toFixed(2)}x
+                                    </span>
+                                </div>
+                                <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
+                                    <div 
+                                        className={`h-full rounded-full transition-all duration-1000 ${data.financialRisk.liquidityScore >= 1 ? 'bg-emerald-500' : 'bg-red-500'}`}
+                                        style={{ width: `${Math.min(data.financialRisk.liquidityScore * 50, 100)}%` }}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                        <div className="mt-8">
+                            <h4 className="text-[10px] font-black text-white uppercase tracking-widest mb-4 bg-white/5 py-1 px-3 rounded inline-block">Whale Tracker</h4>
+                            <div className="space-y-3">
+                                {data.financialRisk.whales.map((whale, idx) => (
+                                    <div key={whale._id} className="flex justify-between items-center bg-black/20 p-3 rounded-xl border border-white/5">
+                                        <div className="flex flex-col min-w-0 flex-1">
+                                            <span className="text-xs font-bold text-white truncate">{whale.name}</span>
+                                        </div>
+                                        <span className="text-sm font-black text-red-400 tabular-nums">₹{whale.walletBalance.toLocaleString()}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Ecosystem & Platform Health */}
+                    <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="rounded-[24px] bg-slate-900 border border-white/10 p-6 flex flex-col justify-between">
+                            <div>
+                                <h3 className="text-xs font-black text-indigo-400 tracking-widest uppercase mb-6 flex items-center gap-2">
+                                    <BarChart3 className="w-4 h-4" /> Platform Utilization
+                                </h3>
+                                <div className="mb-4">
+                                    <h2 className="text-4xl font-black text-white">{data.ecosystem.globalFillRate.toFixed(1)}%</h2>
+                                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-1">Global Arena Fill Rate</p>
+                                </div>
+                                <div className="h-2 w-full bg-slate-800 rounded-full overflow-hidden">
+                                    <div className="h-full bg-indigo-500 rounded-full transition-all" style={{ width: `${data.ecosystem.globalFillRate}%` }} />
+                                </div>
+                            </div>
+                            <div className="mt-8 pt-6 border-t border-white/5 grid grid-cols-2 gap-6">
+                                <div>
+                                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Total Users</p>
+                                    <p className="text-2xl font-black text-white">{data.ecosystem.totalUsers.toLocaleString()}</p>
+                                </div>
+                                <div>
+                                    <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-1">Growth Index</p>
+                                    <div className="flex items-center gap-3">
+                                        <div className="text-sm font-black text-white">+{data.ecosystem.growth.reg24h}<span className="text-[10px] text-slate-500 ml-1">24H</span></div>
+                                        <div className="text-sm font-black text-white">+{data.ecosystem.growth.reg7d}<span className="text-[10px] text-slate-500 ml-1">7D</span></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* SubAdmin Leaderboard */}
+                        <div className="rounded-[24px] bg-slate-900 border border-white/10 p-6 flex flex-col">
+                            <h3 className="text-xs font-black text-purple-400 tracking-widest uppercase mb-6 flex items-center gap-2">
+                                <Trophy className="w-4 h-4" /> Franchise Leaderboard
+                            </h3>
+                            <div className="space-y-3 flex-1">
+                                {data.ecosystem.topSubAdmins.length > 0 ? data.ecosystem.topSubAdmins.map((admin, idx) => (
+                                    <div key={admin._id} className="flex items-center gap-4 bg-white/5 hover:bg-white/10 p-3 rounded-xl border border-white/5 transition-colors">
+                                        <div className="w-8 h-8 rounded-full bg-purple-500/20 text-purple-400 flex items-center justify-center font-black text-xs border border-purple-500/20">
+                                            #{idx + 1}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-xs font-bold text-white truncate">{admin.subAdminId.name}</p>
+                                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Franchise</p>
+                                        </div>
+                                        <span className="text-xs font-black text-emerald-400">₹{admin.totalCommissionEarned.toLocaleString()}</span>
+                                    </div>
+                                )) : (
+                                    <div className="h-full flex items-center justify-center text-[10px] font-black text-slate-600 uppercase">No Data Generated</div>
                                 )}
                             </div>
                         </div>
                     </div>
                 </div>
 
-                {/* Row 3: Deep Dives */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 relative z-10">
-
-                    {/* User Integrity Analysis */}
-                    <div className="p-10 rounded-[32px] bg-slate-950/40 border border-white/5 backdrop-blur-xl group">
-                        <div className="flex items-center justify-between mb-10">
-                            <div className="flex items-center gap-4">
-                                <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20 group-hover:bg-indigo-500/20 transition-colors">
-                                    <ShieldCheck className="w-6 h-6 text-indigo-400" />
-                                </div>
-                                <div>
-                                    <h3 className="text-xl font-black text-white tracking-tight">User Integrity</h3>
-                                    <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mt-1">Platform Distribution</p>
-                                </div>
-                            </div>
-                            <div className="text-right">
-                                <span className="text-2xl font-black text-white">{data.users.total}</span>
-                                <p className="text-[10px] font-bold text-slate-500 uppercase">Profiles</p>
-                            </div>
-                        </div>
-
-                        <div className="space-y-10">
-                            {/* Active Progress */}
-                            <div className="space-y-3">
-                                <div className="flex justify-between items-end">
-                                    <span className="text-xs font-black text-indigo-300 uppercase tracking-[0.1em]">Authenticated Active</span>
-                                    <span className="text-lg font-black text-white">{data.users.total > 0 ? Math.round((data.users.active / data.users.total) * 100) : 0}%</span>
-                                </div>
-                                <div className="h-3 bg-slate-900 rounded-full overflow-hidden p-0.5 border border-white/5">
-                                    <div
-                                        className="h-full bg-gradient-to-r from-indigo-600 to-indigo-400 rounded-full transition-all duration-1000 shadow-[0_0_15px_rgba(79,70,229,0.4)]"
-                                        style={{ width: `${data.users.total > 0 ? (data.users.active / data.users.total) * 100 : 0}%` }}
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Risk Progress */}
-                            <div className="space-y-3">
-                                <div className="flex justify-between items-end">
-                                    <span className="text-xs font-black text-red-400/70 uppercase tracking-[0.1em]">Banned / Restricted</span>
-                                    <span className="text-lg font-black text-white">{data.users.total > 0 ? Math.round((data.users.banned / data.users.total) * 100) : 0}%</span>
-                                </div>
-                                <div className="h-3 bg-slate-900 rounded-full overflow-hidden p-0.5 border border-white/5">
-                                    <div
-                                        className="h-full bg-gradient-to-r from-red-600 to-red-400 rounded-full transition-all duration-1000 shadow-[0_0_15px_rgba(239,68,68,0.4)]"
-                                        style={{ width: `${data.users.total > 0 ? (data.users.banned / data.users.total) * 100 : 0}%` }}
-                                    />
-                                </div>
-                            </div>
+                <div className="mt-12">
+                    <div className="flex items-center justify-between mb-6">
+                        <h2 className="text-sm font-black text-white/50 uppercase tracking-[0.3em]">Phase 2.5: Intelligence Hub</h2>
+                        <div className="hidden sm:flex items-center gap-2 px-3 py-1 bg-indigo-500/10 border border-indigo-500/20 rounded-full text-[9px] font-black text-indigo-400 uppercase tracking-[0.2em]">
+                            Global Series Tracking
                         </div>
                     </div>
-
-                    {/* Match Pipeline */}
-                    <div className="p-6 md:p-10 rounded-[32px] bg-slate-950/40 border border-white/5 backdrop-blur-xl group">
-                        <div className="flex items-center gap-4 mb-8 md:mb-10">
-                            <div className="w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-yellow-500/10 flex items-center justify-center border border-yellow-500/20 group-hover:bg-yellow-500/20 transition-colors">
-                                <TrendingUp className="w-5 h-5 md:w-6 md:h-6 text-yellow-400" />
-                            </div>
-                            <div>
-                                <h3 className="text-lg md:text-xl font-black text-white tracking-tight italic uppercase">Fixtures Pipeline</h3>
-                                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-0.5 md:mt-1">Lifecycle Tracking</p>
-                            </div>
-                        </div>
-
-                        {/* Always 3-column on all screen sizes */}
-                        <div className="grid grid-cols-3 gap-3 md:gap-6">
-                            <div className="relative p-4 md:p-6 rounded-2xl md:rounded-[24px] bg-slate-900/50 border border-white/5 hover:border-indigo-500/30 transition-all group/stat overflow-hidden flex flex-col items-center text-center">
-                                <div className="absolute top-0 right-0 w-16 h-16 bg-indigo-500/5 blur-xl group-hover/stat:bg-indigo-500/10 transition-colors" />
-                                <Clock className="w-5 h-5 md:w-7 md:h-7 text-indigo-400/60 group-hover/stat:text-indigo-400 transition-colors mb-2 md:mb-3" />
-                                <div className="text-2xl md:text-3xl font-black text-white tracking-tighter">{data.matches.upcoming}</div>
-                                <div className="text-[8px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest mt-1">Upcoming</div>
-                            </div>
-                            <div className="relative p-4 md:p-6 rounded-2xl md:rounded-[24px] bg-slate-900/50 border border-white/5 overflow-hidden flex flex-col items-center text-center hover:border-red-500/30 transition-all group/stat">
-                                {data.matches.live > 0 && <div className="absolute inset-0 bg-red-500/5 animate-pulse" />}
-                                <Activity className="w-5 h-5 md:w-7 md:h-7 text-red-400/60 group-hover/stat:text-red-400 transition-colors mb-2 md:mb-3 z-10" />
-                                <div className="text-2xl md:text-3xl font-black text-white tracking-tighter z-10">{data.matches.live}</div>
-                                <div className="text-[8px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest mt-1 z-10">Running</div>
-                            </div>
-                            <div className="relative p-4 md:p-6 rounded-2xl md:rounded-[24px] bg-slate-900/50 border border-white/5 hover:border-emerald-500/30 transition-all group/stat overflow-hidden flex flex-col items-center text-center">
-                                <div className="absolute top-0 right-0 w-16 h-16 bg-emerald-500/5 blur-xl" />
-                                <CheckCircle className="w-5 h-5 md:w-7 md:h-7 text-emerald-400/60 group-hover/stat:text-emerald-400 transition-colors mb-2 md:mb-3" />
-                                <div className="text-2xl md:text-3xl font-black text-white tracking-tighter">{data.matches.finished}</div>
-                                <div className="text-[8px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest mt-1">Settled</div>
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div className="lg:col-span-3 rounded-[24px] bg-slate-900 border border-white/10 p-6 flex flex-col">
+                            <h3 className="text-xs font-black text-indigo-400 tracking-widest uppercase mb-6 flex items-center gap-2">
+                                <Trophy className="w-4 h-4" /> Active Tournaments Performance
+                            </h3>
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left">
+                                    <thead className="bg-white/5 border-b border-white/10 text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                                        <tr>
+                                            <th className="px-6 py-4">Series Name</th>
+                                            <th className="px-6 py-4">Total Matches</th>
+                                            <th className="px-6 py-4">Unique Players</th>
+                                            <th className="px-6 py-4">Engagement</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-white/5">
+                                        {(data as any).intelligence?.tournamentStats?.map((t: any, idx: number) => (
+                                            <tr key={idx} className="hover:bg-white/5 transition-colors">
+                                                <td className="px-6 py-4 font-bold text-white text-xs">{t.name}</td>
+                                                <td className="px-6 py-4 text-xs text-slate-400 tabular-nums">{t.matchCount}</td>
+                                                <td className="px-6 py-4 text-xs text-slate-400 tabular-nums">{t.userCount}</td>
+                                                <td className="px-6 py-4">
+                                                    <div className="h-1.5 w-24 bg-slate-800 rounded-full overflow-hidden">
+                                                        <div className="h-full bg-indigo-500" style={{ width: `${Math.min((t.userCount / 50) * 100, 100)}%` }} />
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                {/* DANGER ZONE - Database Reset */}
-                <div className="mt-20 border-t border-red-500/20 pt-10">
-                    <div className="bg-red-500/5 border border-red-500/10 rounded-[32px] p-8 md:p-12 relative overflow-hidden group">
-                        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10 mix-blend-overlay" />
-                        <div className="absolute -right-20 -bottom-20 w-64 h-64 bg-red-500/10 blur-[100px] rounded-full pointer-events-none" />
-
-                        <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
-                            <div className="max-w-2xl">
-                                <div className="flex items-center gap-4 mb-4">
-                                    <div className="w-12 h-12 rounded-2xl bg-red-500/10 flex items-center justify-center border border-red-500/20">
-                                        <AlertTriangle className="w-6 h-6 text-red-500" />
-                                    </div>
-                                    <h3 className="text-2xl font-black text-white tracking-tight uppercase">Danger Zone</h3>
-                                </div>
-                                <p className="text-slate-400 font-medium leading-relaxed">
-                                    Perform a hard reset of the entire platform database. This action will permanently delete all matches, assignments, analytics, and standard user accounts. <span className="text-red-400 font-bold">Admin accounts will be preserved.</span>
-                                </p>
-                            </div>
-
-                            <button
-                                onClick={() => setShowResetModal(true)}
-                                className="group relative px-8 py-4 bg-red-500 hover:bg-red-600 text-white font-black uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-red-500/20 hover:shadow-red-500/40 active:scale-95 flex items-center gap-3 whitespace-nowrap"
-                            >
-                                <Trash2 className="w-5 h-5 group-hover:rotate-12 transition-transform" />
-                                Hard Reset Database
-                            </button>
+                {/* Phase 3: Live Audit Feed */}
+                <div className="mt-12">
+                    <h2 className="text-sm font-black text-white/50 uppercase tracking-[0.3em] mb-6">Phase 3: Real-Time Audit Feed</h2>
+                    <div className="bg-slate-900 border border-white/10 rounded-[24px] overflow-hidden">
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left">
+                                <thead className="bg-white/5 border-b border-white/10">
+                                    <tr>
+                                        <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Date/Time</th>
+                                        <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">User</th>
+                                        <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Event</th>
+                                        <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Amount</th>
+                                        <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-white/5">
+                                    {data.auditFeed.map((tx, i) => (
+                                        <tr key={tx._id} className="hover:bg-white/5 transition-colors group">
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <div className="text-xs font-bold text-white">{new Date(tx.createdAt).toLocaleDateString()}</div>
+                                                <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest font-mono">{new Date(tx.createdAt).toLocaleTimeString()}</div>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-6 h-6 rounded-full bg-indigo-500/20 flex items-center justify-center text-indigo-400 text-[10px] font-bold">
+                                                        {tx.userId?.name?.[0] || "?"}
+                                                    </div>
+                                                    <span className="text-xs font-bold text-slate-300">{tx.userId?.name || "Unknown User"}</span>
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <span className="text-xs font-black text-white uppercase tracking-wider">{tx.type}</span>
+                                            </td>
+                                            <td className="px-6 py-4 font-mono">
+                                                <span className={`text-xs font-black ${
+                                                    tx.type === 'withdrawal' ? 'text-amber-400' :
+                                                    tx.type === 'deposit' ? 'text-emerald-400' : 'text-slate-300'
+                                                }`}>
+                                                    {tx.type === 'withdrawal' ? '-' : '+'}₹{tx.amount.toLocaleString()}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <span className={`px-2 py-1 rounded text-[9px] font-black uppercase tracking-widest border ${
+                                                    tx.status === 'completed' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' :
+                                                    tx.status === 'pending' ? 'bg-amber-500/10 border-amber-500/20 text-amber-400' :
+                                                    'bg-red-500/10 border-red-500/20 text-red-400'
+                                                }`}>
+                                                    {tx.status}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
                         </div>
                     </div>
+                </div>
+
+                {/* Nuclear Reset - Kept at bottom */}
+                <div className="mt-20 pt-10 border-t border-red-500/20 flex justify-end">
+                    <button
+                        onClick={() => setShowResetModal(true)}
+                        className="px-6 py-3 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all flex items-center gap-2"
+                    >
+                        <Trash2 className="w-4 h-4" /> Wipe Entire Database
+                    </button>
                 </div>
             </div>
         </div>
