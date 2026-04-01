@@ -41,10 +41,14 @@ function RevealCountdown({ targetDate, onComplete }: { targetDate: string, onCom
                 return;
             }
 
+            const hours = Math.floor(difference / 1000 / 60 / 60);
             const minutes = Math.floor((difference / 1000 / 60) % 60);
             const seconds = Math.floor((difference / 1000) % 60);
 
-            return `${minutes}m ${seconds}s`;
+            let result = "";
+            if (hours > 0) result += `${hours}h `;
+            result += `${minutes}m ${seconds}s`;
+            return result;
         };
 
         const timer = setInterval(() => {
@@ -511,7 +515,11 @@ export default function MatchDetailPage({ params }: { params: Promise<{ id: stri
                                 <div className="px-3 py-1 md:px-6 md:py-2 bg-slate-900/50 rounded-full border border-slate-800 mb-1 md:mb-4 backdrop-blur-md">
                                     <span className="text-[10px] md:text-sm font-black italic text-slate-600">VS</span>
                                 </div>
-                                <p className="text-[8px] md:text-xs font-bold text-slate-500 uppercase tracking-[0.1em] md:tracking-widest whitespace-nowrap">{advanced?.info?.date || new Date(match.startTime).toLocaleDateString()}</p>
+                                <p className="text-[8px] md:text-xs font-black text-slate-500 uppercase tracking-[0.2em] whitespace-nowrap">
+                                    {advanced?.info?.date || new Date(match.startTime).toLocaleDateString([], { day: '2-digit', month: 'short' })}
+                                    <span className="mx-2 text-slate-800">•</span>
+                                    {new Date(match.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}
+                                </p>
                             </div>
 
                             {/* Team 2 */}
