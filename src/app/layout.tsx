@@ -11,7 +11,6 @@ export const metadata: Metadata = {
   title: "World Cup Hub",
   description: "Official Player Portal for Cricket World Cup",
   manifest: "/manifest.json",
-  themeColor: "#050B14",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
@@ -23,6 +22,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport = {
+  themeColor: "#050B14",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,

@@ -24,6 +24,7 @@ import { HallOfFameSection } from "@/components/dashboard/HallOfFameSection";
 import { WeeklyReportCard } from "@/components/dashboard/WeeklyReportCard";
 import { useToast } from "@/contexts/ToastContext";
 import { useTournament } from "@/contexts/TournamentContext";
+import { Suspense } from "react";
 
 interface Match {
   _id: string;
@@ -33,7 +34,7 @@ interface Match {
   venue: string;
 }
 
-export default function UserMatchesPage() {
+function UserMatchesContent() {
   const { showToast } = useToast();
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -363,5 +364,17 @@ export default function UserMatchesPage() {
         />
       )}
     </div>
+  );
+}
+
+export default function UserMatchesPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#050B14] flex items-center justify-center">
+        <Spinner />
+      </div>
+    }>
+      <UserMatchesContent />
+    </Suspense>
   );
 }
