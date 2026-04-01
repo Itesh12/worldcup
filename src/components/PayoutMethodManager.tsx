@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { Plus, Trash2, Landmark, Smartphone, Check, CreditCard, Loader2, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import toast from "react-hot-toast";
+import { useToast } from "@/contexts/ToastContext";
 
 interface PayoutMethod {
   _id: string;
@@ -14,6 +14,7 @@ interface PayoutMethod {
 }
 
 export function PayoutMethodManager() {
+  const { showToast } = useToast();
   const [methods, setMethods] = useState<PayoutMethod[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -51,11 +52,11 @@ export function PayoutMethodManager() {
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newMethod.type === "upi" && !newMethod.details) {
-      toast.error("Please enter UPI ID");
+      showToast("Please enter UPI ID", "error");
       return;
     }
     if (newMethod.type === "bank" && (!newMethod.bankName || !newMethod.accountNo || !newMethod.ifsc)) {
-      toast.error("Please fill all bank details");
+      showToast("Please fill all bank details", "error");
       return;
     }
 
@@ -72,15 +73,15 @@ export function PayoutMethodManager() {
       });
       if (res.ok) {
         const data = await res.json();
-        toast.success("Payout method saved");
+        showToast("Payout method saved", "success");
         setMethods(data.methods); // Immediate update from response
         setShowAddForm(false);
         setNewMethod({ type: "upi", label: "", details: "", bankName: "", accountNo: "", ifsc: "", isDefault: false });
       } else {
-        toast.error("Failed to save method");
+        showToast("Failed to save method", "error");
       }
     } catch (err) {
-      toast.error("An error occurred");
+      showToast("An error occurred", "error");
     } finally {
       setSubmitting(false);
     }
@@ -94,11 +95,11 @@ export function PayoutMethodManager() {
         headers: { "Content-Type": "application/json" }
       });
       if (res.ok) {
-        toast.success("Method removed");
+        showToast("Method removed", "success");
         fetchMethods();
       }
     } catch (err) {
-      toast.error("Failed to delete");
+      showToast("Failed to delete", "error");
     }
   };
 
@@ -110,11 +111,11 @@ export function PayoutMethodManager() {
         headers: { "Content-Type": "application/json" }
       });
       if (res.ok) {
-        toast.success("Default method updated");
+        showToast("Default method updated", "success");
         fetchMethods();
       }
     } catch (err) {
-      toast.error("Failed to update default");
+      showToast("Failed to update default", "error");
     }
   };
 

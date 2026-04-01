@@ -20,10 +20,11 @@ import {
   LayoutDashboard
 } from "lucide-react";
 import Link from "next/link";
-import toast from "react-hot-toast";
+import { useToast } from "@/contexts/ToastContext";
 import { Spinner } from "@/components/ui/Spinner";
 
 export default function AdminWithdrawalsPage() {
+  const { showToast } = useToast();
   const [withdrawals, setWithdrawals] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState<string | null>(null);
@@ -41,7 +42,7 @@ export default function AdminWithdrawalsPage() {
         setWithdrawals(data);
       }
     } catch (err) {
-      toast.error("Failed to load withdrawal requests");
+      showToast("Failed to load withdrawal requests", "error");
     } finally {
       setLoading(false);
     }
@@ -76,15 +77,15 @@ export default function AdminWithdrawalsPage() {
       });
 
       if (res.ok) {
-        toast.success(`Withdrawal ${action}ed successfully`);
+        showToast(`Withdrawal ${action}ed successfully`, "success");
         fetchWithdrawals();
         setAdminNote("");
       } else {
         const error = await res.json();
-        toast.error(error.error || "Failed to process request");
+        showToast(error.error || "Failed to process request", "error");
       }
     } catch (err) {
-      toast.error("An error occurred");
+      showToast("An error occurred", "error");
     } finally {
       setProcessingId(null);
     }

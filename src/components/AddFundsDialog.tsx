@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import { X, IndianRupee, Zap, ChevronRight, Loader2, CreditCard } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSession } from "next-auth/react";
-import toast from "react-hot-toast";
+import { useToast } from "@/contexts/ToastContext";
 
 interface AddFundsDialogProps {
   isOpen: boolean;
@@ -17,6 +17,7 @@ interface AddFundsDialogProps {
 const PRESET_AMOUNTS = [100, 500, 1000, 2000, 5000];
 
 export function AddFundsDialog({ isOpen, onClose, onSuccess }: AddFundsDialogProps) {
+  const { showToast } = useToast();
   const { data: session } = useSession();
   const [amount, setAmount] = useState<string>("");
   const [loading, setLoading] = useState(false);
@@ -27,7 +28,7 @@ export function AddFundsDialog({ isOpen, onClose, onSuccess }: AddFundsDialogPro
     e?.preventDefault();
     const numAmount = Number(amount);
     if (!numAmount || isNaN(numAmount) || numAmount < 10) {
-        toast.error("Minimum recharge amount is ₹10");
+        showToast("Minimum recharge amount is ₹10", "error");
         return;
     }
 
@@ -67,15 +68,15 @@ export function AddFundsDialog({ isOpen, onClose, onSuccess }: AddFundsDialogPro
              });
 
              if (verifyRes.ok) {
-               toast.success("Funds added successfully!");
+               showToast("Funds added successfully!", "success");
                onSuccess?.();
                onClose();
                setAmount("");
              } else {
-               toast.error("Payment verification failed.");
+               showToast("Payment verification failed.", "error");
              }
            } catch (err) {
-             toast.error("Verification error.");
+             showToast("Verification error.", "error");
            } finally {
              setLoading(false);
            }
@@ -93,7 +94,7 @@ export function AddFundsDialog({ isOpen, onClose, onSuccess }: AddFundsDialogPro
       rzp.open();
     } catch (err) {
       console.error(err);
-      toast.error("Payment initiation failed.");
+      showToast("Payment initiation failed.", "error");
     } finally {
       if (!(window as any).Razorpay) setLoading(false);
       // Wait for handler if opened

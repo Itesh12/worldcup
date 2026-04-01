@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { X, IndianRupee, ArrowUpRight, ChevronRight, Loader2, Landmark, Smartphone, CheckCircle2, Plus } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import toast from "react-hot-toast";
+import { useToast } from "@/contexts/ToastContext";
 
 interface PayoutMethod {
   _id: string;
@@ -22,6 +22,7 @@ interface WithdrawDialogProps {
 }
 
 export function WithdrawDialog({ isOpen, onClose, onSuccess, balance }: WithdrawDialogProps) {
+  const { showToast } = useToast();
   const [amount, setAmount] = useState<string>("");
   const [methods, setMethods] = useState<PayoutMethod[]>([]);
   const [selectedMethodId, setSelectedMethodId] = useState<string>("");
@@ -56,18 +57,18 @@ export function WithdrawDialog({ isOpen, onClose, onSuccess, balance }: Withdraw
     const numAmount = Number(amount);
     
     if (!numAmount || isNaN(numAmount) || numAmount < 100) {
-      toast.error("Minimum withdrawal is ₹100");
+      showToast("Minimum withdrawal is ₹100", "error");
       return;
     }
 
     if (numAmount > balance) {
-      toast.error("Insufficient balance");
+      showToast("Insufficient balance", "error");
       return;
     }
 
     const selectedMethod = methods.find(m => m._id === selectedMethodId);
     if (!selectedMethod) {
-      toast.error("Please select a withdrawal method");
+      showToast("Please select a withdrawal method", "error");
       return;
     }
 
@@ -84,16 +85,16 @@ export function WithdrawDialog({ isOpen, onClose, onSuccess, balance }: Withdraw
       });
 
       if (res.ok) {
-        toast.success("Withdrawal request submitted!");
+        showToast("Withdrawal request submitted!", "success");
         onSuccess();
         onClose();
         setAmount("");
       } else {
         const error = await res.json();
-        toast.error(error.error || "Failed to submit request");
+        showToast(error.error || "Failed to submit request", "error");
       }
     } catch (err) {
-      toast.error("An error occurred");
+      showToast("An error occurred", "error");
     } finally {
       setLoading(false);
     }

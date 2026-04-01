@@ -7,14 +7,18 @@ import { TournamentProvider } from "@/contexts/TournamentContext";
 import GlobalLoader from "@/components/GlobalLoader";
 import { BottomNav } from "@/components/BottomNav";
 
+import { ToastProvider } from "@/contexts/ToastContext";
+
 export function Providers({ children }: { children: React.ReactNode }) {
     return (
         <LoadingProvider>
             <TournamentProvider>
                 <AuthProvider>
-                    <GlobalLoader />
-                    {children}
-                    <BottomNav />
+                    <ToastProvider>
+                        <GlobalLoader />
+                        {children}
+                        <BottomNav />
+                    </ToastProvider>
                 </AuthProvider>
             </TournamentProvider>
         </LoadingProvider>

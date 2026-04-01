@@ -36,10 +36,11 @@ import { WithdrawDialog } from "@/components/WithdrawDialog";
 import { PayoutMethodManager } from "@/components/PayoutMethodManager";
 import { UserContextSwitcher } from "@/components/UserContextSwitcher";
 import { useTournament } from "@/contexts/TournamentContext";
-import { toast, Toaster } from "react-hot-toast";
+import { useToast } from "@/contexts/ToastContext";
 import { Spinner } from "@/components/ui/Spinner";
 
 export default function ProfilePage() {
+  const { showToast } = useToast();
   const { data: session, update } = useSession();
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
@@ -128,14 +129,14 @@ export default function ProfilePage() {
 
       if (res.success) {
         await update({ name: formData.name, image: formData.image });
-        toast.success("Profile updated!");
+        showToast("Profile updated!", "success");
         setIsEditing(false);
         router.refresh();
       } else {
-        toast.error(res.message || "Failed to update profile");
+        showToast(res.message || "Failed to update profile", "error");
       }
     } catch (error) {
-      toast.error("An error occurred");
+      showToast("An error occurred", "error");
     } finally {
       setIsLoading(false);
     }
@@ -148,15 +149,15 @@ export default function ProfilePage() {
         body: JSON.stringify({ amount, description: "Wallet Recharge" })
       });
       if (res.ok) {
-        toast.success("Funds added successfully!");
+        showToast("Funds added successfully!", "success");
         fetchWalletData();
         fetchUserStats();
       } else {
-        toast.error("Failed to add funds.");
+        showToast("Failed to add funds.", "error");
       }
     } catch (err) {
       console.error(err);
-      toast.error("Error adding funds.");
+      showToast("Error adding funds.", "error");
     }
   };
 
@@ -184,7 +185,6 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-[#050B14] text-white selection:bg-indigo-500/30">
-      <Toaster position="top-right" />
       
       {/* Background Ambience */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">

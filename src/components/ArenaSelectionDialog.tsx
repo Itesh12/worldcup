@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Spinner } from "@/components/ui/Spinner";
-import { toast } from "react-hot-toast";
+import { useToast } from "@/contexts/ToastContext";
 
 interface Arena {
     _id: string;
@@ -48,6 +48,7 @@ export function ArenaSelectionDialog({
     matchName, 
     onJoinSuccess 
 }: ArenaSelectionDialogProps) {
+    const { showToast } = useToast();
     const [arenas, setArenas] = useState<Arena[]>([]);
     const [loading, setLoading] = useState(true);
     const [joining, setJoining] = useState<string | null>(null);
@@ -68,7 +69,7 @@ export function ArenaSelectionDialog({
                 setArenas(data);
             }
         } catch (error) {
-            toast.error("Failed to load arenas");
+            showToast("Failed to load arenas", "error");
         } finally {
             setLoading(false);
         }
@@ -85,14 +86,14 @@ export function ArenaSelectionDialog({
             const data = await res.json();
             
             if (res.ok) {
-                toast.success("Joined successfully! Position hidden until T-30.");
+                showToast("Joined successfully! Position hidden until T-30.", "success");
                 onJoinSuccess();
                 onClose();
             } else {
-                toast.error(data.message || "Failed to join arena");
+                showToast(data.message || "Failed to join arena", "error");
             }
         } catch (error) {
-            toast.error("Connection error");
+            showToast("Connection error", "error");
         } finally {
             setJoining(null);
         }

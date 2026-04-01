@@ -14,7 +14,7 @@ import { WalletCard } from "@/components/WalletCard";
 import { AddFundsDialog } from "@/components/AddFundsDialog";
 import { WithdrawDialog } from "@/components/WithdrawDialog";
 import { TransactionList } from "@/components/TransactionList";
-import { toast, Toaster } from "react-hot-toast";
+import { useToast } from "@/contexts/ToastContext";
 import { useRouter } from "next/navigation";
 import { Spinner } from "@/components/ui/Spinner";
 import { ArenaSelectionDialog } from "@/components/ArenaSelectionDialog";
@@ -29,6 +29,7 @@ interface Match {
 }
 
 export default function UserMatchesPage() {
+  const { showToast } = useToast();
   const { data: session } = useSession();
   const router = useRouter();
   const [matches, setMatches] = useState<Match[]>([]);
@@ -153,14 +154,14 @@ export default function UserMatchesPage() {
         body: JSON.stringify({ amount, description: "Wallet Recharge" })
       });
       if (res.ok) {
-        toast.success("Funds added successfully!");
+        showToast("Funds added successfully!", "success");
         fetchWalletData();
       } else {
-        toast.error("Failed to add funds.");
+        showToast("Failed to add funds.", "error");
       }
     } catch (err) {
       console.error(err);
-      toast.error("Error adding funds.");
+      showToast("Error adding funds.", "error");
     }
   };
 
@@ -207,7 +208,6 @@ export default function UserMatchesPage() {
 
   return (
     <div className="min-h-screen bg-[#050B14] relative overflow-x-hidden">
-      <Toaster position="top-right" />
       {/* Ambient Backlights */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-indigo-600/10 blur-[120px] rounded-full pointer-events-none" />
 
