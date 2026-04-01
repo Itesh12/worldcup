@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState, use } from "react";
-import { ArrowLeft, User, Target, Zap, Info, Calendar, MapPin, Users, Activity, Trophy, X, Star, PartyPopper, RefreshCw, Ban, AlertCircle, Lock, Copy, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, User, Target, Zap, Info, Calendar, MapPin, Users, Activity, Trophy, X, Star, PartyPopper, RefreshCw, Ban, AlertCircle, Lock, Copy, CheckCircle2, Share2 } from "lucide-react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Spinner } from "@/components/ui/Spinner";
 import { ArenaSelectionDialog } from "@/components/ArenaSelectionDialog";
 import { CreateArenaModal } from "@/components/dashboard/CreateArenaModal";
@@ -259,8 +260,10 @@ function TeamSquad({ team, color }: { team: any; color: string }) {
 
 export default function MatchDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { showToast } = useToast();
+    const router = useRouter();
+    const searchParams = useSearchParams();
     const { id: matchId } = use(params);
-    const { data: session } = useSession();
+    const { data: session, status } = useSession();
     const [data, setData] = useState<any>(null);
     const [leaderboard, setLeaderboard] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -277,6 +280,7 @@ export default function MatchDetailPage({ params }: { params: Promise<{ id: stri
     const [hostedArenas, setHostedArenas] = useState<any[]>([]);
     const [loadingHosted, setLoadingHosted] = useState(false);
     const [copiedId, setCopiedId] = useState<string | null>(null);
+    const [copiedLinkId, setCopiedLinkId] = useState<string | null>(null);
 
     const fetchLeaderboard = async () => {
         try {
@@ -361,13 +365,20 @@ export default function MatchDetailPage({ params }: { params: Promise<{ id: stri
 
     // Handle Direct URL Joining via Invite Code
     useEffect(() => {
-        const urlParams = new URLSearchParams(window.location.search);
-        const code = urlParams.get('code');
-        if (code && session && data) {
-            // Trigger joining dialog or direct join logic
+        const code = searchParams.get('code');
+        
+        // 1. If user is unauthenticated and has a code, redirect to login with callback
+        if (code && status === 'unauthenticated') {
+            const callbackUrl = window.location.href;
+            router.push(`/login?callbackUrl=${encodeURIComponent(callbackUrl)}`);
+            return;
+        }
+
+        // 2. If user is authenticated and has a code, trigger dialog
+        if (code && status === 'authenticated' && data) {
             setIsArenaDialogOpen(true);
         }
-    }, [session, data]);
+    }, [status, searchParams, data, router]);
 
     useEffect(() => {
         if (activeTab === 'hosted') {
@@ -587,8 +598,8 @@ export default function MatchDetailPage({ params }: { params: Promise<{ id: stri
                                                     </div>
                                                     <div className="w-1 h-1 rounded-full bg-slate-800" />
                                                     <div className="flex items-center gap-2">
-                                                        <Activity className="w-4 h-4" />
-                                                        <span className="text-xs font-bold uppercase tracking-widest">{arena.status}</span>
+                                                        <Activity className={`w-4 h-4 ${arena.status === 'full' ? 'text-red-500' : 'text-emerald-500'}`} />
+                                                        <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${arena.status === 'full' ? 'text-red-500/80' : 'text-emerald-500/80'}`}>{arena.status}</span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -596,22 +607,44 @@ export default function MatchDetailPage({ params }: { params: Promise<{ id: stri
                                             <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
                                                 {arena.isPrivate && arena.inviteCode && (
                                                     <div className="flex flex-col items-end gap-1.5">
-                                                        <span className="text-[9px] font-black text-slate-600 uppercase tracking-[0.2em]">Invite Code</span>
-                                                        <button 
-                                                            onClick={() => {
-                                                                navigator.clipboard.writeText(arena.inviteCode);
-                                                                setCopiedId(arena._id);
-                                                                setTimeout(() => setCopiedId(null), 2000);
-                                                            }}
-                                                            className="flex items-center gap-3 px-5 py-2.5 bg-slate-900 border border-white/10 rounded-xl hover:border-purple-500/50 transition-all group"
-                                                        >
-                                                            <span className="text-lg font-black text-white tracking-widest">{arena.inviteCode}</span>
-                                                            {copiedId === arena._id ? (
-                                                                <CheckCircle2 className="w-4 h-4 text-green-500" />
-                                                            ) : (
-                                                                <Copy className="w-4 h-4 text-slate-500 group-hover:text-purple-400" />
-                                                            )}
-                                                        </button>
+                                                        <span className="text-[9px] font-black text-slate-600 uppercase tracking-[0.2em]">Contest Access</span>
+                                                        <div className="flex items-center gap-2">
+                                                            <button 
+                                                                onClick={() => {
+                                                                    navigator.clipboard.writeText(arena.inviteCode);
+                                                                    setCopiedId(arena._id);
+                                                                    showToast("Invite code copied!", "success");
+                                                                    setTimeout(() => setCopiedId(null), 2000);
+                                                                }}
+                                                                className="flex items-center gap-3 px-4 py-2 bg-slate-900 border border-white/10 rounded-xl hover:border-purple-500/50 transition-all group"
+                                                                title="Copy Invite Code"
+                                                            >
+                                                                <span className="text-sm font-black text-white tracking-widest">{arena.inviteCode}</span>
+                                                                {copiedId === arena._id ? (
+                                                                    <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />
+                                                                ) : (
+                                                                    <Copy className="w-3.5 h-3.5 text-slate-500 group-hover:text-purple-400" />
+                                                                )}
+                                                            </button>
+
+                                                            <button 
+                                                                onClick={() => {
+                                                                    const shareUrl = `${window.location.origin}/matches/${matchId}?code=${arena.inviteCode}`;
+                                                                    navigator.clipboard.writeText(shareUrl);
+                                                                    setCopiedLinkId(arena._id);
+                                                                    showToast("Deep-link URL copied to clipboard!", "success");
+                                                                    setTimeout(() => setCopiedLinkId(null), 2000);
+                                                                }}
+                                                                className="p-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-600/20 active:scale-95"
+                                                                title="Share Deep-Link URL"
+                                                            >
+                                                                {copiedLinkId === arena._id ? (
+                                                                    <CheckCircle2 className="w-4 h-4" />
+                                                                ) : (
+                                                                    <Share2 className="w-4 h-4" />
+                                                                )}
+                                                            </button>
+                                                        </div>
                                                     </div>
                                                 )}
                                                 

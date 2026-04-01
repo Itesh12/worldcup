@@ -2,7 +2,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Loader2, Mail, Lock, User, Sparkles, Trophy, CheckCircle, Upload } from "lucide-react";
 import { ImageUpload } from "@/components/ImageUpload";
@@ -16,6 +16,8 @@ export default function RegisterPage() {
     const [loading, setLoading] = useState(false);
     const { showToast } = useToast();
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const callbackUrl = searchParams.get('callbackUrl') || "/";
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -35,7 +37,7 @@ export default function RegisterPage() {
             }
 
             showToast("Registration successful! Please login.", "success");
-            router.push("/login");
+            router.push(`/login${callbackUrl !== '/' ? `?callbackUrl=${encodeURIComponent(callbackUrl)}` : ''}`);
         } catch (err: any) {
             showToast(err.message, "error");
         } finally {
@@ -183,7 +185,7 @@ export default function RegisterPage() {
                     <div className="mt-8 pt-8 border-t border-slate-800/50 text-center">
                         <p className="text-slate-400 text-sm">
                             Already have an account?{" "}
-                            <Link href="/login" className="text-purple-500 hover:text-purple-400 font-bold hover:underline">
+                            <Link href={`/login${callbackUrl !== '/' ? `?callbackUrl=${encodeURIComponent(callbackUrl)}` : ''}`} className="text-purple-500 hover:text-purple-400 font-bold hover:underline">
                                 Login now
                             </Link>
                         </p>

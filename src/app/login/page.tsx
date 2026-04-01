@@ -3,7 +3,7 @@
 
 import { useState } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Loader2, Mail, Lock, CheckCircle, Trophy, ArrowRight, User } from "lucide-react";
 import { useToast } from "@/contexts/ToastContext";
@@ -14,6 +14,8 @@ export default function LoginPage() {
     const [loading, setLoading] = useState(false);
     const { showToast } = useToast();
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const callbackUrl = searchParams.get('callbackUrl') || "/";
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -30,7 +32,7 @@ export default function LoginPage() {
                 showToast("Invalid email or password", "error");
             } else {
                 showToast("Login successful!", "success");
-                router.push("/");
+                router.push(callbackUrl);
                 router.refresh();
             }
         } catch (err) {
@@ -153,7 +155,7 @@ export default function LoginPage() {
                     <div className="mt-8 pt-8 border-t border-slate-800/50 text-center">
                         <p className="text-slate-400 text-sm">
                             Don&apos;t have an account?{" "}
-                            <Link href="/register" className="text-purple-500 hover:text-purple-400 font-bold hover:underline">
+                            <Link href={`/register${callbackUrl !== '/' ? `?callbackUrl=${encodeURIComponent(callbackUrl)}` : ''}`} className="text-purple-500 hover:text-purple-400 font-bold hover:underline">
                                 Register now
                             </Link>
                         </p>

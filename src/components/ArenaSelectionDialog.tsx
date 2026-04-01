@@ -19,6 +19,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { Spinner } from "@/components/ui/Spinner";
 import { useToast } from "@/contexts/ToastContext";
+import { useSession } from "next-auth/react";
 
 interface Arena {
     _id: string;
@@ -56,6 +57,8 @@ export function ArenaSelectionDialog({
     const [joining, setJoining] = useState<string | null>(null);
     const [filter, setFilter] = useState<'all' | 'public' | 'private'>('all');
     const [inviteCodes, setInviteCodes] = useState<Record<string, string>>({});
+    const [confirmingArena, setConfirmingArena] = useState<{ arena: Arena, innings: number } | null>(null);
+    const { data: session } = useSession(); // To check if user is admin/subadmin if needed
 
     useEffect(() => {
         if (isOpen && matchId) {
@@ -283,7 +286,7 @@ export function ArenaSelectionDialog({
                                                 </div>
                                             )}
                                             <button 
-                                                onClick={() => !arena.hasJoined && handleJoin(arena._id, 1)}
+                                                onClick={() => !arena.hasJoined && setConfirmingArena({ arena, innings: 1 })}
                                                 disabled={joining !== null || arena.slotsCount >= arena.maxSlots || arena.hasJoined}
                                                 className={`flex-1 md:flex-none flex items-center justify-center gap-3 px-8 py-4 rounded-2xl text-xs font-black italic uppercase tracking-widest transition-all ${
                                                     arena.hasJoined
@@ -324,6 +327,67 @@ export function ArenaSelectionDialog({
                         </p>
                     </div>
                 </motion.div>
+
+                {/* Join Confirmation Overlay */}
+                <AnimatePresence>
+                    {confirmingArena && (
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            className="absolute inset-0 z-20 flex items-center justify-center p-6 bg-[#050B14]/90 backdrop-blur-xl"
+                        >
+                            <div className="w-full max-w-sm bg-[#0A0F1C] border border-white/10 rounded-[32px] p-8 shadow-2xl relative overflow-hidden">
+                                {/* Ambient Light */}
+                                <div className="absolute -top-24 -left-24 w-48 h-48 bg-purple-600/20 blur-[60px] rounded-full pointer-events-none" />
+                                
+                                <div className="relative z-10 text-center space-y-6">
+                                    <div className="w-20 h-20 bg-purple-600/10 border border-purple-500/20 rounded-3xl flex items-center justify-center mx-auto mb-2 animate-pulse-slow">
+                                        <IndianRupee className="w-10 h-10 text-purple-500" />
+                                    </div>
+                                    
+                                    <div>
+                                        <h3 className="text-2xl font-black text-white italic uppercase tracking-tight mb-2">Confirm Payment</h3>
+                                        <p className="text-slate-400 text-sm font-medium leading-relaxed">
+                                            You are about to join <span className="text-white font-bold">{confirmingArena.arena.name}</span>. 
+                                            The entry fee will be deducted from your wallet balance.
+                                        </p>
+                                    </div>
+
+                                    <div className="py-6 px-4 bg-white/5 rounded-2xl border border-white/5 space-y-4">
+                                        <div className="flex justify-between items-center text-xs font-black uppercase tracking-widest text-slate-500">
+                                            <span>Entry Stake</span>
+                                            <span className="text-white">₹{confirmingArena.arena.entryFee}</span>
+                                        </div>
+                                        <div className="h-px bg-white/10 w-full" />
+                                        <div className="flex justify-between items-center text-sm font-black uppercase tracking-widest text-purple-400">
+                                            <span>Total to Pay</span>
+                                            <span className="text-lg">₹{confirmingArena.arena.entryFee}</span>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <button
+                                            onClick={() => setConfirmingArena(null)}
+                                            className="py-4 rounded-2xl bg-white/5 hover:bg-white/10 text-slate-400 font-black uppercase tracking-widest text-[10px] transition-all"
+                                        >
+                                            Cancel
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                handleJoin(confirmingArena.arena._id, confirmingArena.innings);
+                                                setConfirmingArena(null);
+                                            }}
+                                            className="py-4 rounded-2xl bg-purple-600 hover:bg-purple-500 text-white font-black uppercase tracking-widest text-[10px] transition-all shadow-lg shadow-purple-600/30 flex items-center justify-center gap-2"
+                                        >
+                                            Confirm & Pay <ChevronRight className="w-3 h-3" />
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
             </div>
         </AnimatePresence>
     );
