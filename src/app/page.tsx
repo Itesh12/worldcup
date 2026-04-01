@@ -16,7 +16,14 @@ export default function LandingPage() {
         // Splash screen timer
         const timer = setTimeout(() => {
             if (status === "authenticated") {
-                router.push("/dashboard");
+                const role = (session?.user as any)?.role || "user";
+                if (role === "admin") {
+                    router.push("/admin");
+                } else if (role === "subadmin") {
+                    router.push("/subadmin");
+                } else {
+                    router.push("/dashboard");
+                }
             } else {
                 setStep("intro");
             }

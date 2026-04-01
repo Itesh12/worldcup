@@ -85,20 +85,7 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
 
             {/* Bottom Section */}
             <div className="mt-auto px-8 py-8 relative z-10 space-y-4">
-                <Link
-                    href="/dashboard"
-                    className="group relative flex items-center justify-center gap-3 w-full py-4 bg-indigo-500/5 hover:bg-indigo-500/10 border border-indigo-500/10 hover:border-indigo-500/30 rounded-2xl transition-all duration-300 shadow-xl shadow-indigo-500/5 hover:shadow-indigo-500/10"
-                >
-                    <ArrowLeft className="w-4 h-4 text-indigo-400 group-hover:-translate-x-1 transition-transform duration-300" />
-                    <span className="text-[11px] font-black text-slate-400 group-hover:text-white uppercase tracking-[0.2em] transition-colors">
-                        Back to Hub
-                    </span>
-
-                    {/* Subtle Inner Glow on Hover */}
-                    <div className="absolute inset-0 rounded-2xl bg-gradient-to-tr from-indigo-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
-                </Link>
-
-                <div className="text-center opacity-30">
+                <div className="text-center opacity-30 mt-auto">
                     <p className="text-[9px] font-black text-slate-600 uppercase tracking-[0.3em]">Premium Admin Suite v2.0</p>
                 </div>
             </div>

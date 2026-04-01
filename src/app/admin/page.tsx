@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Users, Trophy, Activity, TrendingUp, ShieldCheck, Clock, CheckCircle, Ticket, Medal, Flame, ArrowLeft, Trash2, AlertTriangle, X, FileText, ArrowUpRight, IndianRupee } from "lucide-react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Spinner } from "@/components/ui/Spinner";
 import { useToast } from "@/contexts/ToastContext";
 
@@ -38,7 +39,8 @@ interface AnalyticsData {
 }
 
 export default function AdminDashboardPage() {
-    const { data: session } = useSession();
+    const { data: session, status } = useSession();
+    const router = useRouter();
     const [data, setData] = useState<AnalyticsData | null>(null);
     const { showToast } = useToast();
     const [loading, setLoading] = useState(true);
@@ -49,8 +51,16 @@ export default function AdminDashboardPage() {
     const [resetting, setResetting] = useState(false);
 
     useEffect(() => {
+        if (status === "unauthenticated") {
+            router.push("/login");
+            return;
+        }
+        if (status === "authenticated" && (session?.user as any)?.role !== "admin") {
+            router.push("/dashboard");
+            return;
+        }
         fetchAnalytics();
-    }, []);
+    }, [status, session]);
 
     const fetchAnalytics = async () => {
         try {
@@ -193,6 +203,13 @@ export default function AdminDashboardPage() {
                                 {new Date().toLocaleDateString([], { month: 'long', day: 'numeric' })}
                             </span>
                         </div>
+                        <Link
+                            href="/dashboard?view=player"
+                            className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-black uppercase tracking-widest rounded-2xl transition-all shadow-lg shadow-indigo-600/20"
+                        >
+                            <Trophy className="w-4 h-4" />
+                            Player View
+                        </Link>
                     </div>
                 </div>
             </header>

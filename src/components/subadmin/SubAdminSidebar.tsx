@@ -67,15 +67,6 @@ export function SubAdminSidebar({ isOpen, onClose }: SubAdminSidebarProps) {
             </div>
 
             <div className="mt-auto px-8 py-8 relative z-10 space-y-4">
-                <Link
-                    href="/dashboard"
-                    className="group relative flex items-center justify-center gap-3 w-full py-4 bg-purple-500/5 hover:bg-purple-500/10 border border-purple-500/10 hover:border-purple-500/30 rounded-2xl transition-all duration-300 shadow-xl shadow-purple-500/5 hover:shadow-purple-500/10"
-                >
-                    <ArrowLeft className="w-4 h-4 text-purple-400 group-hover:-translate-x-1 transition-transform duration-300" />
-                    <span className="text-[11px] font-black text-slate-400 group-hover:text-white uppercase tracking-[0.2em] transition-colors">
-                        Back to Hub
-                    </span>
-                </Link>
                 <div className="text-center opacity-30">
                     <p className="text-[9px] font-black text-slate-600 uppercase tracking-[0.3em]">FRANCHISE SUITE v1.0</p>
                 </div>
