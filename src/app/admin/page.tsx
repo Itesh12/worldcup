@@ -6,7 +6,7 @@ import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Spinner } from "@/components/ui/Spinner";
-import { useToast } from "../../contexts/ToastContext";
+import { useToast } from "@/contexts/ToastContext";
 
 interface AnalyticsData {
     users: {

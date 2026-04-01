@@ -16,7 +16,14 @@ interface ToastContextType {
     hideToast: (id: string) => void;
 }
 
-const ToastContext = createContext<ToastContextType | undefined>(undefined);
+const globalContextKey = Symbol.for('__TOAST_CONTEXT__');
+const globalAny: any = globalThis;
+
+if (!globalAny[globalContextKey]) {
+    globalAny[globalContextKey] = createContext<ToastContextType | undefined>(undefined);
+}
+
+const ToastContext = globalAny[globalContextKey] as React.Context<ToastContextType | undefined>;
 
 export function ToastProvider({ children }: { children: ReactNode }) {
     const [toasts, setToasts] = useState<Toast[]>([]);
