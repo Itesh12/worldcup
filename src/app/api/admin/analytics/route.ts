@@ -123,12 +123,23 @@ export async function GET() {
             filledSlots: 0
         };
 
+        let missedOpportunities: any[] = [];
+
         if (todayMatches.length > 0) {
             const todayMatchIds = todayMatches.map(m => m._id);
             const todayArenas = await Arena.find({ matchId: { $in: todayMatchIds } });
             todayStats.arenaCount = todayArenas.length;
             todayStats.totalSlots = todayArenas.reduce((acc: number, a: any) => acc + a.maxSlots, 0);
             todayStats.filledSlots = todayArenas.reduce((acc: number, a: any) => acc + a.slotsCount, 0);
+
+            // Find matches with NO arenas
+            missedOpportunities = todayMatches.filter(m => 
+                !todayArenas.some((a: any) => a.matchId.toString() === m._id.toString())
+            ).map(m => ({
+                _id: m._id,
+                teams: m.teams,
+                startTime: m.startTime
+            }));
         }
 
         // [3.7] Active Tournaments & Intelligence (Phase 3)
@@ -156,7 +167,8 @@ export async function GET() {
                 pendingWithdrawals,
                 liveMatches,
                 dailyFinancials,
-                todayMatchStats: todayStats
+                todayMatchStats: todayStats,
+                missedOpportunities
             },
             financialRisk: {
                 totalSystemLiability,

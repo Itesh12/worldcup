@@ -1,6 +1,7 @@
 "use client";
 
 import React from 'react';
+import Link from 'next/link';
 import { Trophy, Clock, Zap, ShieldAlert, Activity, Radio, RefreshCw, ShieldCheck } from 'lucide-react';
 
 interface LiveMatch {
@@ -82,22 +83,24 @@ export const LiveScoreGrid: React.FC<LiveScoreGridProps> = ({ initialMatches = [
                 {matches.map((match) => {
                     const isLive = match.status === 'live';
                     const startTimeStr = new Date(match.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    const detailLink = role === 'admin' ? `/admin/matches/${match._id}` : `/matches/${match._id}`;
 
                     return (
-                        <div 
+                        <Link 
                             key={match._id} 
-                            className="relative overflow-hidden rounded-[20px] sm:rounded-[24px] p-4 sm:p-6 md:p-8 bg-gradient-to-br from-indigo-950/40 via-slate-900 to-slate-950 border border-indigo-500/20 shadow-2xl transition-all hover:border-indigo-500/40 flex flex-col min-h-0 sm:min-h-[220px]"
+                            href={detailLink}
+                            className="relative overflow-hidden rounded-[20px] sm:rounded-[24px] p-4 sm:p-6 md:p-8 bg-gradient-to-br from-indigo-950/40 via-slate-900 to-slate-950 border border-indigo-500/20 shadow-2xl transition-all hover:border-indigo-500/40 hover:scale-[1.01] flex flex-col min-h-0 sm:min-h-[220px] cursor-pointer group/card"
                         >
                             <div className="absolute top-0 right-0 w-24 h-24 sm:w-32 sm:h-32 bg-indigo-500/5 blur-[50px] rounded-full pointer-events-none" />
                             
                             {/* Dashboard Pattern: Header Section */}
                             <div className="flex justify-between items-center mb-5 sm:mb-6 relative z-10 w-full">
                                 <div className="flex items-center gap-2.5 sm:gap-4">
-                                    <div className={`p-2 sm:p-3 rounded-lg sm:rounded-xl border ${isLive ? 'bg-red-500/10 border-red-500/20' : 'bg-indigo-500/10 border-indigo-500/20'}`}>
+                                    <div className={`p-2 sm:p-3 rounded-lg sm:rounded-xl border ${isLive ? 'bg-red-500/10 border-red-500/20' : 'bg-indigo-500/10 border-indigo-500/20'} group-hover/card:scale-110 transition-transform duration-500`}>
                                         {isLive ? <Trophy className="w-4 h-4 sm:w-6 sm:h-6 text-red-500" /> : <Activity className="w-4 h-4 sm:w-6 sm:h-6 text-indigo-500" />}
                                     </div>
                                     <div className="flex flex-col gap-0.5 sm:gap-1">
-                                        <p className="text-[9px] sm:text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
+                                        <p className="text-[9px] sm:text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] group-hover/card:text-indigo-400 transition-colors">
                                             {match.seriesName || "Arena Global"}
                                         </p>
                                         <div className="flex items-center gap-1.5 sm:gap-2">
@@ -117,7 +120,7 @@ export const LiveScoreGrid: React.FC<LiveScoreGridProps> = ({ initialMatches = [
                             <div className="flex items-center justify-between flex-1 relative z-10 gap-3 sm:gap-4 my-2">
                                 {/* Side A */}
                                 <div className="flex flex-col items-center gap-2 flex-1 min-w-0">
-                                    <div className="w-10 h-10 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-white/5 border border-white/5 flex items-center justify-center group-hover:bg-indigo-500/10 transition-colors shadow-inner">
+                                    <div className="w-10 h-10 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-white/5 border border-white/5 flex items-center justify-center group-hover/card:bg-indigo-500/10 transition-colors shadow-inner">
                                         <span className="text-lg sm:text-2xl font-black text-white/80">{match.teams[0]?.shortName[0]}</span>
                                     </div>
                                     <h3 className="text-[9px] sm:text-[10px] font-black text-slate-400 uppercase tracking-widest text-center truncate w-full">{match.teams[0]?.shortName}</h3>
@@ -147,7 +150,7 @@ export const LiveScoreGrid: React.FC<LiveScoreGridProps> = ({ initialMatches = [
 
                                 {/* Side B */}
                                 <div className="flex flex-col items-center gap-2 flex-1 min-w-0">
-                                    <div className="w-10 h-10 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-white/5 border border-white/5 flex items-center justify-center group-hover:bg-indigo-500/10 transition-colors shadow-inner">
+                                    <div className="w-10 h-10 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-white/5 border border-white/5 flex items-center justify-center group-hover/card:bg-indigo-500/10 transition-colors shadow-inner">
                                         <span className="text-lg sm:text-2xl font-black text-white/80">{match.teams[1]?.shortName[0]}</span>
                                     </div>
                                     <h3 className="text-[9px] sm:text-[10px] font-black text-slate-400 uppercase tracking-widest text-center truncate w-full">{match.teams[1]?.shortName}</h3>
@@ -162,12 +165,12 @@ export const LiveScoreGrid: React.FC<LiveScoreGridProps> = ({ initialMatches = [
                                         {isLive ? (match.liveScore?.statusText || "Active Ops") : "Arena Secured"}
                                     </p>
                                 </div>
-                                <div className="hidden sm:flex items-center gap-2 opacity-30">
+                                <div className="hidden sm:flex items-center gap-2 opacity-30 group-hover/card:opacity-100 transition-opacity">
                                     <span className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Secured Hub</span>
                                     <ShieldCheck className="w-4 h-4 text-indigo-500" />
                                 </div>
                             </div>
-                        </div>
+                        </Link>
                     );
                 })}
             </div>

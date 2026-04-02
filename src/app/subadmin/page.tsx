@@ -4,6 +4,9 @@ import React, { useEffect, useState } from "react";
 import { Users, Swords, IndianRupee, PieChart, RefreshCw, Trophy, ArrowUpRight, Zap, Target, Share2, AlertTriangle, Lightbulb, Copy, UserPlus, FileText, Clock, Database, TrendingUp } from "lucide-react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
+import { AnimatePresence, motion } from "framer-motion";
+import ArenaManager from "@/components/shared/ArenaManager";
+import { CreateArenaModal } from "@/components/dashboard/CreateArenaModal";
 import { Spinner } from "@/components/ui/Spinner";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/contexts/ToastContext";
@@ -45,6 +48,7 @@ export default function SubAdminDashboard() {
     const { data: session, status } = useSession();
     const router = useRouter();
     const [loading, setLoading] = useState(true);
+    const [selectedMatchForArena, setSelectedMatchForArena] = useState<any>(null);
 
     const fetchStats = async () => {
         try {
@@ -122,7 +126,10 @@ export default function SubAdminDashboard() {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-white/5">
                 <div>
                     <h1 className="text-2xl md:text-3xl font-black text-white italic uppercase tracking-tighter leading-none mb-2">
-                        {gamification.brandName} <span className="text-indigo-500">Franchise</span>
+                        {gamification.brandName?.toLowerCase().includes('franchise') 
+                            ? gamification.brandName 
+                            : <>{gamification.brandName} <span className="text-indigo-500">Franchise</span></>
+                        }
                     </h1>
                     <div className="flex items-center gap-3">
                         <div className={`px-2 py-0.5 border rounded text-[9px] font-black uppercase tracking-widest ${activeColor}`}>
@@ -211,46 +218,46 @@ export default function SubAdminDashboard() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* 1. Gamification Hero */}
-                <div className="lg:col-span-2 relative overflow-hidden rounded-[32px] p-8 md:p-10 bg-slate-900 border border-white/10 shadow-2xl flex flex-col justify-center">
-                    <div className={`absolute -right-20 -bottom-20 w-64 h-64 blur-[100px] rounded-full pointer-events-none ${activeColor.split(' ')[1]}`} />
+                {/* 1. Gamification Hero - High Density */}
+                <div className="lg:col-span-2 relative overflow-hidden rounded-2xl p-5 md:p-6 bg-slate-900 border border-white/10 shadow-2xl flex flex-col justify-center">
+                    <div className={`absolute -right-20 -bottom-20 w-64 h-64 blur-[100px] rounded-full pointer-events-none opacity-20 ${activeColor.split(' ')[1]}`} />
                     
-                    <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 relative z-10 w-full mb-10">
+                    <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 relative z-10 w-full mb-8">
                         <div>
-                            <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full border text-[10px] font-black uppercase tracking-widest mb-4 shadow-lg ${activeColor}`}>
-                                <Target className="w-4 h-4" /> {gamification.currentTier} Level
+                            <span className={`inline-flex items-center gap-2 px-2.5 py-1 rounded-full border text-[9px] font-black uppercase tracking-widest mb-3 shadow-lg ${activeColor}`}>
+                                <Target className="w-3.5 h-3.5" /> {gamification.currentTier} Level
                             </span>
-                            <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">Total Earnings Generated</p>
-                            <h2 className="text-5xl md:text-7xl font-black text-white tracking-tighter tabular-nums mt-1 leading-none">
+                            <p className="text-slate-400 text-[9px] font-black uppercase tracking-[0.2em]">Total Earnings Generated</p>
+                            <h2 className="text-3xl md:text-5xl font-black text-white tracking-tighter tabular-nums mt-1 leading-none">
                                 ₹{gamification.totalCommissionEarned.toLocaleString()}
                             </h2>
                         </div>
 
                         <div className="w-full md:w-auto text-left md:text-right">
-                            <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-1">Commission Rate</p>
-                            <div className="text-4xl font-black text-white tabular-nums">
-                                {gamification.commissionPercentage}<span className="text-indigo-400 text-2xl">%</span>
+                            <p className="text-slate-400 text-[9px] font-black uppercase tracking-[0.2em] mb-1">Commission Rate</p>
+                            <div className="text-2xl font-black text-white tabular-nums">
+                                {gamification.commissionPercentage}<span className="text-indigo-400 text-lg">%</span>
                             </div>
                         </div>
                     </div>
 
-                    <div className="relative z-10 p-5 bg-black/40 border border-white/5 rounded-2xl backdrop-blur-md w-full">
-                        <div className="flex justify-between items-end mb-3">
+                    <div className="relative z-10 p-4 bg-black/40 border border-white/5 rounded-xl backdrop-blur-md w-full">
+                        <div className="flex justify-between items-end mb-2.5">
                             <div>
-                                <h4 className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Next Level Progress</h4>
+                                <h4 className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Next Level Progress</h4>
                                 {gamification.nextTierThreshold ? (
-                                    <p className="text-[9px] font-bold text-slate-500 uppercase mt-1">
+                                    <p className="text-[8px] font-bold text-slate-500 uppercase mt-0.5">
                                         Bridge the <span className="text-indigo-400">₹{(gamification.nextTierThreshold - gamification.totalCommissionEarned).toLocaleString()}</span> gap to level up!
                                     </p>
                                 ) : (
-                                    <p className="text-[9px] font-bold text-cyan-400 uppercase mt-1">Max Level Achieved</p>
+                                    <p className="text-[8px] font-bold text-cyan-400 uppercase mt-0.5">Max Level Achieved</p>
                                 )}
                             </div>
-                            <span className="text-xs font-black text-white">{progressPercent.toFixed(1)}%</span>
+                            <span className="text-[10px] font-black text-white">{progressPercent.toFixed(1)}%</span>
                         </div>
-                        <div className="h-2 w-full bg-slate-800 rounded-full overflow-hidden">
+                        <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
                             <div 
-                                className={`h-full rounded-full transition-all duration-1000 ${gamification.currentTier === 'Diamond' ? 'bg-cyan-400 shadow-[0_0_15px_#22d3ee]' : 'bg-indigo-500 shadow-[0_0_15px_#6366f1]'}`}
+                                className={`h-full rounded-full transition-all duration-1000 ${gamification.currentTier === 'Diamond' ? 'bg-cyan-400 shadow-[0_0_10px_#22d3ee]' : 'bg-indigo-500 shadow-[0_0_10px_#6366f1]'}`}
                                 style={{ width: `${progressPercent}%` }} 
                             />
                         </div>
@@ -259,36 +266,36 @@ export default function SubAdminDashboard() {
 
                 {/* 2. Intelligence & Growth Panel */}
                 <div className="flex flex-col gap-6">
-                    <div className="flex-1 bg-slate-900 border border-white/5 rounded-[32px] p-6 relative overflow-hidden group">
+                    <div className="flex-1 bg-slate-900 border border-white/5 rounded-2xl p-5 relative overflow-hidden group hover:border-indigo-500/30 transition-all">
                         <div className="relative z-10">
-                            <div className="flex justify-between items-start mb-4">
-                                <h3 className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] flex items-center gap-2">
-                                    <Users className="w-4 h-4" /> My Player Network
+                            <div className="flex justify-between items-start mb-3">
+                                <h3 className="text-[9px] font-black text-indigo-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                                    <Users className="w-4 h-4" /> Network Size
                                 </h3>
-                                <div className="text-[9px] font-black text-emerald-400 uppercase tracking-widest bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+                                <div className="text-[8px] font-black text-emerald-400 uppercase tracking-widest bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20 shadow-md">
                                     +{intelligence.newPlayers7d} (7D)
                                 </div>
                             </div>
-                            <div className="text-5xl font-black text-white tracking-tighter tabular-nums mb-2">
-                                {intelligence.playerNetworkSize}
+                            <div className="text-3xl font-black text-white tracking-tighter tabular-nums mb-1">
+                                {intelligence.playerNetworkSize} <span className="text-[10px] text-slate-500 font-bold ml-1 uppercase">Active</span>
                             </div>
-                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest leading-relaxed">Network Growth is healthy.</p>
+                            <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest leading-relaxed italic">System Status: Healthy</p>
                         </div>
                     </div>
 
                     <button 
                         onClick={handleCopyInviteLink}
-                        className="bg-indigo-600 hover:bg-indigo-500 rounded-[28px] p-6 text-left transition-all group flex flex-col gap-4 shadow-xl shadow-indigo-600/10"
+                        className="bg-indigo-600 hover:bg-indigo-500 rounded-2xl p-5 text-left transition-all group flex flex-col gap-3 shadow-xl shadow-indigo-600/10 border border-white/5"
                     >
-                        <div className="flex justify-between items-center">
+                        <div className="flex justify-between items-center mb-1">
                             <div className="p-2 bg-white/20 rounded-xl">
-                                <Copy className="w-5 h-5 text-white" />
+                                <Share2 className="w-4 h-4 text-white" />
                             </div>
-                            <ArrowUpRight className="w-4 h-4 text-white/60 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+                            <ArrowUpRight className="w-3.5 h-3.5 text-white/60 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
                         </div>
                         <div>
-                            <h3 className="text-white text-sm font-black uppercase italic tracking-tight">Recruit New Players</h3>
-                            <p className="text-white/60 text-[9px] font-bold uppercase tracking-widest mt-1">Share your franchise link</p>
+                            <h3 className="text-white text-xs font-black uppercase italic tracking-tight">Recruit Elite</h3>
+                            <p className="text-white/60 text-[8px] font-bold uppercase tracking-widest mt-0.5">Share Invitation Link</p>
                         </div>
                     </button>
                 </div>
@@ -363,29 +370,41 @@ export default function SubAdminDashboard() {
                         </div>
                     )}
 
-                    {/* Missed Opportunities Section */}
-                    {alerts.missedOpportunities?.length > 0 && (
-                        <div className="bg-red-500/5 border border-red-500/20 p-5 rounded-2xl">
-                             <h4 className="text-[10px] font-black text-red-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-                                <AlertTriangle className="w-4 h-4" /> Unhosted Matches Today
-                             </h4>
-                             <div className="space-y-3">
-                                {alerts.missedOpportunities.map(m => (
-                                    <div key={m._id} className="flex justify-between items-center">
-                                        <div className="text-[10px] font-bold text-white uppercase truncate max-w-[150px]">
-                                            {m.teams[0]?.name} vs {m.teams[1]?.name}
+                    {/* UNHOSTED MATCHES - High Density Overlay */}
+                    <AnimatePresence>
+                        {alerts.missedOpportunities?.length > 0 && (
+                            <motion.div 
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: 'auto' }}
+                                exit={{ opacity: 0, height: 0 }}
+                                className="overflow-hidden"
+                            >
+                                <div className="bg-red-500/5 border border-red-500/20 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 mb-8">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-10 h-10 rounded-xl bg-red-500/20 flex items-center justify-center border border-red-500/20">
+                                            <AlertTriangle className="w-5 h-5 text-red-500" />
                                         </div>
-                                        <Link 
-                                            href={`/subadmin/arenas/new?matchId=${m._id}`}
-                                            className="text-[9px] font-black text-indigo-400 hover:text-indigo-300 uppercase underline"
-                                        >
-                                            Host Now
-                                        </Link>
+                                        <div>
+                                            <h3 className="text-xs font-black text-white uppercase tracking-tight">Oversight Alert</h3>
+                                            <p className="text-[10px] font-bold text-red-400/80 uppercase tracking-widest">{alerts.missedOpportunities.length} Unhosted Matches Today</p>
+                                        </div>
                                     </div>
-                                ))}
-                             </div>
-                        </div>
-                    )}
+                                    <div className="flex flex-wrap items-center justify-center gap-2">
+                                        {alerts.missedOpportunities.map(m => (
+                                            <button 
+                                                key={m._id}
+                                                onClick={() => setSelectedMatchForArena(m)}
+                                                className="group flex items-center gap-3 bg-black/40 border border-white/5 hover:border-red-500/30 rounded-xl px-4 py-2 transition-all"
+                                            >
+                                                <span className="text-[9px] font-black text-white uppercase">{m.teams[0].shortName || m.teams[0].name} v {m.teams[1].shortName || m.teams[1].name}</span>
+                                                <div className="px-2 py-0.5 bg-red-500 text-white text-[8px] font-black uppercase rounded shadow-lg shadow-red-500/20 group-hover:scale-105 transition-transform">HOST</div>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
                 </div>
 
                 {/* 4. Franchise Earnings Table */}
@@ -396,33 +415,33 @@ export default function SubAdminDashboard() {
                         </h2>
                     </div>
 
-                    <div className="bg-slate-900 border border-white/10 rounded-[28px] overflow-hidden shadow-2xl">
+                    <div className="bg-slate-900 border border-white/10 rounded-2xl overflow-hidden shadow-2xl">
                         <div className="overflow-x-auto">
                             <table className="w-full text-left">
                                 <thead className="bg-white/5 border-b border-white/10">
                                     <tr>
-                                        <th className="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-widest">Arena / Match</th>
-                                        <th className="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-widest">Metrics</th>
-                                        <th className="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-widest">Potential</th>
-                                        <th className="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-widest">State</th>
+                                        <th className="px-5 py-4 text-[9px] font-black text-slate-500 uppercase tracking-widest">Arena / Match</th>
+                                        <th className="px-5 py-4 text-[9px] font-black text-slate-500 uppercase tracking-widest">Metrics</th>
+                                        <th className="px-5 py-4 text-[9px] font-black text-slate-500 uppercase tracking-widest">Potential</th>
+                                        <th className="px-5 py-4 text-[9px] font-black text-slate-500 uppercase tracking-widest">State</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-white/5">
+                                <tbody className="divide-y divide-white/5 text-[10px]">
                                     {recentArenas.map((arena) => (
                                         <tr key={arena._id} className="hover:bg-white/5 transition-colors">
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="text-xs font-black text-white uppercase italic tracking-tight">{arena.name}</div>
-                                                <div className="text-[9px] font-bold text-slate-500 uppercase mt-1">{new Date(arena.createdAt).toLocaleDateString()}</div>
+                                            <td className="px-5 py-3.5 whitespace-nowrap">
+                                                <div className="font-black text-white uppercase italic tracking-tight">{arena.name}</div>
+                                                <div className="text-[8px] font-bold text-slate-500 uppercase mt-0.5">{new Date(arena.createdAt).toLocaleDateString()}</div>
                                             </td>
-                                            <td className="px-6 py-4">
-                                                <div className="text-[10px] font-black text-slate-300">{arena.slotsCount}/{arena.maxSlots} <span className="text-slate-500 ml-1">SLOTS</span></div>
+                                            <td className="px-5 py-3.5">
+                                                <div className="font-black text-slate-300">{arena.slotsCount}/{arena.maxSlots} <span className="text-slate-500 ml-1">SLOTS</span></div>
                                             </td>
-                                            <td className="px-6 py-4">
-                                                <div className="text-xs font-black text-emerald-400 tracking-wider">
+                                            <td className="px-5 py-3.5">
+                                                <div className="font-black text-emerald-400 tracking-wider">
                                                     +₹{((arena.slotsCount * arena.entryFee) * (gamification.commissionPercentage / 100)).toFixed(2)}
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-4">
+                                            <td className="px-5 py-3.5">
                                                 <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest ${
                                                     arena.status === 'open' ? 'text-indigo-400 bg-indigo-500/10' :
                                                     arena.status === 'full' ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-500 bg-white/5'
@@ -438,6 +457,20 @@ export default function SubAdminDashboard() {
                     </div>
                 </div>
             </div>
+            <AnimatePresence>
+                {selectedMatchForArena && (
+                    <CreateArenaModal
+                        matchId={selectedMatchForArena._id}
+                        matchName={`${selectedMatchForArena.teams[0].shortName || selectedMatchForArena.teams[0].name} vs ${selectedMatchForArena.teams[1].shortName || selectedMatchForArena.teams[1].name}`}
+                        isOpen={!!selectedMatchForArena}
+                        onClose={() => setSelectedMatchForArena(null)}
+                        onSuccess={() => {
+                            setSelectedMatchForArena(null);
+                            fetchStats();
+                        }}
+                    />
+                )}
+            </AnimatePresence>
         </div>
     );
 }

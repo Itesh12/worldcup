@@ -80,6 +80,20 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
                             </Link>
                         );
                     })}
+ 
+                    {/* Mobile-Only Action: Player View */}
+                    <div className="lg:hidden pt-4 mt-4 border-t border-white/5">
+                        <Link
+                            href="/dashboard?view=player"
+                            onClick={onClose}
+                            className="group flex items-center gap-4 px-4 py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 transition-all duration-300 shadow-lg shadow-indigo-500/20"
+                        >
+                            <LayoutDashboard className="w-5 h-5 text-white" />
+                            <span className="text-sm font-black text-white uppercase tracking-widest">
+                                Switch to Player View
+                            </span>
+                        </Link>
+                    </div>
                 </nav>
             </div>
 

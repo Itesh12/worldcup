@@ -43,6 +43,37 @@ export function CreateArenaModal({
     const userRole = (session?.user as any)?.role || 'user';
     const isAdmin = userRole === 'admin' || userRole === 'subadmin';
 
+    const themes = {
+        admin: {
+            accent: 'indigo',
+            primary: 'bg-indigo-600',
+            hover: 'hover:bg-indigo-500',
+            text: 'text-indigo-500',
+            border: 'focus:border-indigo-500',
+            shadow: 'shadow-indigo-600/30',
+            gradient: 'from-indigo-900/20'
+        },
+        subadmin: {
+            accent: 'purple',
+            primary: 'bg-purple-600',
+            hover: 'hover:bg-purple-500',
+            text: 'text-purple-500',
+            border: 'focus:border-purple-500',
+            shadow: 'shadow-purple-600/30',
+            gradient: 'from-purple-900/20'
+        },
+        user: {
+            accent: 'amber',
+            primary: 'bg-amber-600',
+            hover: 'hover:bg-amber-500',
+            text: 'text-amber-500',
+            border: 'focus:border-amber-500',
+            shadow: 'shadow-amber-600/30',
+            gradient: 'from-amber-900/20'
+        }
+    };
+
+    const theme = themes[userRole as keyof typeof themes] || themes.user;
     const slotOptions = [2, 3, 4, 6, 8, 10];
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -102,14 +133,14 @@ export function CreateArenaModal({
                 >
                     <form onSubmit={handleSubmit}>
                         {/* Header */}
-                        <div className="p-6 md:p-8 border-b border-white/5 bg-gradient-to-r from-amber-900/20 to-transparent">
+                        <div className={`p-6 md:p-8 border-b border-white/5 bg-gradient-to-r ${theme.gradient} to-transparent`}>
                             <div className="flex items-center justify-between mb-2">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 bg-amber-600 rounded-xl flex items-center justify-center">
+                                    <div className={`w-10 h-10 ${theme.primary} rounded-xl flex items-center justify-center`}>
                                         <Swords className="w-5 h-5 text-white" />
                                     </div>
                                     <h2 className="text-xl font-black text-white italic uppercase tracking-tight">
-                                        HOST <span className="text-amber-500">PRIVATE</span>
+                                        HOST <span className={theme.text}>{userRole === 'user' ? 'PRIVATE' : 'ARENA'}</span>
                                     </h2>
                                 </div>
                                 <button 
@@ -132,8 +163,8 @@ export function CreateArenaModal({
                                     type="text"
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
-                                    placeholder={`${matchName} Private`}
-                                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white font-bold focus:border-amber-500 transition-all outline-none placeholder:text-slate-700"
+                                    placeholder={`${matchName} ${userRole === 'user' ? 'Private' : 'Official'}`}
+                                    className={`w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white font-bold ${theme.border} transition-all outline-none placeholder:text-slate-700`}
                                 />
                             </div>
 
@@ -149,7 +180,7 @@ export function CreateArenaModal({
                                             onChange={(e) => setEntryFee(Number(e.target.value))}
                                             min={10}
                                             required
-                                            className="w-full bg-white/5 border border-white/10 rounded-2xl pl-11 pr-4 py-4 text-white font-bold focus:border-amber-500 transition-all outline-none"
+                                            className={`w-full bg-white/5 border border-white/10 rounded-2xl pl-11 pr-4 py-4 text-white font-bold ${theme.border} transition-all outline-none`}
                                         />
                                     </div>
                                 </div>
@@ -163,7 +194,7 @@ export function CreateArenaModal({
                                                 key={num}
                                                 type="button"
                                                 onClick={() => setMaxSlots(num)}
-                                                className={`flex-1 h-10 rounded-xl flex items-center justify-center font-black text-xs transition-all ${maxSlots === num ? 'bg-amber-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
+                                                className={`flex-1 h-10 rounded-xl flex items-center justify-center font-black text-xs transition-all ${maxSlots === num ? `${theme.primary} text-white shadow-lg` : 'text-slate-500 hover:text-slate-300'}`}
                                             >
                                                 {num}
                                             </button>
@@ -187,7 +218,7 @@ export function CreateArenaModal({
                                     <button
                                         type="button"
                                         onClick={() => setIsPrivate(!isPrivate)}
-                                        className={`w-12 h-6 rounded-full relative transition-colors ${isPrivate ? 'bg-purple-600' : 'bg-slate-800'}`}
+                                        className={`w-12 h-6 rounded-full relative transition-colors ${isPrivate ? 'bg-purple-600' : theme.primary}`}
                                     >
                                         <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${isPrivate ? 'left-7' : 'left-1'}`} />
                                     </button>
@@ -211,7 +242,7 @@ export function CreateArenaModal({
                             <button
                                 type="submit"
                                 disabled={submitting}
-                                className="w-full py-5 rounded-2xl bg-amber-600 hover:bg-amber-500 text-white font-black uppercase tracking-widest transition-all shadow-2xl shadow-amber-600/30 flex items-center justify-center gap-3 disabled:opacity-50 group"
+                                className={`w-full py-5 rounded-2xl ${theme.primary} ${theme.hover} text-white font-black uppercase tracking-widest transition-all shadow-2xl ${theme.shadow} flex items-center justify-center gap-3 disabled:opacity-50 group`}
                             >
                                 {submitting ? (
                                     <>
