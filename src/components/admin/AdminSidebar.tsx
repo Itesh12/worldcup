@@ -28,9 +28,7 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
 
     const navItems = [
         { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
-        { name: "Matches", href: "/admin/matches", icon: Swords },
-        { name: "Users", href: "/admin/users", icon: Users },
-        { name: "Global Leaderboard", href: "/admin/leaderboard", icon: Trophy },
+        { name: "Arenas", href: "/admin/arenas", icon: Swords },
         { name: "Leagues", href: "/admin/tournaments", icon: Trophy },
         { name: "Payouts", href: "/admin/withdrawals", icon: IndianRupee },
     ];

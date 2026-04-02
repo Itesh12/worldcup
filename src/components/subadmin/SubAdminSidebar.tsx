@@ -16,9 +16,9 @@ export function SubAdminSidebar({ isOpen, onClose }: SubAdminSidebarProps) {
 
     const navItems = [
         { name: "Overview", href: "/subadmin", icon: LayoutDashboard },
-        { name: "My Arenas", href: "/subadmin/arenas", icon: Swords }, // Future link
-        { name: "My Users", href: "/subadmin/users", icon: Users }, // Future link
-        { name: "Commission", href: "/subadmin/earnings", icon: IndianRupee }, // Future link
+        { name: "Arenas", href: "/subadmin/arenas", icon: Swords },
+        { name: "My Users", href: "/subadmin/users", icon: Users },
+        { name: "Commission", href: "/subadmin/earnings", icon: IndianRupee },
     ];
 
     const SidebarContent = (

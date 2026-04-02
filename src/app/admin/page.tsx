@@ -436,8 +436,8 @@ export default function AdminDashboardPage() {
                                             #{idx + 1}
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <p className="text-[10px] font-black text-white truncate uppercase tracking-tight">{admin.subAdminId.name}</p>
-                                            <p className="text-[8px] font-bold text-slate-500 uppercase tracking-widest italic">{admin.subAdminId.email.split('@')[0]}</p>
+                                            <p className="text-[10px] font-black text-white truncate uppercase tracking-tight">{admin.subAdminId?.name || "Deleted Franchise"}</p>
+                                            <p className="text-[8px] font-bold text-slate-500 uppercase tracking-widest italic">{admin.subAdminId?.email?.split('@')[0] || "---"}</p>
                                         </div>
                                         <div className="text-right">
                                             <span className="text-[10px] font-black text-emerald-400 block tracking-tighter">₹{admin.totalCommissionEarned.toLocaleString()}</span>

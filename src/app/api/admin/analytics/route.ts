@@ -91,10 +91,12 @@ export async function GET() {
             createdAt: { $gte: startOfToday }
         }).sort({ createdAt: -1 }).limit(3).populate("userId", "name");
 
-        const topSubAdmins = await SubAdminConfig.find()
+        let topSubAdmins = await SubAdminConfig.find()
             .sort({ totalCommissionEarned: -1 })
-            .limit(3)
             .populate("subAdminId", "name email");
+        
+        // Filter out orphaned configs where the user was deleted
+        topSubAdmins = topSubAdmins.filter(config => config.subAdminId !== null).slice(0, 3);
 
         // [3] Global Fill Rate & Growth
         const activeMatches = await Match.find({ status: { $in: ["upcoming", "live"] } });
