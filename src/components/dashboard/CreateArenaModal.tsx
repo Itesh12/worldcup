@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { 
     X, 
     Swords, 
@@ -8,12 +8,15 @@ import {
     Users, 
     Lock,
     Zap,
-    Loader2
+    Loader2,
+    Calendar,
+    Check,
+    ChevronDown,
+    Globe
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useToast } from "@/contexts/ToastContext";
 import { useSession } from "next-auth/react";
-import { Globe } from "lucide-react";
 
 interface CreateArenaModalProps {
     isOpen: boolean;
@@ -38,10 +41,44 @@ export function CreateArenaModal({
     const [entryFee, setEntryFee] = useState<number>(50);
     const [maxSlots, setMaxSlots] = useState<number>(8);
     const [isPrivate, setIsPrivate] = useState(true);
+    
+    // Match Selection States
+    const [selectedMatchId, setSelectedMatchId] = useState(matchId || "");
+    const [availableMatches, setAvailableMatches] = useState<any[]>([]);
+    const [loadingMatches, setLoadingMatches] = useState(false);
+    const [matchSelectorOpen, setMatchSelectorOpen] = useState(false);
 
     const { data: session } = useSession();
     const userRole = (session?.user as any)?.role || 'user';
     const isAdmin = userRole === 'admin' || userRole === 'subadmin';
+
+    // Fetch Today's Matches if no ID passed or if selector needed
+    useEffect(() => {
+        if (isOpen && !matchId) {
+            fetchTodayMatches();
+        }
+    }, [isOpen, matchId]);
+
+    const fetchTodayMatches = async () => {
+        setLoadingMatches(true);
+        try {
+            const res = await fetch("/api/matches?today=true");
+            if (res.ok) {
+                const data = await res.json();
+                setAvailableMatches(data);
+            }
+        } catch (err) {
+            console.error("Failed to fetch today matches", err);
+        } finally {
+            setLoadingMatches(false);
+        }
+    };
+
+    const selectedMatch = matchId 
+        ? { _id: matchId, teams: [{ name: matchName.split(' vs ')[0] }, { name: matchName.split(' vs ')[1] }] }
+        : availableMatches.find(m => m._id === selectedMatchId);
+
+    const activeMatchName = matchId ? matchName : (selectedMatch ? `${selectedMatch.teams[0].shortName || selectedMatch.teams[0].name} vs ${selectedMatch.teams[1].shortName || selectedMatch.teams[1].name}` : "Select Today's Match");
 
     const themes = {
         admin: {
@@ -78,7 +115,10 @@ export function CreateArenaModal({
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!matchId) return;
+        if (!selectedMatchId) {
+            showToast("Please select a match first", "error");
+            return;
+        }
 
         setSubmitting(true);
         try {
@@ -86,8 +126,8 @@ export function CreateArenaModal({
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    matchId,
-                    name: name || `${matchName} Private`,
+                    matchId: selectedMatchId,
+                    name: name || `${activeMatchName} Private`,
                     entryFee,
                     maxSlots,
                     isPrivate: isAdmin ? isPrivate : true,
@@ -151,7 +191,67 @@ export function CreateArenaModal({
                                     <X className="w-6 h-6" />
                                 </button>
                             </div>
-                            <p className="text-slate-500 text-xs font-bold uppercase tracking-widest">{matchName}</p>
+                            
+                            {!matchId ? (
+                                <div className="relative mt-4">
+                                    <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest pl-1 mb-2 block">Available Today</label>
+                                    <button
+                                        type="button"
+                                        onClick={() => setMatchSelectorOpen(!matchSelectorOpen)}
+                                        className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 flex items-center justify-between group hover:border-indigo-500/50 transition-all"
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <Calendar className="w-4 h-4 text-indigo-400" />
+                                            <span className={`text-sm font-bold ${selectedMatchId ? 'text-white' : 'text-slate-500'}`}>
+                                                {activeMatchName}
+                                            </span>
+                                        </div>
+                                        <ChevronDown className={`w-4 h-4 text-slate-500 transition-transform ${matchSelectorOpen ? 'rotate-180' : ''}`} />
+                                    </button>
+
+                                    <AnimatePresence>
+                                        {matchSelectorOpen && (
+                                            <motion.div
+                                                initial={{ opacity: 0, y: -10 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                exit={{ opacity: 0, y: -10 }}
+                                                className="absolute z-[1200] left-0 right-0 mt-2 bg-[#0A0F1C] border border-white/10 rounded-2xl shadow-2xl overflow-hidden max-h-60 overflow-y-auto"
+                                            >
+                                                {loadingMatches ? (
+                                                    <div className="p-4 flex items-center justify-center gap-2">
+                                                        <Loader2 className="w-4 h-4 animate-spin text-indigo-400" />
+                                                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Scanning Waves...</span>
+                                                    </div>
+                                                ) : availableMatches.length === 0 ? (
+                                                    <div className="p-4 text-center text-[10px] font-black text-slate-600 uppercase tracking-widest">No Matches Today</div>
+                                                ) : availableMatches.map(m => (
+                                                    <button
+                                                        key={m._id}
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setSelectedMatchId(m._id);
+                                                            setMatchSelectorOpen(false);
+                                                        }}
+                                                        className={`w-full p-4 flex items-center justify-between group hover:bg-white/5 transition-all ${selectedMatchId === m._id ? 'bg-indigo-500/10' : ''}`}
+                                                    >
+                                                        <div className="flex flex-col items-start gap-1">
+                                                            <div className="text-xs font-black text-white italic uppercase tracking-tight">
+                                                                {m.teams[0].shortName || m.teams[0].name} vs {m.teams[1].shortName || m.teams[1].name}
+                                                            </div>
+                                                            <div className="text-[8px] font-bold text-slate-500 uppercase tracking-widest">
+                                                                {m.seriesName || m.matchDesc} • {new Date(m.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                            </div>
+                                                        </div>
+                                                        {selectedMatchId === m._id && <Check className="w-4 h-4 text-indigo-400" />}
+                                                    </button>
+                                                ))}
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+                                </div>
+                            ) : (
+                                <p className="text-slate-500 text-xs font-bold uppercase tracking-widest">{activeMatchName}</p>
+                            )}
                         </div>
 
                         {/* Form Fields */}
@@ -163,7 +263,7 @@ export function CreateArenaModal({
                                     type="text"
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
-                                    placeholder={`${matchName} ${userRole === 'user' ? 'Private' : 'Official'}`}
+                                    placeholder={`${activeMatchName} ${userRole === 'user' ? 'Private' : 'Official'}`}
                                     className={`w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white font-bold ${theme.border} transition-all outline-none placeholder:text-slate-700`}
                                 />
                             </div>

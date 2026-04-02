@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Users, Swords, IndianRupee, PieChart, RefreshCw, Trophy, ArrowUpRight, Zap, Target, Share2, AlertTriangle, Lightbulb, Copy, UserPlus, FileText, Clock, Database, TrendingUp } from "lucide-react";
+import { Users, Swords, IndianRupee, PieChart, RefreshCw, Trophy, ArrowUpRight, Zap, Target, Share2, AlertTriangle, Lightbulb, Copy, UserPlus, FileText, Clock, Database, TrendingUp, Edit2, Settings2, Loader2, Check } from "lucide-react";
+import { updateSubAdminBrand } from "@/app/actions/subadmin";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
@@ -49,6 +50,9 @@ export default function SubAdminDashboard() {
     const router = useRouter();
     const [loading, setLoading] = useState(true);
     const [selectedMatchForArena, setSelectedMatchForArena] = useState<any>(null);
+    const [isEditBrandOpen, setIsEditBrandOpen] = useState(false);
+    const [newBrandName, setNewBrandName] = useState("");
+    const [isUpdatingBrand, setIsUpdatingBrand] = useState(false);
 
     const fetchStats = async () => {
         try {
@@ -56,6 +60,7 @@ export default function SubAdminDashboard() {
             const data = await res.json();
             if (res.ok) {
                 setStats(data);
+                setNewBrandName(data.gamification.brandName);
             }
         } catch (error) {
             console.error("Failed to fetch stats", error);
@@ -94,6 +99,25 @@ export default function SubAdminDashboard() {
         showToast("Personal Invitation Link Copied!", "success");
     };
 
+    const handleUpdateBrand = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (newBrandName === stats?.gamification.brandName) {
+            setIsEditBrandOpen(false);
+            return;
+        }
+
+        setIsUpdatingBrand(true);
+        const res = await updateSubAdminBrand(newBrandName);
+        if (res.success) {
+            showToast("Franchise identity updated successfully!", "success");
+            fetchStats();
+            setIsEditBrandOpen(false);
+        } else {
+            showToast(res.error || "Failed to update brand name.", "error");
+        }
+        setIsUpdatingBrand(false);
+    };
+
     if (loading) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
@@ -127,7 +151,13 @@ export default function SubAdminDashboard() {
                 <div>
                     <h1 className="text-2xl md:text-3xl font-black text-white italic uppercase tracking-tighter leading-none mb-2">
                         {gamification.brandName?.toLowerCase().includes('franchise') 
-                            ? gamification.brandName 
+                            ? (
+                                <>
+                                    {gamification.brandName.split(/franchise/i)[0]}
+                                    <span className="text-indigo-500">Franchise</span>
+                                    {gamification.brandName.split(/franchise/i)[1]}
+                                </>
+                            )
                             : <>{gamification.brandName} <span className="text-indigo-500">Franchise</span></>
                         }
                     </h1>
@@ -144,13 +174,22 @@ export default function SubAdminDashboard() {
                 <div className="flex items-center gap-3">
                     <button 
                         onClick={fetchStats}
-                        className="p-3 bg-white/5 border border-white/5 rounded-2xl text-slate-400 hover:text-white hover:bg-white/10 transition-all group"
+                        className="p-3 bg-white/5 border border-white/5 rounded-2xl text-slate-400 hover:text-white hover:bg-white/10 transition-all group shrink-0 active:scale-95"
                     >
-                        <RefreshCw className="w-5 h-5 group-hover:rotate-180 transition-transform duration-500" />
+                        <RefreshCw className={`w-5 h-5 group-hover:rotate-180 transition-transform duration-500 ${loading ? 'animate-spin' : ''}`} />
                     </button>
+                    
+                    <button 
+                        onClick={() => setIsEditBrandOpen(true)}
+                        className="flex items-center gap-2 bg-indigo-500/10 border border-indigo-500/20 hover:bg-indigo-500/20 hover:border-indigo-500/30 text-indigo-300 hover:text-white px-4 py-3 rounded-2xl text-[10px] font-black transition-all uppercase tracking-widest active:scale-95 shrink-0"
+                    >
+                        <Settings2 className="w-4 h-4" />
+                        <span className="hidden xs:block">Identity</span>
+                    </button>
+
                     <Link 
                         href="/dashboard?view=player"
-                        className="hidden sm:flex items-center gap-2 bg-indigo-600/20 border border-indigo-500/30 hover:bg-indigo-600 hover:border-indigo-500 text-indigo-300 hover:text-white px-5 py-3 rounded-2xl text-[10px] font-black transition-all uppercase tracking-widest"
+                        className="hidden sm:flex items-center gap-2 bg-white/[0.03] border border-white/5 hover:bg-white/10 text-slate-400 hover:text-white px-5 py-3 rounded-2xl text-[10px] font-black transition-all uppercase tracking-widest"
                     >
                         Player View
                     </Link>
@@ -469,6 +508,83 @@ export default function SubAdminDashboard() {
                             fetchStats();
                         }}
                     />
+                )}
+
+                {isEditBrandOpen && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-xl">
+                        <motion.div 
+                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                            className="bg-[#0A0F1C] border border-white/10 w-full max-w-lg rounded-[40px] shadow-2xl overflow-hidden"
+                        >
+                            <div className="px-8 py-8 border-b border-white/5 bg-white/[0.02] flex justify-between items-center">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20 shadow-lg shadow-indigo-500/5">
+                                        <Trophy className="w-6 h-6 text-indigo-400" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-2xl font-black text-white tracking-tight uppercase italic leading-none">
+                                            Franchise <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">Identity</span>
+                                        </h3>
+                                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-1.5">Brand Management Console</p>
+                                    </div>
+                                </div>
+                                <button onClick={() => setIsEditBrandOpen(false)} className="w-10 h-10 rounded-2xl flex items-center justify-center text-slate-500 hover:text-white hover:bg-white/5 transition-all border border-transparent hover:border-white/10">
+                                    <Edit2 className="w-6 h-6 opacity-40 hover:opacity-100" />
+                                </button>
+                            </div>
+
+                            <form onSubmit={handleUpdateBrand} className="p-8 space-y-8">
+                                <div className="space-y-3">
+                                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] px-1 italic">
+                                        Agent Portfolio Name
+                                    </label>
+                                    <div className="relative group">
+                                        <div className="absolute left-5 top-1/2 -translate-y-1/2">
+                                            <Settings2 className="w-4 h-4 text-slate-600 group-focus-within:text-indigo-400 transition-colors" />
+                                        </div>
+                                        <input
+                                            type="text"
+                                            value={newBrandName}
+                                            onChange={(e) => setNewBrandName(e.target.value)}
+                                            className="w-full bg-[#050810] border border-white/5 rounded-2xl pl-13 pr-6 py-5 text-sm text-white font-bold placeholder:text-slate-800 focus:outline-none focus:border-indigo-500/50 focus:ring-4 focus:ring-indigo-500/5 transition-all shadow-xl"
+                                            placeholder="Enter your franchise name"
+                                            autoFocus
+                                        />
+                                    </div>
+                                    <p className="text-[9px] font-bold text-slate-600 uppercase tracking-[0.2em] px-1 flex items-center gap-2">
+                                        <div className="w-1 h-1 bg-indigo-500 rounded-full" />
+                                        Broadcasted to all personnel in your player network.
+                                    </p>
+                                </div>
+
+                                <div className="pt-6 border-t border-white/5 flex flex-col sm:flex-row justify-end items-center gap-6">
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsEditBrandOpen(false)}
+                                        className="px-8 py-3 text-slate-500 text-[10px] font-black uppercase tracking-[0.2em] hover:text-white transition-all order-2 sm:order-1 active:scale-95"
+                                    >
+                                        Abort
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        disabled={isUpdatingBrand || !newBrandName.trim()}
+                                        className="w-full sm:w-auto px-10 py-4 bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white text-[11px] font-black uppercase tracking-[0.2em] rounded-2xl transition-all shadow-[0_15px_35px_rgba(79,70,229,0.25)] hover:shadow-indigo-500/40 disabled:opacity-50 order-1 sm:order-2 active:scale-95 flex items-center justify-center gap-3"
+                                    >
+                                        {isUpdatingBrand ? <Loader2 className="w-4 h-4 animate-spin" /> : (
+                                            <>
+                                                Commit Branding
+                                                <div className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center">
+                                                    <Check className="w-3 h-3 text-white" />
+                                                </div>
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
+                            </form>
+                        </motion.div>
+                    </div>
                 )}
             </AnimatePresence>
         </div>

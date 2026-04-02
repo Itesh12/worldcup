@@ -17,14 +17,15 @@ export function AdminLayoutWrapper({ children }: { children: React.ReactNode }) 
                 {/* Mobile Header */}
                 <header className="lg:hidden h-16 flex items-center justify-between px-6 bg-[#050B14]/80 backdrop-blur-xl border-b border-white/5 z-40 shrink-0">
                     <div className="flex items-center gap-3">
-                        <Trophy className="w-6 h-6 text-indigo-500" />
-                        <span className="text-sm font-black text-white tracking-tight uppercase">World Cup Hub</span>
+                        <Trophy className="w-5 h-5 text-indigo-500" />
+                        <span className="text-sm font-black text-white tracking-tight uppercase italic">Admin <span className="text-indigo-500">Dashboard</span></span>
                     </div>
+                    
                     <button
                         onClick={() => setIsSidebarOpen(true)}
-                        className="p-2 text-slate-400 hover:text-white transition-colors"
+                        className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/30 hover:bg-indigo-500 transition-all active:scale-95 select-none"
                     >
-                        <Menu className="w-6 h-6" />
+                        <Menu className="w-5 h-5 text-white" />
                     </button>
                 </header>
 

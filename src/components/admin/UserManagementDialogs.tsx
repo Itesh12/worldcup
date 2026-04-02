@@ -6,9 +6,10 @@ import { createPortal } from "react-dom";
 import { 
     Edit, Ban, CheckCircle, Trash2, X, BadgeAlert, 
     AlertTriangle, Loader2, Key, User as UserIcon, 
-    Shield, Mail, ShieldCheck, MousePointer2, Activity
+    Shield, Mail, ShieldCheck, MousePointer2, Activity, Trophy
 } from "lucide-react";
 import { updateUser, toggleBanUser, deleteUser, generateResetCode } from "@/app/admin/users/actions";
+import { updateSubAdminConfigByAdmin } from "@/app/actions/subadmin";
 import { ImageUpload } from "@/components/ImageUpload";
 import { CustomDropdown } from "./CustomDropdown";
 import { useRouter } from "next/navigation";
@@ -44,13 +45,20 @@ export function UserManagementDialogs({ user, subAdmins }: UserManagementProps) 
         email: user.email,
         role: user.role,
         image: user.image || "",
-        assignedSubAdminId: user.assignedSubAdminId?._id || ""
+        assignedSubAdminId: user.assignedSubAdminId?._id || "",
+        brandName: subAdmins.find(sa => sa._id === user._id)?.brandName || ""
     });
 
     const handleUpdate = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
         const res = await updateUser(user._id, formData);
+        
+        // If it's a subadmin, also update their config
+        if (formData.role === 'subadmin') {
+            await updateSubAdminConfigByAdmin(user._id, { brandName: formData.brandName });
+        }
+
         if (res.success) {
             router.refresh();
             setIsEditOpen(false);
@@ -247,6 +255,21 @@ export function UserManagementDialogs({ user, subAdmins }: UserManagementProps) 
                                                 icon={MousePointer2}
                                                 placeholder="Assign Sub-Admin"
                                             />
+                                        )}
+
+                                        {formData.role === 'subadmin' && (
+                                            <div className="relative">
+                                                <label className="block text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] mb-1.5 px-1 flex items-center gap-2 italic">
+                                                    <Trophy className="w-3 h-3" /> Franchise Brand Name
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    value={formData.brandName}
+                                                    onChange={(e) => setFormData({ ...formData, brandName: e.target.value })}
+                                                    className="w-full bg-slate-950/50 border border-white/5 rounded-xl px-4 py-3 text-sm text-white font-bold placeholder:text-slate-800 focus:outline-none focus:border-indigo-500/50 focus:ring-4 focus:ring-indigo-500/5 transition-all shadow-xl"
+                                                    placeholder="e.g. My Franchise"
+                                                />
+                                            </div>
                                         )}
                                     </div>
                                 </div>
