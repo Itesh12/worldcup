@@ -97,6 +97,17 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
 
             {/* Bottom Section */}
             <div className="mt-auto px-8 py-8 relative z-10 space-y-4">
+                <button 
+                    onClick={() => {
+                        const { signOut } = require("next-auth/react");
+                        signOut({ callbackUrl: "/login" });
+                    }}
+                    className="w-full flex items-center gap-4 px-4 py-3.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500 hover:text-white transition-all duration-300 group"
+                >
+                    <LogOut className="w-5 h-5 group-hover:rotate-12 transition-transform" />
+                    <span className="text-sm font-black uppercase tracking-widest">Terminate Session</span>
+                </button>
+
                 <div className="text-center opacity-30 mt-auto">
                     <p className="text-[9px] font-black text-slate-600 uppercase tracking-[0.3em]">Premium Admin Suite v2.0</p>
                 </div>

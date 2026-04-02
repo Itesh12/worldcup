@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Trophy, RefreshCcw, LayoutDashboard, Menu } from "lucide-react";
+import { Trophy, RefreshCcw, LayoutDashboard, Menu, LogOut } from "lucide-react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { UserContextSwitcher } from "@/components/UserContextSwitcher";
@@ -49,15 +49,25 @@ export function DashboardHeader({ refreshing, onRefresh }: DashboardHeaderProps)
                     </button>
 
                     {/* Admin/Sub-Admin Quick Access */}
-                    {session?.user && ((session.user as any).role === "admin" || (session.user as any).role === "subadmin") && (
+                    {session?.user && ((session.user as any).role === "admin" || (session.user as any).role === "subadmin") ? (
                         <Link
                             href={(session.user as any).role === "admin" ? "/admin" : "/subadmin"}
                             className="hidden md:flex items-center gap-2 px-4 md:px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] md:text-xs font-black uppercase tracking-widest rounded-xl transition-all border border-indigo-500/20 shadow-lg shadow-indigo-600/20 active:scale-95"
                         >
                             <LayoutDashboard className="w-3.5 h-3.5 md:w-4 md:h-4 shrink-0" />
                             <span className="hidden sm:inline">Command Center</span>
-                            <span className="sm:hidden">HQ</span>
                         </Link>
+                    ) : (
+                        <button
+                            onClick={() => {
+                                const { signOut } = require("next-auth/react");
+                                signOut({ callbackUrl: "/login" });
+                            }}
+                            className="hidden md:flex items-center gap-2 px-4 py-2.5 bg-slate-800/40 hover:bg-red-500/10 border border-white/10 hover:border-red-500/30 text-slate-400 hover:text-red-400 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all active:scale-95 group"
+                        >
+                            <LogOut className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform" />
+                            <span>Sign Out</span>
+                        </button>
                     )}
                 </div>
             </div>
