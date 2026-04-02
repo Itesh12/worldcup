@@ -10,14 +10,14 @@ export function SubAdminLayoutWrapper({ children }: { children: React.ReactNode 
     const pathname = usePathname();
 
     return (
-        <div className="flex min-h-screen bg-[#050B14] text-white">
+        <div className="flex h-screen bg-[#050B14] text-white overflow-hidden">
             {/* Sidebar Component */}
             <SubAdminSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
             {/* Main Content Area */}
-            <div className="flex-1 flex flex-col min-h-screen overflow-hidden">
-                {/* Mobile Header Overlay */}
-                <header className="lg:hidden h-16 bg-[#050B14]/80 backdrop-blur-xl border-b border-white/5 flex items-center justify-between px-6 sticky top-0 z-40">
+            <div className="flex-1 flex flex-col h-full relative overflow-hidden">
+                {/* Unified Franchise Header (Constant & Sticky) */}
+                <header className="sticky top-0 z-[60] bg-[#050B14]/80 backdrop-blur-xl border-b border-white/5 h-16 flex items-center justify-between px-6 shrink-0">
                     <div className="flex items-center gap-3">
                         <Trophy className="w-5 h-5 text-purple-500" />
                         <h1 className="text-sm font-black text-white italic uppercase tracking-tighter">
@@ -27,7 +27,7 @@ export function SubAdminLayoutWrapper({ children }: { children: React.ReactNode 
                     
                     <button 
                         onClick={() => setIsSidebarOpen(true)}
-                        className="w-10 h-10 bg-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-purple-600/30 hover:bg-purple-500 transition-all active:scale-90 select-none"
+                        className="lg:hidden w-10 h-10 bg-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-purple-600/30 hover:bg-purple-500 transition-all active:scale-90 select-none"
                     >
                         <Menu className="w-5 h-5 text-white" />
                     </button>

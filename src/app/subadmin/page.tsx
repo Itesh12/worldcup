@@ -146,57 +146,52 @@ export default function SubAdminDashboard() {
     return (
         <div className="p-4 md:p-10 space-y-10 max-w-[1600px] mx-auto pb-24 lg:pb-12 animate-in fade-in duration-700">
             
-            {/* Header Section */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-white/5">
-                <div>
-                    <h1 className="text-2xl md:text-3xl font-black text-white italic uppercase tracking-tighter leading-none mb-2">
-                        {gamification.brandName?.toLowerCase().includes('franchise') 
-                            ? (
-                                <>
-                                    {gamification.brandName.split(/franchise/i)[0]}
-                                    <span className="text-indigo-500">Franchise</span>
-                                    {gamification.brandName.split(/franchise/i)[1]}
-                                </>
-                            )
-                            : <>{gamification.brandName} <span className="text-indigo-500">Franchise</span></>
-                        }
-                    </h1>
+            {/* Header is now at Layout Level */}
+
+            {/* Franchise Configuration Toolbar (Repositioned to Content) */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-8 border-b border-white/5 relative z-10">
+                <div className="flex flex-col gap-2">
+                    <h2 className="text-xl md:text-2xl font-black text-white italic uppercase tracking-tighter leading-none">
+                        Franchise <span className="text-purple-500 font-black">Configuration</span>
+                    </h2>
                     <div className="flex items-center gap-3">
                         <div className={`px-2 py-0.5 border rounded text-[9px] font-black uppercase tracking-widest ${activeColor}`}>
-                            {gamification.currentTier} Level
+                            {gamification.currentTier} Level Agent
                         </div>
                         <p className="text-slate-500 text-[9px] font-bold uppercase tracking-widest hidden sm:block">
-                            HQ • Marketing & Growth Analytics
+                            Operational Hub • {gamification.brandName}
                         </p>
                     </div>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3">
                     <button 
                         onClick={fetchStats}
-                        className="p-3 bg-white/5 border border-white/5 rounded-2xl text-slate-400 hover:text-white hover:bg-white/10 transition-all group shrink-0 active:scale-95"
+                        className="p-3.5 bg-white/5 border border-white/5 rounded-2xl text-slate-400 hover:text-white hover:bg-white/10 transition-all group shrink-0 active:scale-95"
                     >
                         <RefreshCw className={`w-5 h-5 group-hover:rotate-180 transition-transform duration-500 ${loading ? 'animate-spin' : ''}`} />
                     </button>
                     
                     <button 
                         onClick={() => setIsEditBrandOpen(true)}
-                        className="flex items-center gap-2 bg-indigo-500/10 border border-indigo-500/20 hover:bg-indigo-500/20 hover:border-indigo-500/30 text-indigo-300 hover:text-white px-4 py-3 rounded-2xl text-[10px] font-black transition-all uppercase tracking-widest active:scale-95 shrink-0"
+                        className="flex items-center gap-2 bg-purple-500/10 border border-purple-500/20 hover:bg-purple-500/20 hover:border-purple-500/30 text-purple-300 hover:text-white px-5 py-3.5 rounded-2xl text-[10px] font-black transition-all uppercase tracking-widest active:scale-95 shrink-0"
                     >
                         <Settings2 className="w-4 h-4" />
-                        <span className="hidden xs:block">Identity</span>
+                        Identity
                     </button>
 
                     <Link 
                         href="/dashboard?view=player"
-                        className="hidden sm:flex items-center gap-2 bg-white/[0.03] border border-white/5 hover:bg-white/10 text-slate-400 hover:text-white px-5 py-3 rounded-2xl text-[10px] font-black transition-all uppercase tracking-widest"
+                        className="hidden sm:flex items-center gap-2 bg-white/[0.03] border border-white/5 hover:bg-white/10 text-slate-400 hover:text-white px-6 py-3.5 rounded-2xl text-[10px] font-black transition-all uppercase tracking-widest"
                     >
                         Player View
                     </Link>
+                    
                     <Link 
                         href="/subadmin/arenas/new"
-                        className="flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:opacity-90 text-white px-6 py-3 rounded-2xl text-xs font-black transition-all shadow-xl shadow-indigo-600/20 uppercase tracking-widest"
+                        className="flex-1 sm:flex-none flex items-center justify-center gap-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:opacity-90 text-white px-8 py-4 rounded-2xl text-xs font-black transition-all shadow-xl shadow-purple-600/20 uppercase tracking-widest"
                     >
+                        <Swords className="w-4 h-4" />
                         Host Match
                     </Link>
                 </div>

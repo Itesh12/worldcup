@@ -5,7 +5,8 @@ import { RefreshCcw, Calendar, MapPin, Activity, Swords, Zap, ChevronRight, Glob
 import Link from "next/link";
 import { AdminContextSwitcher } from "@/components/admin/AdminContextSwitcher";
 import { AnimatePresence } from "framer-motion";
-import ArenaManager from "@/components/shared/ArenaManager";
+import { CreateArenaModal } from "@/components/dashboard/CreateArenaModal";
+import { useToast } from "@/contexts/ToastContext";
 
 interface Match {
     _id: string;
@@ -26,10 +27,6 @@ export default function AdminMatchesPage() {
     const [syncing, setSyncing] = useState(false);
     const [activeTab, setActiveTab] = useState<TabType>('today');
     const [selectedTournament, setSelectedTournament] = useState<string | null>(null);
-    const [selectedMatchPricing, setSelectedMatchPricing] = useState<Match | null>(null);
-    const [tempEntryFee, setTempEntryFee] = useState<string>("");
-    const [tempCommission, setTempCommission] = useState<string>("");
-    const [updating, setUpdating] = useState(false);
     const [selectedMatchForArena, setSelectedMatchForArena] = useState<Match | null>(null);
 
     useEffect(() => {
@@ -63,29 +60,6 @@ export default function AdminMatchesPage() {
         }
     };
 
-    const handleUpdatePricing = async () => {
-        if (!selectedMatchPricing) return;
-        setUpdating(true);
-        try {
-            const res = await fetch("/api/admin/matches", {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    matchId: selectedMatchPricing._id,
-                    entryFee: tempEntryFee === "" ? undefined : Number(tempEntryFee),
-                    commissionPercentage: tempCommission === "" ? undefined : Number(tempCommission)
-                })
-            });
-            if (res.ok) {
-                if (selectedTournament) await fetchMatches(selectedTournament);
-                setSelectedMatchPricing(null);
-            }
-        } catch (err) {
-            console.error("Failed to update pricing", err);
-        } finally {
-            setUpdating(false);
-        }
-    };
 
     // --- Memoized Categorization Logic ---
     const todayStr = useMemo(() => new Date().toDateString(), []);
@@ -116,41 +90,46 @@ export default function AdminMatchesPage() {
 
     return (
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 relative pb-20">
-            {/* Standardized Header */}
-            <header className="sticky top-0 z-[60] bg-[#050B14]/80 backdrop-blur-xl border-b border-white/5">
-                <div className="max-w-7xl mx-auto px-4 md:px-6 py-4 md:py-6">
-                    {/* Row 1: Title + Sync button */}
-                    <div className="flex items-center justify-between gap-4">
-                        <div className="flex items-center gap-3 md:gap-4">
-                            <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20 shrink-0">
-                                <Swords className="w-5 h-5 md:w-6 md:h-6 text-indigo-400" />
+            {/* Header is now at Layout Level */}
+
+            {/* Match Management Controls (Repositioned to Content) */}
+            <div className="max-w-7xl mx-auto px-4 md:px-6 pt-6 md:pt-10">
+                <div className="bg-slate-900/40 border border-white/5 rounded-[2rem] p-6 md:p-8 backdrop-blur-md relative overflow-hidden group hover:border-indigo-500/20 transition-all">
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-600/5 blur-[80px] rounded-full pointer-events-none" />
+                    
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
+                        <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 md:w-16 md:h-16 rounded-2xl md:rounded-3xl bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20 shadow-lg shadow-indigo-500/5">
+                                <Swords className="w-6 h-6 md:w-8 md:h-8 text-indigo-400" />
                             </div>
                             <div>
-                                <h1 className="text-xl md:text-3xl font-black text-white tracking-tighter uppercase italic leading-none">
-                                    Match <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">Management</span>
-                                </h1>
-                                <p className="text-[9px] md:text-xs font-bold text-slate-500 uppercase tracking-widest mt-1 hidden xs:block">
-                                    Control Central
-                                </p>
+                                <h2 className="text-xl md:text-3xl font-black text-white italic uppercase tracking-tighter leading-none">
+                                    Match <span className="text-indigo-400">Logistics</span>
+                                </h2>
+                                <p className="text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-[0.2em] mt-1.5 md:mt-2">Global Match Configuration & Sync</p>
                             </div>
                         </div>
+
                         <button
                             onClick={handleSync}
                             disabled={syncing}
-                            className="group relative flex items-center gap-2 px-4 md:px-6 py-2.5 md:py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl md:rounded-2xl font-black transition-all shadow-lg shadow-indigo-600/20 disabled:opacity-50 active:scale-95 shrink-0"
+                            className="group flex items-center justify-center gap-3 px-6 md:px-8 py-3.5 md:py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-black transition-all shadow-xl shadow-indigo-600/20 disabled:opacity-50 active:scale-95"
                         >
                             <RefreshCcw className={`w-4 h-4 md:w-5 md:h-5 ${syncing ? "animate-spin" : ""}`} />
-                            <span className="uppercase tracking-widest text-[10px] md:text-xs">
-                                <span className="hidden sm:inline">Global </span>Sync
-                            </span>
+                            <span className="uppercase tracking-widest text-xs">Global Sync</span>
                         </button>
                     </div>
-                    {/* Row 2: Tournament Switcher */}
-                    <div className="mt-4 md:mt-6">
-                        <AdminContextSwitcher onSelect={(id) => setSelectedTournament(id)} />
+
+                    <div className="mt-8 pt-8 border-t border-white/5 relative z-10">
+                        <div className="flex flex-col md:flex-row md:items-center gap-4">
+                            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest md:w-32 shrink-0">Select Tournament</span>
+                            <div className="flex-1 min-w-0">
+                                <AdminContextSwitcher onSelect={(id) => setSelectedTournament(id)} />
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </header>
+            </div>
 
             {/* Ambient Background Glows */}
             <div className="fixed inset-0 pointer-events-none z-0">
@@ -262,33 +241,17 @@ export default function AdminMatchesPage() {
                                         </div>
                                     </div>
                                 </div>
-                                <div className="flex gap-4 relative z-10 px-1">
-                                    <button
-                                        onClick={() => {
-                                            setSelectedMatchPricing(match);
-                                            setTempEntryFee(match.entryFee?.toString() || "");
-                                            setTempCommission(match.commissionPercentage?.toString() || "");
-                                        }}
-                                        className="flex-1 flex items-center justify-center gap-2 py-4 bg-white/5 hover:bg-slate-800 text-slate-300 rounded-[18px] md:rounded-[20px] text-[10px] md:text-xs font-black transition-all duration-300 border border-white/10 uppercase tracking-widest"
-                                    >
-                                        <Settings className="w-3.5 h-3.5" />
-                                        Pricing
-                                    </button>
-                                    <button
-                                        onClick={() => setSelectedMatchForArena(match)}
-                                        className="flex-1 flex items-center justify-center gap-2 py-4 bg-indigo-600/10 hover:bg-indigo-600 text-white rounded-[18px] md:rounded-[20px] text-[10px] md:text-xs font-black transition-all duration-300 border border-indigo-500/20 hover:border-indigo-400 uppercase tracking-widest"
-                                    >
-                                        <Swords className="w-3.5 h-3.5" />
-                                        Arenas
-                                    </button>
-                                    <Link
-                                        href={`/admin/matches/${match._id}/slots`}
-                                        className="flex-1 flex items-center justify-center gap-2 py-4 bg-white/5 hover:bg-slate-800 text-slate-300 rounded-[18px] md:rounded-[20px] text-[10px] md:text-xs font-black transition-all duration-300 border border-white/10 uppercase tracking-widest text-center"
-                                    >
-                                        Slots
-                                        <ChevronRight className="w-4 h-4" />
-                                    </Link>
-                                </div>
+                                {activeTab === 'today' && (
+                                    <div className="flex gap-4 relative z-10 px-1">
+                                        <button
+                                            onClick={() => setSelectedMatchForArena(match)}
+                                            className="w-full flex items-center justify-center gap-2 py-4 bg-indigo-600/10 hover:bg-indigo-600 text-white rounded-[18px] md:rounded-[20px] text-[10px] md:text-xs font-black transition-all duration-300 border border-indigo-500/20 hover:border-indigo-400 uppercase tracking-widest shadow-lg shadow-indigo-600/5 hover:shadow-indigo-600/20"
+                                        >
+                                            <Swords className="w-3.5 h-3.5" />
+                                            Manage Arenas
+                                        </button>
+                                    </div>
+                                )}
                             </div>
                         ))}
                     </div>
@@ -297,86 +260,19 @@ export default function AdminMatchesPage() {
 
             <AnimatePresence>
                 {selectedMatchForArena && (
-                    <ArenaManager
+                    <CreateArenaModal
                         matchId={selectedMatchForArena._id}
-                        matchName={`${selectedMatchForArena.teams[0].shortName} VS ${selectedMatchForArena.teams[1].shortName}`}
-                        userRole="admin"
+                        matchName={`${selectedMatchForArena.teams[0].shortName || selectedMatchForArena.teams[0].name} VS ${selectedMatchForArena.teams[1].shortName || selectedMatchForArena.teams[1].name}`}
+                        isOpen={!!selectedMatchForArena}
                         onClose={() => setSelectedMatchForArena(null)}
+                        onSuccess={() => {
+                            setSelectedMatchForArena(null);
+                            if (selectedTournament) fetchMatches(selectedTournament);
+                        }}
                     />
                 )}
             </AnimatePresence>
 
-            {/* Pricing Override Modal */}
-            {selectedMatchPricing && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-                    <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={() => setSelectedMatchPricing(null)} />
-                    <div className="relative w-full max-w-lg bg-[#0f172a] border border-white/10 rounded-[2.5rem] p-8 md:p-10 shadow-3xl overflow-hidden animate-in fade-in zoom-in duration-300">
-                        {/* Modal Header */}
-                        <div className="flex items-center justify-between mb-8">
-                            <div className="flex items-center gap-4">
-                                <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20">
-                                    <DollarSign className="w-6 h-6 text-indigo-400" />
-                                </div>
-                                <h2 className="text-2xl font-black text-white uppercase tracking-tight italic">Pricing <span className="text-indigo-400">Override</span></h2>
-                            </div>
-                            <button onClick={() => setSelectedMatchPricing(null)} className="p-2 rounded-full bg-white/5 hover:bg-white/10 text-slate-400">
-                                <X className="w-5 h-5" />
-                            </button>
-                        </div>
-
-                        <div className="space-y-6">
-                            <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
-                                <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1">Target Match</p>
-                                <p className="text-white font-bold">{selectedMatchPricing.teams[0].shortName} vs {selectedMatchPricing.teams[1].shortName}</p>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Entry Fee (₹)</label>
-                                    <div className="relative">
-                                        <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-600" />
-                                        <input
-                                            type="number"
-                                            value={tempEntryFee}
-                                            onChange={(e) => setTempEntryFee(e.target.value)}
-                                            placeholder="Default"
-                                            className="w-full bg-slate-900 border border-white/10 rounded-2xl pl-11 pr-4 py-4 text-white font-bold focus:border-indigo-500 transition-all outline-none"
-                                        />
-                                    </div>
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Commission (%)</label>
-                                    <div className="relative">
-                                        <Percent className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-600" />
-                                        <input
-                                            type="number"
-                                            value={tempCommission}
-                                            onChange={(e) => setTempCommission(e.target.value)}
-                                            placeholder="Default"
-                                            className="w-full bg-slate-900 border border-white/10 rounded-2xl pl-11 pr-4 py-4 text-white font-bold focus:border-indigo-500 transition-all outline-none"
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="flex items-start gap-3 p-4 rounded-2xl bg-indigo-500/5 border border-indigo-500/10 text-indigo-300">
-                                <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
-                                <p className="text-[10px] font-medium leading-relaxed">
-                                    Overrides left blank will automatically fallback to the tournament-level defaults. Overrides are locked once a match starts to ensure fairness.
-                                </p>
-                            </div>
-
-                            <button
-                                onClick={handleUpdatePricing}
-                                disabled={updating}
-                                className="w-full py-5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-black uppercase tracking-widest transition-all shadow-xl shadow-indigo-600/20 flex items-center justify-center gap-3 disabled:opacity-50"
-                            >
-                                {updating ? "Applying Overrides..." : "Apply Match Overrides"}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
         </div>
     );
 }

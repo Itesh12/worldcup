@@ -7,6 +7,7 @@ import { useSession } from "next-auth/react";
 import { UserContextSwitcher } from "@/components/UserContextSwitcher";
 import { useTournament } from "@/contexts/TournamentContext";
 import { AnimatePresence } from "framer-motion";
+import { DashboardLayoutWrapper } from "@/components/dashboard/DashboardLayoutWrapper";
 import ArenaManager from "@/components/shared/ArenaManager";
 
 interface Match {
@@ -82,35 +83,9 @@ export default function AllMatchesPage() {
     const displayMatches = activeTab === 'upcoming' ? upcomingMatches : finishedMatches;
 
     return (
-        <div className="min-h-screen bg-[#050B14] pb-20 relative overflow-x-hidden">
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-indigo-600/5 blur-[120px] rounded-full pointer-events-none" />
+        <DashboardLayoutWrapper>
 
-            <header className="sticky top-0 z-40 bg-[#050B14]/80 backdrop-blur-xl border-b border-white/5">
-                <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-3 md:gap-6 min-w-0">
-                        <Link href="/dashboard" className="shrink-0 w-8 h-8 md:w-10 md:h-10 rounded-full bg-slate-900 border border-white/5 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800 transition-colors shadow-lg">
-                            <ArrowLeft className="w-4 h-4 md:w-5 md:h-5" />
-                        </Link>
-                        <div className="flex items-center gap-2 md:gap-3 min-w-0">
-                            <Trophy className="shrink-0 w-5 h-5 md:w-6 md:h-6 text-indigo-500" />
-                            <h1 className="text-sm md:text-xl font-black text-white tracking-tight truncate">FULL <span className="text-indigo-500">SCHEDULE</span></h1>
-                        </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-2 md:gap-4 shrink-0">
-                        <button
-                          onClick={handleRefresh}
-                          disabled={refreshing}
-                          className={`p-2 md:p-2.5 rounded-xl bg-slate-900 border border-white/5 text-slate-400 hover:text-white transition-all hover:bg-slate-800 group ${refreshing ? 'cursor-not-allowed opacity-50' : ''} shadow-lg`}
-                          title="Refresh Match Data"
-                        >
-                          <RefreshCcw className={`w-3.5 h-3.5 md:w-4 h-4 ${refreshing ? 'animate-spin text-indigo-500' : 'group-hover:rotate-180 transition-transform duration-500'}`} />
-                        </button>
-                    </div>
-                </div>
-            </header>
-
-            <main className="max-w-7xl mx-auto px-4 pt-10">
+            <div className="px-4 py-8 max-w-7xl mx-auto">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
                     <div className="flex items-center gap-6 border-b border-white/10 overflow-x-auto scrollbar-hide">
                         <button
@@ -161,7 +136,7 @@ export default function AllMatchesPage() {
                         </div>
                     )}
                 </div>
-            </main>
+            </div>
 
             <AnimatePresence>
                 {selectedMatchForHost && (
@@ -173,7 +148,7 @@ export default function AllMatchesPage() {
                     />
                 )}
             </AnimatePresence>
-        </div>
+        </DashboardLayoutWrapper>
     );
 }
 

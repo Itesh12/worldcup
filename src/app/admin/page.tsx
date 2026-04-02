@@ -174,34 +174,7 @@ export default function AdminDashboardPage() {
                 </div>
             )}
 
-            {/* Header Section (Synced with Sub-Admin) */}
-            {/* Unified Command Center Header (Compact & Professional) */}
-            <header className="sticky top-0 z-50 bg-[#050B14]/80 backdrop-blur-xl border-b border-white/5 py-4">
-                <div className="max-w-[1600px] mx-auto px-4 md:px-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div className="flex flex-col gap-1.5">
-                        <h1 className="text-xl md:text-2xl font-black text-white italic uppercase tracking-tighter leading-none">
-                            System <span className="text-indigo-500 font-black">Command</span> <span className="text-slate-500 font-black not-italic ml-1">Center</span>
-                        </h1>
-                        <div className="flex items-center gap-3">
-                            <div className="px-2 py-0.5 bg-indigo-500/10 border border-indigo-500/20 rounded text-[9px] font-black text-indigo-400 uppercase tracking-widest">
-                                Global Master HQ
-                            </div>
-                            <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/20 px-2 py-0.5 rounded-full backdrop-blur-md">
-                                <div className="w-1 h-1 rounded-full bg-red-500 animate-pulse shadow-[0_0_8px_#ef4444]" />
-                                <span className="text-[9px] font-black text-red-500 uppercase tracking-widest leading-none">Oversight Live</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <Link
-                            href="/dashboard?view=player"
-                            className="hidden sm:flex items-center gap-2 px-4 py-2 bg-indigo-600/20 border border-indigo-500/30 hover:bg-indigo-600 hover:border-indigo-500 text-indigo-300 hover:text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all"
-                        >
-                            Player View
-                        </Link>
-                    </div>
-                </div>
-            </header>
+            {/* Unified Command Center Header is now at Layout Level */}
 
             <div className="max-w-[1600px] mx-auto px-4 md:px-10 py-8 pb-10 lg:pb-12 space-y-12">
 

@@ -202,54 +202,48 @@ export default function AdminTournamentsPage() {
 
             {/* Migration Confirmation Modal remains for Safety */}
 
-            {/* Standardized Premium Header */}
-            <header className="sticky top-0 z-[60] bg-[#050B14]/80 backdrop-blur-xl border-b border-white/5">
-                <div className="max-w-7xl mx-auto px-4 md:px-6 py-4 md:py-6">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        <div className="flex items-center gap-3 md:gap-4">
-                            <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20 shrink-0">
-                                <Globe className="w-5 h-5 md:w-6 md:h-6 text-indigo-400" />
-                            </div>
-                            <div>
-                                <h1 className="text-xl md:text-3xl font-black text-white tracking-tighter uppercase italic leading-none">
-                                    League <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">& Tournaments</span>
-                                </h1>
-                                <p className="text-[9px] md:text-xs font-bold text-slate-500 uppercase tracking-widest mt-1 hidden xs:block">
-                                    Platform Data Contexts
-                                </p>
-                            </div>
-                        </div>
+            {/* Header is now at Layout Level */}
 
-                        <div className="flex items-center gap-2 md:gap-3 shrink-0 auto-cols-auto overflow-x-auto no-scrollbar pb-1 -mb-1">
-                            <button 
-                                onClick={handleMigrateClick}
-                                disabled={isMigrating}
-                                className="flex items-center justify-center gap-1.5 md:gap-2 bg-slate-800/80 hover:bg-slate-700 text-white px-3 md:px-5 py-2.5 md:py-3 rounded-xl md:rounded-2xl text-[10px] md:text-xs font-black transition-all border border-slate-700 disabled:opacity-50 uppercase tracking-widest whitespace-nowrap"
-                            >
-                                {isMigrating ? "Syncing..." : "Run Migration"}
-                            </button>
-                            <button 
-                                onClick={() => setShowNewForm(!showNewForm)}
-                                className={`flex items-center justify-center gap-1.5 md:gap-2 px-4 md:px-6 py-2.5 md:py-3 rounded-xl md:rounded-2xl text-[10px] md:text-xs font-black transition-all shadow-lg uppercase tracking-widest whitespace-nowrap ${
-                                    showNewForm 
-                                    ? "bg-slate-800 hover:bg-slate-700 text-white border border-white/10" 
-                                    : "bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-600/20"
-                                }`}
-                            >
-                                {showNewForm ? (
-                                    <>
-                                        <X className="w-3.5 h-3.5 md:w-4 md:h-4 shrink-0" /> Close <span className="hidden xs:inline">Form</span>
-                                    </>
-                                ) : (
-                                    <>
-                                        <Plus className="w-3.5 h-3.5 md:w-4 md:h-4 shrink-0" /> Add <span className="hidden xs:inline">Tournament</span>
-                                    </>
-                                )}
-                            </button>
-                        </div>
-                    </div>
+            {/* Platform Controls (Repositioned to Content) */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-8 border-b border-white/5 relative z-10">
+                <div className="flex flex-col gap-2">
+                    <h2 className="text-xl md:text-2xl font-black text-white italic uppercase tracking-tighter leading-none">
+                        Platform <span className="text-indigo-500 font-black">Data Contexts</span>
+                    </h2>
+                    <p className="text-slate-500 text-[9px] font-bold uppercase tracking-widest px-1 italic">
+                        Series Sync & League Metadata Management
+                    </p>
                 </div>
-            </header>
+
+                <div className="flex flex-wrap items-center gap-3">
+                    <button 
+                        onClick={handleMigrateClick}
+                        disabled={isMigrating}
+                        className="flex items-center justify-center gap-2 bg-slate-800/80 hover:bg-slate-700 text-white px-5 py-3.5 rounded-2xl text-[10px] font-black transition-all border border-slate-700 disabled:opacity-50 uppercase tracking-widest whitespace-nowrap active:scale-95"
+                    >
+                        <RefreshCw className={`w-4 h-4 ${isMigrating ? 'animate-spin' : ''}`} />
+                        {isMigrating ? "Syncing..." : "Run Migration"}
+                    </button>
+                    <button 
+                        onClick={() => setShowNewForm(!showNewForm)}
+                        className={`flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl text-[10px] font-black transition-all shadow-lg uppercase tracking-widest whitespace-nowrap active:scale-95 ${
+                            showNewForm 
+                            ? "bg-slate-800 hover:bg-slate-700 text-white border border-white/10" 
+                            : "bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-600/20"
+                        }`}
+                    >
+                        {showNewForm ? (
+                            <>
+                                <X className="w-4 h-4 shrink-0" /> Close Form
+                            </>
+                        ) : (
+                            <>
+                                <Plus className="w-4 h-4 shrink-0" /> Add Tournament
+                            </>
+                        )}
+                    </button>
+                </div>
+            </div>
 
             <main className="max-w-7xl mx-auto px-4 md:px-6 pt-6 md:pt-10 relative z-10 w-full">
                 <p className="text-slate-400 font-medium text-sm md:text-base italic opacity-80 mb-6 md:mb-10 max-w-2xl">

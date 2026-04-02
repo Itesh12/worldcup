@@ -6,13 +6,10 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { 
   Trophy, 
-  LayoutDashboard, 
-  RefreshCcw,
   IndianRupee,
   Zap,
-  ArrowRight
+  RefreshCcw,
 } from "lucide-react";
-import { UserContextSwitcher } from "@/components/UserContextSwitcher";
 import { AddFundsDialog } from "@/components/AddFundsDialog";
 import { WithdrawDialog } from "@/components/WithdrawDialog";
 import { Spinner } from "@/components/ui/Spinner";
@@ -23,6 +20,7 @@ import { MatchHeroSection } from "@/components/dashboard/MatchHeroSection";
 import { MatchListTabs } from "@/components/dashboard/MatchListTabs";
 import { HallOfFameSection } from "@/components/dashboard/HallOfFameSection";
 import { WeeklyReportCard } from "@/components/dashboard/WeeklyReportCard";
+import { DashboardLayoutWrapper } from "@/components/dashboard/DashboardLayoutWrapper";
 import { useToast } from "@/contexts/ToastContext";
 import { useTournament } from "@/contexts/TournamentContext";
 import { Suspense } from "react";
@@ -196,70 +194,7 @@ function UserMatchesContent() {
   ).sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime()).slice(0, 5);
 
   return (
-    <div className="min-h-screen bg-[#050B14] relative overflow-x-hidden">
-      {/* Ambient Backlights */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-indigo-600/10 blur-[120px] rounded-full pointer-events-none" />
-
-      {/* Header / Nav */}
-      <header className="sticky top-0 z-50 bg-[#050B14]/80 backdrop-blur-xl border-b border-white/5">
-        <div className="max-w-7xl mx-auto px-4 md:px-6">
-          {/* Main Top Row */}
-          <div className="flex items-center justify-between gap-4 py-3 md:py-4">
-            <div className="flex items-center gap-2 md:gap-3 min-w-0 font-bold">
-              <Trophy className="w-5 h-5 md:w-8 md:h-8 text-indigo-500 shrink-0" />
-              <div className="min-w-0">
-                <h1 className="text-xs md:text-xl font-black text-white tracking-tight leading-none uppercase italic">WORLD CUP <span className="text-indigo-500">HUB</span></h1>
-                <p className="text-[8px] md:text-[10px] text-slate-500 font-bold uppercase tracking-widest hidden xs:block mt-0.5 md:mt-1">Official Player Portal</p>
-              </div>
-            </div>
-
-            {/* Desktop Switcher: Centered */}
-            <div className="hidden lg:flex items-center gap-1.5 w-[320px]">
-              <div className="flex-[4] min-w-0 scale-90 origin-right">
-                <UserContextSwitcher onSelect={(id) => setTournamentId(id || "")} />
-              </div>
-              <button
-                onClick={() => handleRefresh(false)}
-                disabled={refreshing}
-                className={`flex items-center justify-center w-10 h-10 rounded-xl bg-slate-800/40 border border-white/10 text-slate-400 hover:text-white hover:bg-slate-700/80 transition-all group ${refreshing ? 'cursor-not-allowed' : ''}`}
-              >
-                <RefreshCcw className={`w-4 h-4 ${refreshing ? 'animate-spin text-indigo-500' : 'group-hover:rotate-180 transition-transform duration-500'}`} />
-              </button>
-            </div>
-
-            <div className="flex items-center gap-2 md:gap-4 shrink-0">
-              {session?.user && (session.user as any).role === "admin" && (
-                <Link
-                  href="/admin"
-                  className="hidden lg:flex items-center gap-2 px-4 md:px-6 py-2 bg-slate-800 hover:bg-slate-700 text-white text-[10px] md:text-xs font-black uppercase tracking-widest rounded-xl transition-colors border border-white/5 shadow-lg shadow-black/20"
-                >
-                  <LayoutDashboard className="w-4 h-4 text-indigo-400 shrink-0" />
-                  <span className="hidden sm:inline">Admin Hub</span>
-                  <span className="sm:hidden">Admin</span>
-                </Link>
-              )}
-            </div>
-          </div>
-
-          {/* Mobile Switcher Row: Integrated Sub-bar */}
-          <div className="lg:hidden pb-3">
-             <div className="flex items-stretch gap-1.5 w-full">
-                <div className="flex-[4] min-w-0">
-                  <UserContextSwitcher onSelect={(id) => setTournamentId(id || "")} />
-                </div>
-                <button
-                  onClick={() => handleRefresh(false)}
-                  disabled={refreshing}
-                  className={`flex-[1] max-w-[48px] flex items-center justify-center rounded-2xl bg-slate-800/40 border border-white/10 text-slate-400 hover:text-white hover:bg-slate-700/80 transition-all shadow-xl group ${refreshing ? 'cursor-not-allowed' : ''}`}
-                  title="Refresh Data"
-                >
-                  <RefreshCcw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin text-indigo-500' : 'group-hover:rotate-180 transition-transform duration-500'}`} />
-                </button>
-             </div>
-          </div>
-        </div>
-      </header>
-
+    <DashboardLayoutWrapper>
       {/* Modals placed outside header */}
       <AddFundsDialog 
         isOpen={isWalletModalOpen} 
@@ -278,7 +213,7 @@ function UserMatchesContent() {
             <Spinner />
         </div>
       ) : (
-        <main className="max-w-7xl mx-auto px-4 pt-6 pb-20 space-y-8 md:space-y-12">
+       <main className="px-4 py-8 space-y-8 md:space-y-12">
           {/* 1. TOP BAR: User Performance Summary */}
           {session && (
             <PlayerStatsHeader 
@@ -313,41 +248,41 @@ function UserMatchesContent() {
             <aside className="lg:col-span-4 space-y-8">
                 {/* User Profile Summary */}
                 <div className="bg-slate-900/40 border border-white/5 rounded-3xl p-6 hover:border-indigo-500/20 transition-all group">
-                <div className="flex items-center gap-4 mb-6">
-                    <div className="w-12 h-12 rounded-full bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20 group-hover:bg-indigo-500/20 transition-all">
-                    {session?.user?.image ? (
-                        <img src={session.user.image} alt={session.user.name || ""} className="w-full h-full rounded-full object-cover" />
-                    ) : (
-                        <Trophy className="w-6 h-6 text-indigo-400" />
-                    )}
-                    </div>
-                    <div>
-                    <h4 className="text-sm font-black text-white uppercase tracking-tight">{session?.user?.name || "Player"}</h4>
-                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest leading-none mt-1">Active Status</p>
-                    </div>
-                </div>
+                  <div className="flex items-center gap-4 mb-6">
+                      <div className="w-12 h-12 rounded-full bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20 group-hover:bg-indigo-500/20 transition-all">
+                      {session?.user?.image ? (
+                          <img src={session.user.image} alt={session.user.name || ""} className="w-full h-full rounded-full object-cover" />
+                      ) : (
+                          <Trophy className="w-6 h-6 text-indigo-400" />
+                      )}
+                      </div>
+                      <div>
+                      <h4 className="text-sm font-black text-white uppercase tracking-tight">{session?.user?.name || "Player"}</h4>
+                      <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest leading-none mt-1">Active Status</p>
+                      </div>
+                  </div>
 
-                <div className="space-y-3">
-                    <Link href="/wallet" className="flex items-center justify-between p-4 bg-white/5 rounded-2xl hover:bg-white/10 transition-all group/item">
-                    <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20 group-hover/item:bg-emerald-500/20 transition-all">
-                        <IndianRupee className="w-4 h-4 text-emerald-400" />
-                        </div>
-                        <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Balance</span>
-                    </div>
-                    <span className="text-sm font-black text-white italic">₹{walletData?.balance || 0}</span>
-                    </Link>
+                  <div className="space-y-3">
+                      <Link href="/wallet" className="flex items-center justify-between p-4 bg-white/5 rounded-2xl hover:bg-white/10 transition-all group/item">
+                      <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20 group-hover/item:bg-emerald-500/20 transition-all">
+                          <IndianRupee className="w-4 h-4 text-emerald-400" />
+                          </div>
+                          <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Balance</span>
+                      </div>
+                      <span className="text-sm font-black text-white italic">₹{walletData?.balance || 0}</span>
+                      </Link>
 
-                    <Link href="/profile/stats" className="flex items-center justify-between p-4 bg-white/5 rounded-2xl hover:bg-white/10 transition-all group/item">
-                    <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center border border-purple-500/20 group-hover/item:bg-purple-500/20 transition-all">
-                        <Zap className="w-4 h-4 text-purple-400" />
-                        </div>
-                        <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Rank</span>
-                    </div>
-                    <span className="text-sm font-black text-white italic">#{userStats?.rank || "---"}</span>
-                    </Link>
-                </div>
+                      <Link href="/profile/stats" className="flex items-center justify-between p-4 bg-white/5 rounded-2xl hover:bg-white/10 transition-all group/item">
+                      <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center border border-purple-500/20 group-hover/item:bg-purple-500/20 transition-all">
+                          <Zap className="w-4 h-4 text-purple-400" />
+                          </div>
+                          <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Rank</span>
+                      </div>
+                      <span className="text-sm font-black text-white italic">#{userStats?.rank || "---"}</span>
+                      </Link>
+                  </div>
                 </div>
 
                 {/* Quick Actions */}
@@ -395,7 +330,7 @@ function UserMatchesContent() {
           onSuccess={() => handleRefresh(true)}
         />
       )}
-    </div>
+    </DashboardLayoutWrapper>
   );
 }
 

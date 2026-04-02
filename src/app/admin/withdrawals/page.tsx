@@ -13,6 +13,7 @@ import {
   ExternalLink,
   MessageSquare,
   Loader2,
+  RefreshCw,
   TrendingUp,
   Wallet,
   Coins,
@@ -97,50 +98,44 @@ export default function AdminWithdrawalsPage() {
 
     return (
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 relative pb-20">
-            {/* Standardized Premium Header */}
-            <header className="sticky top-0 z-[60] bg-[#050B14]/80 backdrop-blur-xl border-b border-white/5">
-                <div className="max-w-7xl mx-auto px-4 md:px-6 py-4 md:py-6">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        <div className="flex items-center gap-3 md:gap-4">
-                            <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-amber-500/10 flex items-center justify-center border border-amber-500/20 shrink-0">
-                                <IndianRupee className="w-5 h-5 md:w-6 md:h-6 text-amber-500" />
-                            </div>
-                            <div>
-                                <h1 className="text-xl md:text-3xl font-black text-white tracking-tighter uppercase italic leading-none">
-                                    Financial <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-400">Control Center</span>
-                                </h1>
-                                <p className="text-[9px] md:text-xs font-bold text-slate-500 uppercase tracking-widest mt-1 hidden xs:block">
-                                    Revenue & Payout Management
-                                </p>
-                            </div>
-                        </div>
+            {/* Header is now at Layout Level */}
 
-                        <div className="flex items-center gap-4">
-                            <button 
-                                onClick={() => { fetchWithdrawals(); fetchStats(); }}
-                                className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:text-white transition-all"
+            {/* Settlement Controls (Repositioned to Content) */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-8 border-b border-white/5 relative z-10">
+                <div className="flex flex-col gap-2">
+                    <h2 className="text-xl md:text-2xl font-black text-white italic uppercase tracking-tighter leading-none">
+                        Settlement <span className="text-amber-500 font-black">Control Center</span>
+                    </h2>
+                    <p className="text-slate-500 text-[9px] font-bold uppercase tracking-widest px-1 italic">
+                        Revenue Integrity & Payout Oversight
+                    </p>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-3">
+                    <button 
+                        onClick={() => { fetchWithdrawals(); fetchStats(); }}
+                        className="p-3.5 bg-white/5 border border-white/10 rounded-2xl text-slate-500 hover:text-white transition-all group shrink-0 active:scale-95"
+                    >
+                        <RefreshCw className={`w-5 h-5 group-hover:rotate-180 transition-transform duration-700 ${loading || statsLoading ? 'animate-spin' : ''}`} />
+                    </button>
+                    
+                    <div className="flex items-center gap-1.5 bg-white/5 p-1 rounded-2xl border border-white/10">
+                        {(["all", "pending", "completed", "failed"] as const).map((f) => (
+                            <button
+                                key={f}
+                                onClick={() => setFilter(f)}
+                                className={`px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                                    filter === f 
+                                        ? "bg-amber-600 text-white shadow-lg shadow-amber-900/20" 
+                                        : "text-slate-400 hover:text-slate-200 hover:bg-white/5"
+                                }`}
                             >
-                                <Loader2 className={`w-4 h-4 ${loading || statsLoading ? 'animate-spin' : ''}`} />
+                                {f}
                             </button>
-                            <div className="flex items-center gap-2 shrink-0 overflow-x-auto no-scrollbar pb-1 -mb-1 bg-white/5 p-1 rounded-xl md:rounded-2xl border border-white/10 text-nowrap">
-                                {(["all", "pending", "completed", "failed"] as const).map((f) => (
-                                    <button
-                                        key={f}
-                                        onClick={() => setFilter(f)}
-                                        className={`px-3 py-2 md:px-4 md:py-2.5 rounded-lg md:rounded-xl text-[10px] md:text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap ${
-                                            filter === f 
-                                                ? "bg-amber-600 text-white shadow-lg shadow-amber-900/20" 
-                                                : "text-slate-400 hover:text-slate-200 hover:bg-white/5"
-                                        }`}
-                                    >
-                                        {f}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
+                        ))}
                     </div>
                 </div>
-            </header>
+            </div>
 
             <main className="max-w-7xl mx-auto px-4 md:px-6 pt-6 md:pt-10 relative z-10 w-full mb-10">
                 {/* Finance Dashboard Grid */}
