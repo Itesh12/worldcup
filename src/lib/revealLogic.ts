@@ -76,37 +76,27 @@ export async function revealArenaPositions(arenaId: string) {
                     type: 'commission',
                     description: `Platform Fee from Arena: ${arena.name} (${assignments.length} slots)`,
                     referenceId: arenaId,
-                    status: 'completed'
+                    status: 'pending'
                 }], { session: mongooseSession });
-
-                await User.findByIdAndUpdate(
-                    mainAdmin._id,
-                    { $inc: { commissionEarned: adminCommission } },
-                    { session: mongooseSession }
-                );
             }
         }
 
         // 6b. Organizer/Sub-Admin Commission
-        if (arena.organizerCommissionPercentage > 0) {
+        if (arena.organizerCommissionPercentage > 0 && arena.createdBy) {
             const organizerCommission = (totalEntryFees * arena.organizerCommissionPercentage) / 100;
             const creatorId = arena.createdBy;
+            const creator = await User.findById(creatorId).session(mongooseSession);
+            const isSubAdmin = creator && creator.role === 'subadmin';
 
-            if (organizerCommission > 0) {
+            if (organizerCommission > 0 && isSubAdmin) {
                 await Transaction.create([{
                     userId: creatorId,
                     amount: organizerCommission,
                     type: 'commission',
                     description: `Organizer Fee from Arena: ${arena.name} (${assignments.length} slots)`,
                     referenceId: arenaId,
-                    status: 'completed'
+                    status: 'pending'
                 }], { session: mongooseSession });
-
-                await User.findByIdAndUpdate(
-                    creatorId,
-                    { $inc: { commissionEarned: organizerCommission } },
-                    { session: mongooseSession }
-                );
             }
         }
 
@@ -166,5 +156,66 @@ export async function processAllPendingReveals() {
     } catch (error: any) {
         console.error("Cron - Bulk reveal error:", error);
         throw error;
+    }
+}
+
+export async function finalizeMatchCommissions(matchId: string, matchStatus: string) {
+    const mongooseSession = await mongoose.startSession();
+    mongooseSession.startTransaction();
+    try {
+        await connectDB();
+        
+        // Find arenas for this match
+        const arenas = await Arena.find({ matchId }).session(mongooseSession);
+        const arenaIds = arenas.map(a => a._id.toString());
+        if (arenaIds.length === 0) {
+            await mongooseSession.abortTransaction();
+            return;
+        }
+
+        // Find all pending commission transactions for these arenas
+        const pendingTxs = await Transaction.find({
+            type: 'commission',
+            status: 'pending',
+            referenceId: { $in: arenaIds }
+        }).session(mongooseSession);
+
+        if (pendingTxs.length === 0) {
+            await mongooseSession.abortTransaction();
+            return;
+        }
+
+        const isAbandoned = ['abandoned', 'cancelled', 'no result'].includes(matchStatus.toLowerCase());
+
+        for (const tx of pendingTxs) {
+            if (isAbandoned) {
+                // Cancel commission due to refund
+                tx.status = 'failed';
+                tx.description = tx.description + ' (Match Abandoned - Refunded)';
+                await tx.save({ session: mongooseSession });
+            } else {
+                // Execute final commission payout
+                tx.status = 'completed';
+                await tx.save({ session: mongooseSession });
+
+                // Distribute funds to Wallet Balance & Stats
+                await User.findByIdAndUpdate(tx.userId, {
+                    $inc: { balance: tx.amount, commissionEarned: tx.amount }
+                }, { session: mongooseSession });
+
+                // If subadmin, also update config master totals
+                await SubAdminConfig.findOneAndUpdate(
+                    { subAdminId: tx.userId },
+                    { $inc: { totalCommissionEarned: tx.amount, balance: tx.amount } },
+                    { session: mongooseSession }
+                );
+            }
+        }
+        await mongooseSession.commitTransaction();
+    } catch(e) {
+        await mongooseSession.abortTransaction();
+        console.error("Failed to finalize commissions for match", matchId, e);
+    } finally {
+        mongooseSession.endSession();
     }
 }

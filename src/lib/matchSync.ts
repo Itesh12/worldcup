@@ -3,7 +3,7 @@ import Match from "@/models/Match";
 import Tournament from "@/models/Tournament";
 import Arena from "@/models/Arena";
 import { getCricbuzzMatches } from "@/lib/cricbuzzScraper";
-import { revealArenaPositions } from "./revealLogic";
+import { revealArenaPositions, finalizeMatchCommissions } from "./revealLogic";
 
 export async function performMatchSync(requestTournamentId?: string) {
     try {
@@ -54,11 +54,15 @@ export async function performMatchSync(requestTournamentId?: string) {
 
         // Keep track of external IDs for sync consistency
         for (const matchData of matchesToSync) {
-            await Match.findOneAndUpdate(
+            const updatedMatch = await Match.findOneAndUpdate(
                 { externalMatchId: matchData.externalMatchId },
                 matchData,
                 { upsert: true, new: true, runValidators: true }
             );
+
+            if (updatedMatch && ['finished', 'completed', 'result', 'settled', 'abandoned', 'cancelled', 'no result'].includes(updatedMatch.status.toLowerCase())) {
+                await finalizeMatchCommissions(updatedMatch._id.toString(), updatedMatch.status);
+            }
         }
 
         console.log(`Match Sync Utility - Successfully synced ${matchesToSync.length} matches (IDs preserved)`);

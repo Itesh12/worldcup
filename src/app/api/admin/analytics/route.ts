@@ -159,10 +159,21 @@ export async function GET() {
         const liquidityScore = totalSystemLiability > 0 ? (dailyFinancials.deposits / (totalSystemLiability / 30)) : 100; // Simplified Daily Coverage Index
 
         // [4] Live Audit Feed
-        const latestTransactions = await Transaction.find()
+        const rawLatestTransactions = await Transaction.find()
             .sort({ createdAt: -1 })
             .limit(10)
-            .populate("userId", "name");
+            .populate("userId", "name")
+            .lean();
+
+        const latestTransactions = await Promise.all(rawLatestTransactions.map(async (tx: any) => {
+            if (tx.type === 'commission' && tx.referenceId) {
+                const arena = await Arena.findById(tx.referenceId).populate('createdBy', 'name').lean() as any;
+                if (arena && arena.createdBy) {
+                    tx.sourceUser = arena.createdBy.name;
+                }
+            }
+            return tx;
+        }));
 
         return NextResponse.json({
             actionDesk: {

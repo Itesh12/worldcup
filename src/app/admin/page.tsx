@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Users, Trophy, Activity, TrendingUp, AlertTriangle, X, ArrowUpRight, IndianRupee, Clock, Search, ShieldAlert, BarChart3, Radio, Database, Trash2, ArrowRight, Swords, Zap } from "lucide-react";
+import { Users, Trophy, Activity, TrendingUp, AlertTriangle, X, ArrowUpRight, IndianRupee, Clock, Search, ShieldAlert, BarChart3, Radio, Database, Trash2, ArrowRight, Swords, Zap, ChevronRight } from "lucide-react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -505,10 +505,9 @@ export default function AdminDashboardPage() {
                                 <thead className="bg-white/5 border-b border-white/10">
                                     <tr>
                                         <th className="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-widest">Timestamp</th>
-                                        <th className="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-widest">Entity</th>
-                                        <th className="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-widest">Operation</th>
+                                        <th className="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-widest">Details</th>
                                         <th className="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-widest">Amount</th>
-                                        <th className="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-widest">Status</th>
+                                        <th className="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-widest text-right">Status</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-white/5 text-[10px]">
@@ -518,16 +517,18 @@ export default function AdminDashboardPage() {
                                                 <div className="font-black text-white uppercase tracking-tight">{new Date(tx.createdAt).toLocaleDateString()}</div>
                                                 <div className="text-[8px] font-bold text-slate-500 uppercase tracking-widest font-mono mt-0.5">{new Date(tx.createdAt).toLocaleTimeString()}</div>
                                             </td>
-                                            <td className="px-6 py-3.5">
-                                                <div className="flex items-center gap-2">
-                                                    <div className="w-6 h-6 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-400 text-[9px] font-black border border-indigo-500/20">
-                                                        {tx.userId?.name?.[0] || "?"}
-                                                    </div>
-                                                    <span className="font-black text-slate-300 uppercase tracking-tight truncate max-w-[120px]">{tx.userId?.name || "Anonymous"}</span>
+                                            <td className="px-6 py-3.5 max-w-xl">
+                                                <div className="font-black text-slate-100 text-[10px] uppercase tracking-tight break-words leading-relaxed">
+                                                    {tx.description || tx.type}
                                                 </div>
-                                            </td>
-                                            <td className="px-6 py-3.5">
-                                                <span className="font-black text-white uppercase tracking-widest italic">{tx.type}</span>
+                                                <div className="flex items-center gap-2 mt-1.5 opacity-70">
+                                                    <div className="w-4 h-4 rounded-md bg-indigo-500/20 flex items-center justify-center text-indigo-400 text-[8px] font-black border border-indigo-500/30">
+                                                        {(tx.sourceUser || tx.userId?.name)?.[0] || "?"}
+                                                    </div>
+                                                    <span className="font-bold text-[8px] text-slate-400 uppercase tracking-widest">
+                                                        {tx.sourceUser ? `Source: ${tx.sourceUser}` : (tx.userId?.name || "System")}
+                                                    </span>
+                                                </div>
                                             </td>
                                             <td className="px-6 py-3.5 font-mono">
                                                 <span className={`font-black ${tx.type === 'withdrawal' ? 'text-amber-400' :
@@ -548,6 +549,15 @@ export default function AdminDashboardPage() {
                                     ))}
                                 </tbody>
                             </table>
+                        </div>
+                        
+                        <div className="p-4 border-t border-white/5 flex justify-center rounded-b-2xl bg-slate-900/40">
+                            <Link 
+                                href="/admin/ledger" 
+                                className="flex items-center gap-2 text-[10px] font-black tracking-widest text-indigo-400 hover:text-indigo-300 transition-colors uppercase hover:translate-x-1 duration-300"
+                            >
+                                View Complete Ledger <ChevronRight className="w-3.5 h-3.5" />
+                            </Link>
                         </div>
                     </div>
                 </div>
