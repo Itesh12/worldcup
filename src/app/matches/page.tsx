@@ -211,22 +211,33 @@ function StandardMatchCard({ match, onHost }: { match: Match; onHost: (m: Match)
                     </div>
                 </div>
                 
-                <div className="flex gap-3">
-                    <button 
-                        onClick={() => onHost(match)}
-                        className="flex-1 flex items-center justify-center gap-2 py-3 bg-white/5 hover:bg-slate-800 text-slate-300 rounded-2xl text-[10px] font-black transition-all duration-300 border border-white/10 uppercase tracking-widest relative z-20"
-                    >
-                        <Swords className="w-3.5 h-3.5" />
-                        Host
-                    </button>
+                {!isFinished && (
+                    <div className="flex gap-3">
+                        <button 
+                            onClick={() => onHost(match)}
+                            className="flex-1 flex items-center justify-center gap-2 py-3 bg-white/5 hover:bg-slate-800 text-slate-300 rounded-2xl text-[10px] font-black transition-all duration-300 border border-white/10 uppercase tracking-widest relative z-20"
+                        >
+                            <Swords className="w-3.5 h-3.5" />
+                            Host
+                        </button>
+                        <Link 
+                            href={`/matches/${match._id}`}
+                            className="flex-1 flex items-center justify-center gap-2 py-3 bg-indigo-600/10 hover:bg-indigo-600 text-white rounded-2xl text-[10px] font-black transition-all duration-300 border border-indigo-500/20 hover:border-indigo-400 uppercase tracking-widest text-center relative z-20"
+                        >
+                            Match Center
+                            <ChevronRight className="w-4 h-4" />
+                        </Link>
+                    </div>
+                )}
+                {isFinished && (
                     <Link 
                         href={`/matches/${match._id}`}
-                        className="flex-1 flex items-center justify-center gap-2 py-3 bg-indigo-600/10 hover:bg-indigo-600 text-white rounded-2xl text-[10px] font-black transition-all duration-300 border border-indigo-500/20 hover:border-indigo-400 uppercase tracking-widest text-center relative z-20"
+                        className="w-full flex items-center justify-center gap-2 py-3.5 bg-slate-800/50 hover:bg-slate-800 text-slate-300 rounded-2xl text-[10px] font-black transition-all duration-300 border border-white/5 uppercase tracking-[0.2em] text-center relative z-20"
                     >
-                        Match Center
+                        View Result & Statistics
                         <ChevronRight className="w-4 h-4" />
                     </Link>
-                </div>
+                )}
             </div>
         </div>
     );

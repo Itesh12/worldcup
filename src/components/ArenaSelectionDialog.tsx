@@ -41,6 +41,7 @@ interface ArenaSelectionDialogProps {
     matchName: string;
     onJoinSuccess: () => void;
     onHostClick: () => void;
+    isMatchFinished?: boolean;
 }
 
 export function ArenaSelectionDialog({ 
@@ -49,7 +50,8 @@ export function ArenaSelectionDialog({
     matchId, 
     matchName, 
     onJoinSuccess,
-    onHostClick
+    onHostClick,
+    isMatchFinished = false
 }: ArenaSelectionDialogProps) {
     const { showToast } = useToast();
     const [arenas, setArenas] = useState<Arena[]>([]);
@@ -57,7 +59,7 @@ export function ArenaSelectionDialog({
     const [joining, setJoining] = useState<string | null>(null);
     const [filter, setFilter] = useState<'all' | 'public' | 'private'>('all');
     const [inviteCodes, setInviteCodes] = useState<Record<string, string>>({});
-    const [confirmingArena, setConfirmingArena] = useState<{ arena: Arena, innings: number } | null>(null);
+    const [confirmingArena, setConfirmingArena] = useState<Arena | null>(null);
     const { data: session } = useSession(); // To check if user is admin/subadmin if needed
 
     useEffect(() => {
@@ -94,7 +96,7 @@ export function ArenaSelectionDialog({
         }
     };
 
-    const handleJoin = async (arenaId: string, inningsNumber: number) => {
+    const handleJoin = async (arenaId: string) => {
         const arena = arenas.find(a => a._id === arenaId);
         if (arena?.isPrivate && !inviteCodes[arenaId]) {
             showToast("Entering the invite code is mandatory for private contests.", "warning");
@@ -108,7 +110,6 @@ export function ArenaSelectionDialog({
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ 
                     arenaId, 
-                    inningsNumber,
                     inviteCode: arena?.isPrivate ? inviteCodes[arenaId] : undefined
                 })
             });
@@ -213,16 +214,18 @@ export function ArenaSelectionDialog({
                                 <div className="text-center">
                                     <p className="text-slate-400 font-bold uppercase tracking-widest text-sm mb-2">No Arenas Found</p>
                                     <p className="text-slate-600 text-xs mb-6">Be the first to launch a contest for this match!</p>
-                                    <button
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            onClose();
-                                            onHostClick();
-                                        }}
-                                        className="px-8 py-4 bg-amber-600 hover:bg-amber-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-xl shadow-amber-600/20 active:scale-95 flex items-center gap-2 mx-auto"
-                                    >
-                                        Host Your Own Arena
-                                    </button>
+                                    {!isMatchFinished && (
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                onClose();
+                                                onHostClick();
+                                            }}
+                                            className="px-8 py-4 bg-amber-600 hover:bg-amber-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-xl shadow-amber-600/20 active:scale-95 flex items-center gap-2 mx-auto"
+                                        >
+                                            Host Your Own Arena
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                         ) : (
@@ -286,12 +289,14 @@ export function ArenaSelectionDialog({
                                                 </div>
                                             )}
                                             <button 
-                                                onClick={() => !arena.hasJoined && setConfirmingArena({ arena, innings: 1 })}
-                                                disabled={joining !== null || arena.slotsCount >= arena.maxSlots || arena.hasJoined}
+                                                onClick={() => !arena.hasJoined && !isMatchFinished && setConfirmingArena(arena)}
+                                                disabled={joining !== null || arena.slotsCount >= arena.maxSlots || arena.hasJoined || isMatchFinished}
                                                 className={`flex-1 md:flex-none flex items-center justify-center gap-3 px-8 py-4 rounded-2xl text-xs font-black italic uppercase tracking-widest transition-all ${
                                                     arena.hasJoined
                                                     ? "bg-indigo-500/10 text-indigo-400 border border-indigo-500/30 cursor-default"
                                                     : arena.slotsCount >= arena.maxSlots 
+                                                    ? "bg-slate-800 text-slate-500 cursor-not-allowed"
+                                                    : isMatchFinished
                                                     ? "bg-slate-800 text-slate-500 cursor-not-allowed"
                                                     : "bg-purple-600 hover:bg-purple-500 text-white shadow-lg shadow-purple-600/20 active:scale-95"
                                                 }`}
@@ -305,6 +310,8 @@ export function ArenaSelectionDialog({
                                                     </div>
                                                 ) : arena.slotsCount >= arena.maxSlots ? (
                                                     "Arena Full"
+                                                ) : isMatchFinished ? (
+                                                    "Match Finished"
                                                 ) : (
                                                     <>Join Now <ArrowRight className="w-4 h-4" /></>
                                                 )}
@@ -349,7 +356,7 @@ export function ArenaSelectionDialog({
                                     <div>
                                         <h3 className="text-2xl font-black text-white italic uppercase tracking-tight mb-2">Confirm Payment</h3>
                                         <p className="text-slate-400 text-sm font-medium leading-relaxed">
-                                            You are about to join <span className="text-white font-bold">{confirmingArena.arena.name}</span>. 
+                                            You are about to join <span className="text-white font-bold">{confirmingArena.name}</span>. 
                                             The entry fee will be deducted from your wallet balance.
                                         </p>
                                     </div>
@@ -357,12 +364,12 @@ export function ArenaSelectionDialog({
                                     <div className="py-6 px-4 bg-white/5 rounded-2xl border border-white/5 space-y-4">
                                         <div className="flex justify-between items-center text-xs font-black uppercase tracking-widest text-slate-500">
                                             <span>Entry Stake</span>
-                                            <span className="text-white">₹{confirmingArena.arena.entryFee}</span>
+                                            <span className="text-white">₹{confirmingArena.entryFee}</span>
                                         </div>
                                         <div className="h-px bg-white/10 w-full" />
                                         <div className="flex justify-between items-center text-sm font-black uppercase tracking-widest text-purple-400">
                                             <span>Total to Pay</span>
-                                            <span className="text-lg">₹{confirmingArena.arena.entryFee}</span>
+                                            <span className="text-lg">₹{confirmingArena.entryFee}</span>
                                         </div>
                                     </div>
 
@@ -375,7 +382,7 @@ export function ArenaSelectionDialog({
                                         </button>
                                         <button
                                             onClick={() => {
-                                                handleJoin(confirmingArena.arena._id, confirmingArena.innings);
+                                                handleJoin(confirmingArena._id);
                                                 setConfirmingArena(null);
                                             }}
                                             className="py-4 rounded-2xl bg-purple-600 hover:bg-purple-500 text-white font-black uppercase tracking-widest text-[10px] transition-all shadow-lg shadow-purple-600/30 flex items-center justify-center gap-2"

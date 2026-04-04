@@ -17,12 +17,16 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    const { arenaId, matchId, inviteCode, inningsNumber } = await req.json();
+    const { arenaId, matchId, inviteCode } = await req.json();
+    let { inningsNumber } = await req.json(); // May be undefined for Arena joins
     const userId = (session.user as any).id;
 
-    if ((!arenaId && (!matchId || !inviteCode)) || !inningsNumber) {
+    if (!arenaId && (!matchId || !inviteCode)) {
         return NextResponse.json({ message: "Incomplete selection details" }, { status: 400 });
     }
+    
+    // Default to Innings 1 for Arena Join records (revealed later)
+    if (!inningsNumber) inningsNumber = 1;
 
     const mongooseSession = await mongoose.startSession();
     mongooseSession.startTransaction();
@@ -66,11 +70,10 @@ export async function POST(req: NextRequest) {
             throw new Error("Insufficient wallet balance");
         }
 
-        // 4. Duplicate Check
+        // 4. Duplicate Check (One entry per user per arena)
         const existing = await UserBattingAssignment.findOne({
             arenaId: arena._id,
-            userId,
-            inningsNumber
+            userId
         }).session(mongooseSession);
 
         if (existing) {

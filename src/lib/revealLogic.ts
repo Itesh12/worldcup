@@ -35,10 +35,24 @@ export async function revealArenaPositions(arenaId: string) {
             return { message: "No players in arena to reveal" };
         }
 
-        // 3. Prepare Positions Array (1 to maxSlots)
-        let positions = Array.from({ length: arena.maxSlots }, (_, i) => i + 1);
+        // 3. Prepare Pool of Inning/Position Combinations
+        // For even numbers (2,4,6,8,10): Split equally (max/2)
+        // For odd numbers (if any): Round 1st inning up
+        const slotsPerInning1 = Math.ceil(arena.maxSlots / 2);
+        
+        const slotPool: { inningsNumber: number, position: number }[] = [];
+        
+        // Inning 1 Slots
+        for (let i = 1; i <= slotsPerInning1; i++) {
+            slotPool.push({ inningsNumber: 1, position: i });
+        }
+        
+        // Inning 2 Slots
+        for (let i = 1; i <= (arena.maxSlots - slotsPerInning1); i++) {
+            slotPool.push({ inningsNumber: 2, position: i });
+        }
 
-        // 4. SHUFFLE Algorithm (Fisher-Yates)
+        // 4. SHUFFLE Algorithm (Fisher-Yates) to randomize the assignments
         const shuffle = (array: any[]) => {
             for (let i = array.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
@@ -47,13 +61,17 @@ export async function revealArenaPositions(arenaId: string) {
             return array;
         };
 
-        const shuffledPositions = shuffle(positions);
+        const shuffledSlots = shuffle(slotPool);
 
-        // 5. Assign Shuffled Positions to Users
+        // 5. Assign Shuffled Inning + Position to Users
         const updates = assignments.map((assignment, index) => {
+            const slot = shuffledSlots[index];
             return UserBattingAssignment.findByIdAndUpdate(
                 assignment._id,
-                { position: shuffledPositions[index] },
+                { 
+                    inningsNumber: slot.inningsNumber,
+                    position: slot.position 
+                },
                 { session: mongooseSession }
             );
         });

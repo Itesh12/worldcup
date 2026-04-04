@@ -24,7 +24,7 @@ interface Stats {
     };
     alerts: {
         needsPromotion: { _id: string; name: string; entryFee: number; fillRate: number; hoursUntilStart: number }[];
-        missedOpportunities: { _id: string; teams: any[]; startTime: string }[];
+        missedOpportunities: { _id: string; teams: any[]; startTime: string; status: string }[];
     };
     intelligence: {
         playerNetworkSize: number;
@@ -424,16 +424,22 @@ export default function SubAdminDashboard() {
                                         </div>
                                     </div>
                                     <div className="flex flex-wrap items-center justify-center gap-2">
-                                        {alerts.missedOpportunities.map(m => (
-                                            <button 
-                                                key={m._id}
-                                                onClick={() => setSelectedMatchForArena(m)}
-                                                className="group flex items-center gap-3 bg-black/40 border border-white/5 hover:border-red-500/30 rounded-xl px-4 py-2 transition-all"
-                                            >
-                                                <span className="text-[9px] font-black text-white uppercase">{m.teams[0].shortName || m.teams[0].name} v {m.teams[1].shortName || m.teams[1].name}</span>
-                                                <div className="px-2 py-0.5 bg-red-500 text-white text-[8px] font-black uppercase rounded shadow-lg shadow-red-500/20 group-hover:scale-105 transition-transform">HOST</div>
-                                            </button>
-                                        ))}
+                                        {alerts.missedOpportunities.map(m => {
+                                            const isFinished = ['finished', 'completed', 'result', 'settled'].includes(m.status?.toLowerCase() || '');
+                                            return (
+                                                <button 
+                                                    key={m._id}
+                                                    onClick={() => !isFinished && setSelectedMatchForArena(m)}
+                                                    disabled={isFinished}
+                                                    className={`group flex items-center gap-3 bg-black/40 border border-white/5 ${isFinished ? 'opacity-50 cursor-not-allowed' : 'hover:border-red-500/30'} rounded-xl px-4 py-2 transition-all`}
+                                                >
+                                                    <span className="text-[9px] font-black text-white uppercase">{m.teams[0].shortName || m.teams[0].name} v {m.teams[1].shortName || m.teams[1].name}</span>
+                                                    <div className={`px-2 py-0.5 ${isFinished ? 'bg-slate-700' : 'bg-red-500 shadow-lg shadow-red-500/20 group-hover:scale-105'} text-white text-[8px] font-black uppercase rounded transition-transform`}>
+                                                        {isFinished ? 'MISSED' : 'HOST'}
+                                                    </div>
+                                                </button>
+                                            );
+                                        })}
                                     </div>
                                 </div>
                             </motion.div>

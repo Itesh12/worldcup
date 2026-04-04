@@ -1,21 +1,22 @@
 "use client";
 
 import { useEffect, useState, use, Suspense } from "react";
-import { ArrowLeft, User, Target, Zap, Info, Calendar, MapPin, Users, Activity, Trophy, X, Star, PartyPopper, RefreshCw, Ban, AlertCircle, Lock, Copy, CheckCircle2, Share2 } from "lucide-react";
+import { ArrowLeft, User, Target, Zap, Info, Calendar, MapPin, Users, Activity, Trophy, X, Star, PartyPopper, RefreshCw, Ban, AlertCircle, Lock, Copy, CheckCircle2, Share2, Swords, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Spinner } from "@/components/ui/Spinner";
 import { ArenaSelectionDialog } from "@/components/ArenaSelectionDialog";
 import { CreateArenaModal } from "@/components/dashboard/CreateArenaModal";
-import { Swords } from "lucide-react";
 import { useToast } from "@/contexts/ToastContext";
+import { ArenaDetailView } from "@/components/dashboard/ArenaDetailView";
 
 interface SlotData {
     inningsNumber: number;
     position: number | null;
     isRevealed: boolean;
     revealTime: string;
+    arenaId: string;
     arenaName: string;
     resolution?: {
         playerName: string;
@@ -269,15 +270,11 @@ function MatchDetailContent({ params }: { params: Promise<{ id: string }> }) {
     const { id: matchId } = use(params);
     const { data: session, status } = useSession();
     const [data, setData] = useState<any>(null);
-    const [leaderboard, setLeaderboard] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState<'hosted' | 'slots' | 'scorecard' | 'leaderboard' | 'squads' | 'info'>('slots');
+    const [activeTab, setActiveTab] = useState<'hosted' | 'slots' | 'scorecard' | 'squads' | 'info'>('slots');
     const [error, setError] = useState<string | null>(null);
     const [refreshing, setRefreshing] = useState(false);
     const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
-    const [showWinnerPopup, setShowWinnerPopup] = useState(false);
-    const [showAbandonedPopup, setShowAbandonedPopup] = useState(false);
-    const [winnerData, setWinnerData] = useState<any>(null);
     const [hasShownPopup, setHasShownPopup] = useState(false);
     const [isArenaDialogOpen, setIsArenaDialogOpen] = useState(false);
     const [matchForHosting, setMatchForHosting] = useState<any>(null);
@@ -285,17 +282,7 @@ function MatchDetailContent({ params }: { params: Promise<{ id: string }> }) {
     const [loadingHosted, setLoadingHosted] = useState(false);
     const [copiedId, setCopiedId] = useState<string | null>(null);
     const [copiedLinkId, setCopiedLinkId] = useState<string | null>(null);
-
-    const fetchLeaderboard = async () => {
-        try {
-            const lbRes = await fetch(`/api/matches/${matchId}/leaderboard`);
-            const lbResult = await lbRes.json();
-            if (lbRes.ok) setLeaderboard(lbResult);
-        } catch (err) {
-            console.error("Error fetching leaderboard:", err);
-            showToast("Failed to update leaderboard.", "error");
-        }
-    };
+    const [selectedArenaId, setSelectedArenaId] = useState<string | null>(null);
 
     const fetchHostedArenas = async () => {
         if (!session) return;
@@ -325,11 +312,6 @@ function MatchDetailContent({ params }: { params: Promise<{ id: string }> }) {
             if (res.ok) {
                 setData(result);
                 setLastUpdated(new Date());
-                // Also update leaderboard if on that tab or initially (restricted to session)
-                if (session && (activeTab === 'leaderboard' || !leaderboard.length)) {
-                    fetchLeaderboard();
-                }
-                // Fetch hosted arenas if on that tab
                 if (session && activeTab === 'hosted') {
                     fetchHostedArenas();
                 }
@@ -350,22 +332,15 @@ function MatchDetailContent({ params }: { params: Promise<{ id: string }> }) {
         fetchMatchData();
     }, [matchId]);
 
-    // Check for match completion to show winner popup
+    // Check for match completion
     useEffect(() => {
-        const status = data?.match?.status?.toLowerCase();
-        const isFinished = status === 'finished' || status === 'completed' || status === 'result' || status === 'settled';
+        const ms = data?.match?.status?.toLowerCase();
+        const finished = ms === 'finished' || ms === 'completed' || ms === 'result' || ms === 'settled';
 
-        if (isFinished && leaderboard.length > 0 && !hasShownPopup) {
-            const topScore = leaderboard[0].totalRuns;
-            if (topScore > 0) {
-                setWinnerData(leaderboard[0]); // Rank 1
-                setShowWinnerPopup(true);
-            } else {
-                setShowAbandonedPopup(true);
-            }
+        if (finished && !hasShownPopup) {
             setHasShownPopup(true);
         }
-    }, [data?.match?.status, leaderboard, hasShownPopup]);
+    }, [data?.match?.status, hasShownPopup]);
 
     // Handle Direct URL Joining via Invite Code
     useEffect(() => {
@@ -412,13 +387,19 @@ function MatchDetailContent({ params }: { params: Promise<{ id: string }> }) {
     );
 
     const { match, slots, advanced } = data;
+    const matchStatus = match?.status?.toLowerCase() || '';
+    const isFinished = matchStatus === 'finished' || matchStatus === 'completed' || matchStatus === 'result' || matchStatus === 'settled';
 
-    // Grouping slots by arenaName
+    // Grouping slots by arenaId for better lookup
     const groupedSlots = slots.reduce((acc: any, slot: SlotData) => {
-        if (!acc[slot.arenaName]) {
-            acc[slot.arenaName] = [];
+        const key = slot.arenaId;
+        if (!acc[key]) {
+            acc[key] = {
+                name: slot.arenaName,
+                slots: []
+            };
         }
-        acc[slot.arenaName].push(slot);
+        acc[key].slots.push(slot);
         return acc;
     }, {});
 
@@ -439,7 +420,6 @@ function MatchDetailContent({ params }: { params: Promise<{ id: string }> }) {
     const tabs = [
         { id: 'hosted', label: 'My Arenas', icon: Swords },
         { id: 'slots', label: 'My Slots', icon: Target },
-        { id: 'leaderboard', label: 'Leaderboard', icon: Trophy },
         { id: 'scorecard', label: 'Scorecard', icon: Activity },
         { id: 'squads', label: 'Squads', icon: Users },
         { id: 'info', label: 'Match Info', icon: Info },
@@ -478,9 +458,7 @@ function MatchDetailContent({ params }: { params: Promise<{ id: string }> }) {
                         <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-slate-900 border border-white/5 shadow-inner">
                             <span className={`w-1.5 h-1.5 rounded-full ${match.status === 'live' ? 'bg-green-500 animate-pulse' : 'bg-slate-700'}`} />
                             <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">
-                                {(leaderboard.length > 0 && leaderboard[0].totalRuns === 0 && (match.status === 'finished' || match.status === 'completed' || match.status === 'result' || match.status === 'settled'))
-                                    ? "CANCELLED / FORFEITED"
-                                    : match.status}
+                                {match.status}
                             </span>
                         </div>
                     </div>
@@ -564,7 +542,7 @@ function MatchDetailContent({ params }: { params: Promise<{ id: string }> }) {
                     <div className="space-y-10 animate-in fade-in slide-in-from-bottom-5 duration-700">
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                             <SectionHeader title="Your Hosted Arenas" icon={Swords} color="purple" />
-                            {session && (
+                            {!isFinished && session && (
                                 <button 
                                     onClick={() => setMatchForHosting(match)}
                                     className="flex items-center gap-3 px-8 py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl text-xs font-black italic uppercase tracking-widest transition-all shadow-lg shadow-indigo-600/20 active:scale-95"
@@ -612,8 +590,16 @@ function MatchDetailContent({ params }: { params: Promise<{ id: string }> }) {
                                                 </div>
                                             </div>
 
-                                            <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
-                                                {arena.isPrivate && arena.inviteCode && (
+                                                <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
+                                                    <button 
+                                                        onClick={() => setSelectedArenaId(arena._id)}
+                                                        className="flex items-center gap-2 px-6 py-2.5 bg-slate-900 border border-white/5 rounded-xl hover:border-indigo-500/50 transition-all text-[10px] font-black text-indigo-400 uppercase tracking-widest group"
+                                                    >
+                                                        <Trophy className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
+                                                        View Standings
+                                                    </button>
+
+                                                    {arena.isPrivate && arena.inviteCode && (
                                                     <div className="flex flex-col items-end gap-1.5">
                                                         <span className="text-[9px] font-black text-slate-600 uppercase tracking-[0.2em]">Contest Access</span>
                                                         <div className="flex items-center gap-2">
@@ -673,7 +659,7 @@ function MatchDetailContent({ params }: { params: Promise<{ id: string }> }) {
                     <div className="space-y-10 animate-in fade-in slide-in-from-bottom-5 duration-700">
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                             <SectionHeader title="Your Assignments" icon={Target} color="indigo" />
-                            {session && (
+                            {!isFinished && session && (
                                 <button 
                                     onClick={() => setIsArenaDialogOpen(true)}
                                     className="flex items-center gap-3 px-8 py-4 bg-purple-600 hover:bg-purple-500 text-white rounded-2xl text-xs font-black italic uppercase tracking-widest transition-all shadow-lg shadow-purple-600/20 active:scale-95"
@@ -690,19 +676,23 @@ function MatchDetailContent({ params }: { params: Promise<{ id: string }> }) {
                             <EmptyState message="You haven't been assigned to any slots yet. Launch into an arena to start playing!" />
                         ) : (
                             <div className="space-y-16">
-                                {Object.entries(groupedSlots).map(([arenaName, arenaSlots]: [string, any], aIdx) => (
+                                {Object.entries(groupedSlots).map(([arenaId, group]: [string, any], aIdx) => (
                                     <div key={aIdx} className="space-y-6">
                                         <div className="flex items-center gap-4 px-2">
                                             <div className="h-px flex-1 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
-                                            <div className="flex items-center gap-3 px-6 py-2 bg-slate-900/40 border border-white/5 rounded-full backdrop-blur-md">
-                                                <Zap className="w-3 h-3 text-purple-400" />
-                                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] italic">{arenaName}</span>
-                                            </div>
+                                            <button 
+                                                onClick={() => setSelectedArenaId(arenaId)}
+                                                className="flex items-center gap-3 px-6 py-2 bg-slate-900/40 border border-white/5 rounded-full backdrop-blur-md hover:border-indigo-500/50 transition-all group"
+                                            >
+                                                <Zap className="w-3 h-3 text-purple-400 group-hover:scale-110 transition-transform" />
+                                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] italic">{group.name}</span>
+                                                <ChevronRight className="w-3 h-3 text-slate-600 group-hover:translate-x-0.5 transition-transform" />
+                                            </button>
                                             <div className="h-px flex-1 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
                                         </div>
 
                                         <div className="grid gap-6">
-                                            {arenaSlots.map((slot: SlotData, idx: number) => {
+                                            {group.slots.map((slot: SlotData, idx: number) => {
                                                 const isRevealed = slot.isRevealed;
 
                                                 return (
@@ -778,85 +768,7 @@ function MatchDetailContent({ params }: { params: Promise<{ id: string }> }) {
                     </div>
                 )}
 
-                {activeTab === 'leaderboard' && (
-                    <div className="space-y-10 animate-in fade-in slide-in-from-bottom-5 duration-700">
-                        <SectionHeader title="Match Leaderboard" icon={Trophy} color="indigo" />
-                        {!session ? (
-                            <AuthBackdrop message="The scorecard of champions is for members only. Sign in to view the live leaderboard." />
-                        ) : leaderboard.length === 0 ? (
-                            <EmptyState message="No scores recorded yet for this match." />
-                        ) : (
-                            <div className="grid gap-4">
-                                {leaderboard.map((entry, idx) => (
-                                    <div
-                                        key={idx}
-                                        className={`relative overflow-hidden bg-[#0A0F1C]/60 border ${idx === 0 ? 'border-yellow-500/30' :
-                                            idx === 1 ? 'border-slate-400/30' :
-                                                idx === 2 ? 'border-orange-500/30' : 'border-white/5'
-                                            } rounded-xl md:rounded-2xl p-4 md:p-6 flex flex-col md:flex-row items-center justify-between gap-4 md:gap-6 backdrop-blur-3xl group hover:border-indigo-500/30 transition-all`}
-                                    >
-                                        {/* Rank Badge */}
-                                        <div className="flex items-center gap-4 md:gap-6 w-full md:w-auto">
-                                            <div className={`w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl flex items-center justify-center font-black text-sm md:text-lg ${idx === 0 ? 'bg-yellow-500 text-black shadow-lg shadow-yellow-500/20' :
-                                                idx === 1 ? 'bg-slate-400 text-black' :
-                                                    idx === 2 ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-400 font-bold'
-                                                }`}>
-                                                {idx + 1}
-                                            </div>
 
-                                            <div className="flex items-center gap-3 md:gap-4">
-                                                <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-gradient-to-tr from-indigo-600 to-purple-600 p-[1.5px] shadow-lg shadow-indigo-500/20">
-                                                    <div className="w-full h-full rounded-full bg-[#050B14] flex items-center justify-center overflow-hidden">
-                                                        {entry.user.image ? (
-                                                            <img src={entry.user.image} alt={entry.user.name} className="w-full h-full object-cover" />
-                                                        ) : (
-                                                            <User className="w-3 md:w-4 h-3 md:h-4 text-slate-500" />
-                                                        )}
-                                                    </div>
-                                                </div>
-                                                <div className="flex flex-col">
-                                                    <span className="text-white font-black tracking-tight uppercase text-xs md:text-sm">{entry.user.name}</span>
-                                                    {entry.playingAs && entry.playingAs.length > 0 && (
-                                                        <span className="text-[8px] md:text-[9px] font-bold text-indigo-400/70 uppercase tracking-widest mt-0.5">
-                                                            AS {entry.playingAs[0].toUpperCase()}
-                                                            {entry.playingAs.length > 1 && ` & ${entry.playingAs.length - 1} MORE`}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {/* Stats */}
-                                        <div className="flex items-center gap-4 sm:gap-6 md:gap-10 w-full md:w-auto justify-between md:justify-end px-2 md:px-0 border-t md:border-t-0 border-white/5 pt-3 md:pt-0 overflow-x-auto scrollbar-hide pb-2 md:pb-0">
-                                            <div className="flex flex-col items-center md:items-end min-w-[30px]">
-                                                <span className="text-[8px] md:text-[9px] font-black text-slate-500 tracking-widest uppercase mb-1">Runs</span>
-                                                <span className="text-lg md:text-xl font-black text-white">{entry.totalRuns}</span>
-                                            </div>
-                                            <div className="flex flex-col items-center md:items-end min-w-[30px]">
-                                                <span className="text-[8px] md:text-[9px] font-black text-slate-500 tracking-widest uppercase mb-1">Balls</span>
-                                                <span className="text-xs md:text-sm font-black text-slate-400">{entry.totalBalls}</span>
-                                            </div>
-                                            <div className="flex flex-col items-center md:items-end min-w-[20px]">
-                                                <span className="text-[8px] md:text-[9px] font-black text-slate-500 tracking-widest uppercase mb-1">4s</span>
-                                                <span className="text-xs md:text-sm font-black text-slate-400">{entry.totalFours || 0}</span>
-                                            </div>
-                                            <div className="flex flex-col items-center md:items-end min-w-[20px]">
-                                                <span className="text-[8px] md:text-[9px] font-black text-slate-500 tracking-widest uppercase mb-1">6s</span>
-                                                <span className="text-xs md:text-sm font-black text-slate-400">{entry.totalSixes || 0}</span>
-                                            </div>
-                                            <div className="flex flex-col items-center md:items-end min-w-[40px]">
-                                                <span className="text-[8px] md:text-[9px] font-black text-slate-500 tracking-widest uppercase mb-1">S/R</span>
-                                                <span className={`text-xs md:text-sm font-black ${parseFloat(entry.strikeRate) > 150 ? 'text-green-500' : 'text-indigo-400'}`}>
-                                                    {entry.strikeRate}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                )}
 
                 {activeTab === 'scorecard' && (
                     <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -912,118 +824,7 @@ function MatchDetailContent({ params }: { params: Promise<{ id: string }> }) {
                 )}
             </main>
 
-            {/* Winner Popup Overlay */}
-            {
-                showWinnerPopup && winnerData && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-500">
-                        <div className="relative w-full max-w-lg bg-[#0A0F1C] border border-white/10 rounded-[3rem] p-10 overflow-hidden shadow-[0_0_100px_rgba(99,102,241,0.2)]">
-                            {/* Background Effects */}
-                            <div className="absolute -top-24 -left-24 w-64 h-64 bg-indigo-600/20 blur-[80px] rounded-full" />
-                            <div className="absolute -bottom-24 -right-24 w-64 h-64 bg-purple-600/20 blur-[80px] rounded-full" />
-
-                            <button
-                                onClick={() => setShowWinnerPopup(false)}
-                                className="absolute top-6 right-6 p-2 rounded-full bg-white/5 hover:bg-white/10 border border-white/5 text-slate-400 hover:text-white transition-all z-10"
-                            >
-                                <X className="w-5 h-5" />
-                            </button>
-
-                            <div className="relative z-10 flex flex-col items-center text-center">
-                                <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-yellow-500 via-orange-500 to-yellow-600 p-[3px] shadow-[0_0_40px_rgba(234,179,8,0.3)] mb-8 animate-bounce">
-                                    <div className="w-full h-full rounded-full bg-[#050B14] flex items-center justify-center">
-                                        <Trophy className="w-12 h-12 text-yellow-500" />
-                                    </div>
-                                </div>
-
-                                <h2 className="text-2xl md:text-4xl font-black text-white tracking-tight uppercase mb-2">Match Winner</h2>
-                                <p className="text-indigo-400 font-bold uppercase tracking-[0.2em] md:tracking-[0.3em] text-[10px] md:text-xs mb-6 md:mb-8">Performance MVP</p>
-
-                                <div className="flex items-center gap-4 md:gap-6 mb-8 md:mb-10 w-full p-4 md:p-6 bg-white/5 rounded-[1.5rem] md:rounded-[2rem] border border-white/5">
-                                    <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-gradient-to-tr from-indigo-600 to-purple-600 p-[2px]">
-                                        <div className="w-full h-full rounded-full bg-[#050B14] flex items-center justify-center overflow-hidden">
-                                            {winnerData.user.image ? (
-                                                <img src={winnerData.user.image} alt={winnerData.user.name} className="w-full h-full object-cover" />
-                                            ) : (
-                                                <User className="w-4 md:w-6 h-4 md:h-6 text-slate-500" />
-                                            )}
-                                        </div>
-                                    </div>
-                                    <div className="flex-1 text-left px-2">
-                                        <h3 className="text-xl md:text-2xl font-black text-white uppercase tracking-tight truncate">{winnerData.user.name}</h3>
-                                        <p className="text-[8px] md:text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Global Rank Reached: #1</p>
-                                    </div>
-                                </div>
-
-                                <div className="grid grid-cols-3 gap-3 md:gap-4 w-full mb-8 md:mb-10">
-                                    <div className="flex flex-col items-center p-3 md:p-4 bg-white/5 rounded-xl md:rounded-2xl border border-white/5">
-                                        <span className="text-[8px] md:text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Runs</span>
-                                        <span className="text-lg md:text-2xl font-black text-white">{winnerData.totalRuns}</span>
-                                    </div>
-                                    <div className="flex flex-col items-center p-3 md:p-4 bg-white/5 rounded-xl md:rounded-2xl border border-white/5">
-                                        <span className="text-[8px] md:text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Strike Rate</span>
-                                        <span className="text-lg md:text-2xl font-black text-indigo-400">{winnerData.strikeRate}</span>
-                                    </div>
-                                    <div className="flex flex-col items-center p-3 md:p-4 bg-white/5 rounded-xl md:rounded-2xl border border-white/5">
-                                        <span className="text-[8px] md:text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Boundaries</span>
-                                        <span className="text-lg md:text-2xl font-black text-white">{(winnerData.totalFours || 0) + (winnerData.totalSixes || 0)}</span>
-                                    </div>
-                                </div>
-
-                                <button
-                                    onClick={() => setShowWinnerPopup(false)}
-                                    className="w-full py-5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-black uppercase tracking-[0.2em] text-xs shadow-xl shadow-indigo-600/30 transition-all hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-3"
-                                >
-                                    <PartyPopper className="w-4 h-4" />
-                                    Celebrate Victory
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-            {/* Abandoned / Cancelled Popup */}
-            {
-                showAbandonedPopup && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-500">
-                        <div className="relative w-full max-w-lg bg-[#0A0F1C] border border-white/10 rounded-[3rem] p-10 overflow-hidden shadow-[0_0_100px_rgba(239,68,68,0.1)]">
-                            {/* Background Effects */}
-                            <div className="absolute -top-24 -left-24 w-64 h-64 bg-red-600/10 blur-[80px] rounded-full" />
-                            <div className="absolute -bottom-24 -right-24 w-64 h-64 bg-orange-600/10 blur-[80px] rounded-full" />
-
-                            <button
-                                onClick={() => setShowAbandonedPopup(false)}
-                                className="absolute top-6 right-6 p-2 rounded-full bg-white/5 hover:bg-white/10 border border-white/5 text-slate-400 hover:text-white transition-all z-10"
-                            >
-                                <X className="w-5 h-5" />
-                            </button>
-
-                            <div className="relative z-10 flex flex-col items-center text-center">
-                                <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-red-900/40 via-slate-800 to-slate-900 p-[3px] shadow-[0_0_40px_rgba(239,68,68,0.1)] mb-8">
-                                    <div className="w-full h-full rounded-full bg-[#050B14] flex items-center justify-center">
-                                        <Ban className="w-12 h-12 text-red-500" />
-                                    </div>
-                                </div>
-
-                                <h2 className="text-2xl md:text-4xl font-black text-white tracking-tight uppercase mb-2">Match Cancelled</h2>
-                                <p className="text-red-500 font-bold uppercase tracking-[0.2em] md:tracking-[0.3em] text-[10px] md:text-xs mb-8">Abandoned / Forfeited</p>
-
-                                <div className="p-8 bg-white/5 rounded-[2rem] border border-white/5 mb-10 w-full">
-                                    <p className="text-slate-400 font-medium leading-relaxed">
-                                        This match has been marked as cancelled or forfeited. No winners have been declared, and player statistics for this match have been neutralized.
-                                    </p>
-                                </div>
-
-                                <button
-                                    onClick={() => setShowAbandonedPopup(false)}
-                                    className="w-full py-5 bg-slate-800 hover:bg-slate-700 text-white rounded-2xl font-black uppercase tracking-[0.2em] text-xs transition-all flex items-center justify-center gap-3"
-                                >
-                                    Dismiss Notice
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )
-            }
+            {/* Modal Dialogs */}
 
             <ArenaSelectionDialog
                 isOpen={isArenaDialogOpen}
@@ -1032,6 +833,7 @@ function MatchDetailContent({ params }: { params: Promise<{ id: string }> }) {
                 matchName={`${match.teams[0].shortName} VS ${match.teams[1].shortName}`}
                 onJoinSuccess={() => fetchMatchData(true)}
                 onHostClick={() => setMatchForHosting(match)}
+                isMatchFinished={isFinished}
             />
 
             {matchForHosting && (
@@ -1043,18 +845,25 @@ function MatchDetailContent({ params }: { params: Promise<{ id: string }> }) {
                     onSuccess={() => fetchMatchData(true)}
                 />
             )}
+
+            <ArenaDetailView 
+                isOpen={!!selectedArenaId}
+                onClose={() => setSelectedArenaId(null)}
+                arenaId={selectedArenaId || ""}
+                matchId={matchId}
+            />
         </div>
     );
 }
 
-export default function MatchDetailPage(props: any) {
+export default function MatchDetailPage(props: { params: Promise<{ id: string }> }) {
     return (
         <Suspense fallback={
             <div className="min-h-screen bg-[#050810] flex items-center justify-center">
                 <Spinner />
             </div>
         }>
-            <MatchDetailContent {...props} />
+            <MatchDetailContent params={props.params} />
         </Suspense>
     );
 }
