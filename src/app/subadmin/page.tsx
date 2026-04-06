@@ -8,6 +8,7 @@ import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import ArenaManager from "@/components/shared/ArenaManager";
 import { CreateArenaModal } from "@/components/dashboard/CreateArenaModal";
+import { ArenaDetailView } from "@/components/dashboard/ArenaDetailView";
 import { Spinner } from "@/components/ui/Spinner";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/contexts/ToastContext";
@@ -53,6 +54,7 @@ export default function SubAdminDashboard() {
     const [isEditBrandOpen, setIsEditBrandOpen] = useState(false);
     const [newBrandName, setNewBrandName] = useState("");
     const [isUpdatingBrand, setIsUpdatingBrand] = useState(false);
+    const [selectedArenaForView, setSelectedArenaForView] = useState<{ arenaId: string; matchId: string } | null>(null);
 
     const fetchStats = async () => {
         try {
@@ -468,7 +470,11 @@ export default function SubAdminDashboard() {
                                 </thead>
                                 <tbody className="divide-y divide-white/5 text-[10px]">
                                     {recentArenas.map((arena) => (
-                                        <tr key={arena._id} className="hover:bg-white/5 transition-colors">
+                                        <tr 
+                                            key={arena._id} 
+                                            onClick={() => setSelectedArenaForView({ arenaId: arena._id, matchId: arena.matchId?._id || arena.matchId })}
+                                            className="hover:bg-white/5 transition-colors cursor-pointer"
+                                        >
                                             <td className="px-5 py-3.5 whitespace-nowrap">
                                                 <div className="font-black text-white uppercase italic tracking-tight">{arena.name}</div>
                                                 <div className="text-[8px] font-bold text-slate-500 uppercase mt-0.5">{new Date(arena.createdAt).toLocaleDateString()}</div>
@@ -586,6 +592,15 @@ export default function SubAdminDashboard() {
                             </form>
                         </motion.div>
                     </div>
+                )}
+
+                {selectedArenaForView && (
+                    <ArenaDetailView 
+                        isOpen={!!selectedArenaForView}
+                        onClose={() => setSelectedArenaForView(null)}
+                        arenaId={selectedArenaForView.arenaId}
+                        matchId={selectedArenaForView.matchId}
+                    />
                 )}
             </AnimatePresence>
         </div>

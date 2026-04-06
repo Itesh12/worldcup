@@ -23,6 +23,7 @@ import { useRouter } from "next/navigation";
 import { useToast } from "@/contexts/ToastContext";
 import { Spinner } from "@/components/ui/Spinner";
 import { CreateArenaModal } from "@/components/dashboard/CreateArenaModal";
+import { ArenaDetailView } from "@/components/dashboard/ArenaDetailView";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 
@@ -35,6 +36,7 @@ export default function MyArenasPage() {
     const [loading, setLoading] = useState(true);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [expandedMatches, setExpandedMatches] = useState<Record<string, boolean>>({});
+    const [selectedArenaForView, setSelectedArenaForView] = useState<{ arenaId: string; matchId: string } | null>(null);
 
     const fetchArenas = async () => {
         try {
@@ -201,7 +203,8 @@ export default function MyArenasPage() {
                                             {group.arenas.map((arena: any) => (
                                                 <div 
                                                     key={arena._id}
-                                                    className="group relative bg-[#0A0F1C] border border-white/5 rounded-3xl overflow-hidden hover:border-purple-500/30 transition-all duration-500 shadow-2xl p-6"
+                                                    onClick={() => setSelectedArenaForView({ arenaId: arena._id, matchId: arena.matchId._id })}
+                                                    className="group relative bg-[#0A0F1C] border border-white/5 rounded-3xl overflow-hidden hover:border-purple-500/30 transition-all duration-500 shadow-2xl p-6 cursor-pointer"
                                                 >
                                                     <div className="flex items-start justify-between gap-4 mb-5">
                                                         <div className="flex-1 overflow-hidden">
@@ -239,13 +242,16 @@ export default function MyArenasPage() {
                                                         </div>
                                                     </div>
 
-                                                    <Link 
-                                                        href={`/matches/${arena.matchId?._id}`}
+                                                    <button 
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setSelectedArenaForView({ arenaId: arena._id, matchId: arena.matchId?._id });
+                                                        }}
                                                         className="mt-6 w-full flex items-center justify-between p-4 bg-white/5 hover:bg-white/10 rounded-2xl border border-white/5 transition-all group/btn"
                                                     >
                                                         <span className="text-[9px] font-black text-slate-400 group-hover/btn:text-white uppercase tracking-[0.2em] transition-colors">Audit Grid</span>
                                                         <ChevronRight className="w-4 h-4 text-slate-600 group-hover/btn:text-purple-400 group-hover/btn:translate-x-1 transition-all" />
-                                                    </Link>
+                                                    </button>
                                                 </div>
                                             ))}
                                         </div>
@@ -267,6 +273,14 @@ export default function MyArenasPage() {
                     setIsCreateModalOpen(false);
                     fetchArenas();
                 }}
+            />
+
+            {/* Arena Detail View Modal */}
+            <ArenaDetailView 
+                isOpen={!!selectedArenaForView}
+                onClose={() => setSelectedArenaForView(null)}
+                arenaId={selectedArenaForView?.arenaId || ""}
+                matchId={selectedArenaForView?.matchId || ""}
             />
         </div>
     );

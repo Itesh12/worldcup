@@ -22,6 +22,7 @@ import { useRouter } from "next/navigation";
 import { useToast } from "@/contexts/ToastContext";
 import { Spinner } from "@/components/ui/Spinner";
 import { CreateArenaModal } from "@/components/dashboard/CreateArenaModal";
+import { ArenaDetailView } from "@/components/dashboard/ArenaDetailView";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 
@@ -57,6 +58,7 @@ export default function AdminArenasPage() {
     const [arenas, setArenas] = useState<Arena[]>([]);
     const [loading, setLoading] = useState(true);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [selectedArenaForView, setSelectedArenaForView] = useState<{ arenaId: string; matchId: string } | null>(null);
     
     // Filters
     const [searchQuery, setSearchQuery] = useState("");
@@ -306,7 +308,8 @@ export default function AdminArenasPage() {
                                             {group.arenas.map((arena) => (
                                                 <div 
                                                     key={arena._id}
-                                                    className={`relative bg-slate-900/50 border rounded-3xl p-5 hover:scale-[1.02] transition-all duration-300 ${
+                                                    onClick={() => setSelectedArenaForView({ arenaId: arena._id, matchId: arena.matchId._id })}
+                                                    className={`relative bg-slate-900/50 border rounded-3xl p-5 hover:scale-[1.02] transition-all duration-300 cursor-pointer ${
                                                         arena.createdBy.role === 'admin' 
                                                         ? 'border-indigo-500/20 hover:border-indigo-500/50' 
                                                         : 'border-white/5 hover:border-white/20'
@@ -348,12 +351,15 @@ export default function AdminArenasPage() {
                                                             <span className="block text-[8px] font-black text-slate-600 uppercase tracking-widest mb-0.5 italic">By {arena.createdBy.name}</span>
                                                             <span className="block text-[7px] font-bold text-slate-500 truncate">{arena.createdBy.email}</span>
                                                         </div>
-                                                        <Link 
-                                                            href={`/matches/${arena.matchId._id}`}
+                                                        <button 
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setSelectedArenaForView({ arenaId: arena._id, matchId: arena.matchId._id });
+                                                            }}
                                                             className="p-2 bg-white/5 hover:bg-white/10 rounded-lg transition-colors group/link"
                                                         >
                                                             <ChevronRight className="w-4 h-4 text-slate-600 group-hover/link:text-white" />
-                                                        </Link>
+                                                        </button>
                                                     </div>
                                                 </div>
                                             ))}
@@ -377,6 +383,14 @@ export default function AdminArenasPage() {
                     fetchArenas();
                     showToast("Arena Grid Updated", "success");
                 }}
+            />
+
+            {/* Arena Detail Inspection Modal */}
+            <ArenaDetailView 
+                isOpen={!!selectedArenaForView}
+                onClose={() => setSelectedArenaForView(null)}
+                arenaId={selectedArenaForView?.arenaId || ""}
+                matchId={selectedArenaForView?.matchId || ""}
             />
         </div>
     );

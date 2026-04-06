@@ -45,17 +45,17 @@ export function ArenaDetailView({ isOpen, onClose, arenaId, matchId }: ArenaDeta
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl animate-in fade-in duration-300">
-            <div className="relative w-full max-w-4xl max-h-[90vh] bg-[#0A0F1C] border border-white/10 rounded-[3rem] overflow-hidden flex flex-col shadow-[0_0_100px_rgba(99,102,241,0.1)]">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 md:p-12 bg-black/90 backdrop-blur-xl animate-in fade-in duration-300">
+            <div className="relative w-full max-w-4xl max-h-[80vh] bg-[#0A0F1C] border border-white/10 rounded-[1.5rem] overflow-hidden flex flex-col shadow-[0_0_100px_rgba(99,102,241,0.1)]">
                 {/* Background Effects */}
                 <div className="absolute -top-48 -left-48 w-96 h-96 bg-indigo-600/10 blur-[120px] rounded-full pointer-events-none" />
                 <div className="absolute -bottom-48 -right-48 w-96 h-96 bg-purple-600/10 blur-[120px] rounded-full pointer-events-none" />
 
                 {/* Header Container */}
-                <div className="relative z-10 p-6 md:p-8 border-b border-white/5 flex items-center justify-between bg-slate-900/20">
-                    <div className="flex items-center gap-4 md:gap-6">
-                        <div className="w-12 h-12 md:w-16 md:h-16 rounded-2xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center shadow-lg shadow-indigo-600/10">
-                            <Trophy className="w-6 h-6 md:w-8 md:h-8 text-indigo-400" />
+                <div className="relative z-10 p-4 md:p-5 border-b border-white/5 flex items-center justify-between bg-slate-900/20">
+                    <div className="flex items-center gap-4 md:gap-5">
+                        <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center shadow-lg shadow-indigo-600/10">
+                            <Trophy className="w-5 h-5 md:w-6 md:h-6 text-indigo-400" />
                         </div>
                         <div>
                             <div className="flex items-center gap-3">
@@ -91,12 +91,12 @@ export function ArenaDetailView({ isOpen, onClose, arenaId, matchId }: ArenaDeta
                             <p className="text-[10px] font-black text-slate-600 uppercase tracking-[0.3em] font-mono">Syncing Arena Standings...</p>
                         </div>
                     ) : (
-                        <div className="p-6 md:p-10 space-y-12">
+                        <div className="p-4 md:p-6 space-y-6">
                             {/* Navigation Tabs */}
                             <div className="flex items-center gap-8 border-b border-white/5 mx-2 pb-0.5">
                                 <button
                                     onClick={() => setActiveSection('leaderboard')}
-                                    className={`relative pb-4 text-xs font-black uppercase tracking-[0.2em] transition-all ${activeSection === 'leaderboard' ? 'text-white' : 'text-slate-500 hover:text-slate-300'}`}
+                                    className={`relative pb-3 text-[10px] font-black uppercase tracking-[0.2em] transition-all ${activeSection === 'leaderboard' ? 'text-white' : 'text-slate-500 hover:text-slate-300'}`}
                                 >
                                     Arena Standings
                                     {activeSection === 'leaderboard' && (
@@ -105,7 +105,7 @@ export function ArenaDetailView({ isOpen, onClose, arenaId, matchId }: ArenaDeta
                                 </button>
                                 <button
                                     onClick={() => setActiveSection('participants')}
-                                    className={`relative pb-4 text-xs font-black uppercase tracking-[0.2em] transition-all ${activeSection === 'participants' ? 'text-white' : 'text-slate-500 hover:text-slate-300'}`}
+                                    className={`relative pb-3 text-[10px] font-black uppercase tracking-[0.2em] transition-all ${activeSection === 'participants' ? 'text-white' : 'text-slate-500 hover:text-slate-300'}`}
                                 >
                                     Participant List
                                     {activeSection === 'participants' && (
@@ -124,11 +124,11 @@ export function ArenaDetailView({ isOpen, onClose, arenaId, matchId }: ArenaDeta
                                                 className={`relative overflow-hidden bg-slate-900/30 border ${idx === 0 ? 'border-yellow-500/20 bg-yellow-500/5' :
                                                     idx === 1 ? 'border-slate-400/20' :
                                                         idx === 2 ? 'border-orange-500/20' : 'border-white/5'
-                                                    } rounded-2xl md:rounded-[2rem] p-4 md:p-6 flex flex-col md:flex-row items-center justify-between gap-4 md:gap-6 group hover:border-indigo-500/30 transition-all backdrop-blur-md shadow-xl`}
+                                                    } rounded-xl md:rounded-2xl p-3 md:p-4 flex flex-col md:flex-row items-center justify-between gap-4 md:gap-5 group hover:border-indigo-500/30 transition-all backdrop-blur-md shadow-xl`}
                                             >
                                                 {/* Left Side: Rank & User */}
-                                                <div className="flex items-center gap-4 md:gap-6 w-full md:w-auto">
-                                                    <div className={`w-10 h-10 md:w-14 md:h-14 rounded-xl flex items-center justify-center font-black text-lg md:text-2xl ${idx === 0 ? 'bg-yellow-500 text-black shadow-lg shadow-yellow-500/20' :
+                                                <div className="flex items-center gap-4 md:gap-5 w-full md:w-auto">
+                                                    <div className={`w-8 h-8 md:w-10 md:h-10 rounded-lg flex items-center justify-center font-black text-sm md:text-lg ${idx === 0 ? 'bg-yellow-500 text-black shadow-lg shadow-yellow-500/20' :
                                                         idx === 1 ? 'bg-slate-400 text-black' :
                                                             idx === 2 ? 'bg-orange-600 text-white' : 'bg-slate-800/80 text-slate-500 border border-white/5'
                                                         }`}>
@@ -145,7 +145,7 @@ export function ArenaDetailView({ isOpen, onClose, arenaId, matchId }: ArenaDeta
                                                             </div>
                                                         </div>
                                                         <div className="flex flex-col">
-                                                            <span className="text-sm md:text-lg font-black text-white uppercase tracking-tight truncate max-w-[120px] md:max-w-none">{entry.user.name}</span>
+                                                            <span className="text-sm md:text-base font-black text-white uppercase tracking-tight truncate max-w-[120px] md:max-w-none">{entry.user.name}</span>
                                                             <div className="flex items-center gap-2">
                                                                 <Star className={`w-3 h-3 ${idx < 3 ? 'text-yellow-500 animate-pulse' : 'text-slate-600'}`} />
                                                                 <span className="text-[8px] md:text-[9px] font-bold text-slate-500 uppercase tracking-widest">{entry.slots.length} Global Slot Assignments</span>
