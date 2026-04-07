@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { CheckCircle, Circle, Plus, Trophy, Activity, Globe, Search, RefreshCw, ChevronDown, AlertTriangle, X, XCircle, ArrowLeft } from "lucide-react";
 import { Spinner } from "@/components/ui/Spinner";
 import { useToast } from "@/contexts/ToastContext";
@@ -17,7 +17,7 @@ interface Tournament {
     entryFee: number;
 }
 
-export default function AdminTournamentsPage() {
+function TournamentsContent() {
     const searchParams = useSearchParams();
     const isPlayerView = searchParams.get("view") === "player";
     const [tournaments, setTournaments] = useState<Tournament[]>([]);
@@ -445,5 +445,17 @@ export default function AdminTournamentsPage() {
                 )}
             </main>
         </div>
+    );
+}
+
+export default function AdminTournamentsPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen bg-[#050810] flex items-center justify-center">
+                <Spinner />
+            </div>
+        }>
+            <TournamentsContent />
+        </Suspense>
     );
 }

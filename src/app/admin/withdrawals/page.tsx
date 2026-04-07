@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, Suspense } from "react";
 import { 
   IndianRupee, 
   Clock, 
@@ -25,7 +25,7 @@ import { useSearchParams } from "next/navigation";
 import { useToast } from "@/contexts/ToastContext";
 import { Spinner } from "@/components/ui/Spinner";
 
-export default function AdminWithdrawalsPage() {
+function WithdrawalsContent() {
   const searchParams = useSearchParams();
   const isPlayerView = searchParams.get("view") === "player";
   const { showToast } = useToast();
@@ -349,4 +349,17 @@ export default function AdminWithdrawalsPage() {
             </main>
         </div>
     );
+}
+
+export default function WithdrawalsPage() {
+  return (
+    <Suspense fallback={
+        <div className="min-h-screen bg-[#05060f] flex flex-col items-center justify-center gap-4">
+            <Loader2 className="w-12 h-12 text-amber-500 animate-spin" />
+            <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] animate-pulse">Initializing Financial Grid...</p>
+        </div>
+    }>
+      <WithdrawalsContent />
+    </Suspense>
+  );
 }

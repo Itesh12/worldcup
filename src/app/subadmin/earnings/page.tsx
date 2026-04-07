@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, Suspense } from "react";
 import { 
     IndianRupee, 
     TrendingUp, 
@@ -23,7 +23,7 @@ import { useToast } from "@/contexts/ToastContext";
 import { Spinner } from "@/components/ui/Spinner";
 import { motion, AnimatePresence } from "framer-motion";
 
-export default function SubAdminEarningsPage() {
+function EarningsContent() {
     const { data: session, status } = useSession();
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -336,5 +336,18 @@ export default function SubAdminEarningsPage() {
                 </div>
             </div>
         </div>
+    );
+}
+
+export default function SubAdminEarningsPage() {
+    return (
+        <Suspense fallback={
+            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+                <Spinner />
+                <p className="text-slate-500 font-black text-xs uppercase tracking-[0.3em] animate-pulse">Initializing Financial Grid...</p>
+            </div>
+        }>
+            <EarningsContent />
+        </Suspense>
     );
 }

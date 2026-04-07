@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, Suspense } from "react";
 import { RefreshCcw, Calendar, MapPin, Activity, Swords, Zap, ChevronRight, Globe, Lock, Clock, CheckCircle, ArrowLeft, Settings, DollarSign, Percent, X, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -8,6 +8,7 @@ import { AdminContextSwitcher } from "@/components/admin/AdminContextSwitcher";
 import { AnimatePresence } from "framer-motion";
 import { CreateArenaModal } from "@/components/dashboard/CreateArenaModal";
 import { useToast } from "@/contexts/ToastContext";
+import { Spinner } from "@/components/ui/Spinner";
 
 interface Match {
     _id: string;
@@ -22,7 +23,7 @@ interface Match {
 
 type TabType = 'today' | 'upcoming' | 'past';
 
-export default function AdminMatchesPage() {
+function MatchesContent() {
     const searchParams = useSearchParams();
     const isPlayerView = searchParams.get("view") === "player";
     const [matches, setMatches] = useState<Match[]>([]);
@@ -283,5 +284,17 @@ export default function AdminMatchesPage() {
             </AnimatePresence>
 
         </div>
+    );
+}
+
+export default function AdminMatchesPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen bg-[#050810] flex items-center justify-center">
+                <Spinner />
+            </div>
+        }>
+            <MatchesContent />
+        </Suspense>
     );
 }

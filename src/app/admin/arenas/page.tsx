@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, Suspense } from "react";
 import { 
     Swords, 
     Plus, 
@@ -54,7 +54,7 @@ interface Arena {
     createdAt: string;
 }
 
-export default function AdminArenasPage() {
+function ArenasContent() {
     const { data: session, status } = useSession();
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -389,6 +389,7 @@ export default function AdminArenasPage() {
                                                                     } else {
                                                                         const data = await res.json();
                                                                         showToast(data.message || "Settlement Failed", "error");
+                                                                        fetchArenas();
                                                                     }
                                                                 } catch (err) {
                                                                     showToast("Network Error", "error");
@@ -456,5 +457,18 @@ export default function AdminArenasPage() {
                 matchId={selectedArenaForView?.matchId || ""}
             />
         </div>
+    );
+}
+
+export default function AdminArenasPage() {
+    return (
+        <Suspense fallback={
+            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+                <Spinner />
+                <p className="text-slate-500 font-black text-xs uppercase tracking-[0.3em] animate-pulse">Syncing High-Density Grid...</p>
+            </div>
+        }>
+            <ArenasContent />
+        </Suspense>
     );
 }

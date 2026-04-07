@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState, use } from "react";
+import { useEffect, useState, use, Suspense } from "react";
 import { User as UserIcon, Plus, Trash2, ArrowLeft, Swords, Medal, ShieldCheck, Zap, ChevronRight, Gavel, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { Spinner } from "@/components/ui/Spinner";
 
 interface Slot {
     _id: string;
@@ -32,7 +33,7 @@ interface MatchDetails {
     advanced?: any;
 }
 
-export default function MatchSlotsPage({ params }: { params: Promise<{ id: string }> }) {
+function MatchSlotsContent({ params }: { params: Promise<{ id: string }> }) {
     const searchParams = useSearchParams();
     const isPlayerView = searchParams.get("view") === "player";
     const { id: matchId } = use(params);
@@ -141,6 +142,14 @@ export default function MatchSlotsPage({ params }: { params: Promise<{ id: strin
     const team1 = matchDetails?.match?.teams?.[0]?.shortName || "TBC";
     const team2 = matchDetails?.match?.teams?.[1]?.shortName || "TBC";
 
+    if (loading) {
+        return (
+            <div className="flex min-h-screen items-center justify-center bg-[#050B14]">
+                <Spinner />
+            </div>
+        );
+    }
+
     return (
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 relative pb-20">
             {/* Standardized Header */}
@@ -195,7 +204,7 @@ export default function MatchSlotsPage({ params }: { params: Promise<{ id: strin
 
             {/* Page Header Area */}
             <div className="max-w-7xl mx-auto px-4 pt-12 relative z-10">
-                <p className="text-slate-400 font-medium italic italic">Strategic assignment of player slots for {slots.length || slotCount} total positions.</p>
+                <p className="text-slate-400 font-medium italic">Strategic assignment of player slots for {slots.length || slotCount} total positions.</p>
             </div>
 
             {/* Innings Grid - Only show if slots are generated */}
@@ -232,7 +241,7 @@ export default function MatchSlotsPage({ params }: { params: Promise<{ id: strin
                                                     {assignment ? (
                                                         <div className="flex-1 flex items-center justify-between bg-white/5 p-2 pr-4 rounded-xl border border-white/5 group-hover:border-indigo-500/20 transition-all">
                                                             <div className="flex items-center gap-3">
-                                                                <div className="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-black text-white shadow-lg shadow-indigo-600/20">
+                                                                  <div className="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-black text-white shadow-lg shadow-indigo-600/20">
                                                                     {assignment.userId.name.split(' ').map(n => n[0]).join('')}
                                                                 </div>
                                                                 <div className="flex flex-col">
@@ -321,5 +330,17 @@ export default function MatchSlotsPage({ params }: { params: Promise<{ id: strin
                 )}
             </div>
         </div>
+    );
+}
+
+export default function MatchSlotsPage(props: { params: Promise<{ id: string }> }) {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen bg-[#050B14] flex items-center justify-center">
+                <Spinner />
+            </div>
+        }>
+            <MatchSlotsContent params={props.params} />
+        </Suspense>
     );
 }

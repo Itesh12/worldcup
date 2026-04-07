@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, Suspense } from "react";
 import { 
     Swords, 
     Plus, 
@@ -29,7 +29,7 @@ import { ArenaDetailView } from "@/components/dashboard/ArenaDetailView";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 
-export default function MyArenasPage() {
+function ArenasContent() {
     const { data: session, status } = useSession();
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -330,5 +330,18 @@ export default function MyArenasPage() {
                 matchId={selectedArenaForView?.matchId || ""}
             />
         </div>
+    );
+}
+
+export default function MyArenasPage() {
+    return (
+        <Suspense fallback={
+            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+                <Spinner />
+                <p className="text-slate-500 font-black text-xs uppercase tracking-[0.3em] animate-pulse">Initializing Arena Hierarchy...</p>
+            </div>
+        }>
+            <ArenasContent />
+        </Suspense>
     );
 }

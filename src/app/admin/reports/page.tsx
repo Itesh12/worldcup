@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, Suspense } from "react";
 import { useSession } from "next-auth/react";
 import {
     FileText,
@@ -206,7 +206,7 @@ const MasterReportTemplate = React.forwardRef<HTMLDivElement, { week: any }>((({
                                 {u.matches.map((m: any, mi: number) => (
                                     <div key={mi} className="flex items-center justify-between p-6 bg-white/5 rounded-3xl border border-white/5">
                                         <div>
-                                            <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">{new Date(m.date).toLocaleDateString([], { month: 'short', day: 'numeric' })} &middot; {m.venue}</p>
+                                            <p className="text-[8px] font-bold text-slate-500 uppercase tracking-widest mb-1">{new Date(m.date).toLocaleDateString([], { month: 'short', day: 'numeric' })} &middot; {m.venue}</p>
                                             <p className="font-black text-lg">{m.runs} Runs <span className="text-slate-500 text-sm font-normal">({m.balls} balls)</span></p>
                                         </div>
                                         <div className="text-right">
@@ -243,7 +243,7 @@ const MasterReportTemplate = React.forwardRef<HTMLDivElement, { week: any }>((({
     );
 }));
 
-export default function AdminReportsPage() {
+function ReportsContent() {
     const searchParams = useSearchParams();
     const isPlayerView = searchParams.get("view") === "player";
     const { data: session } = useSession();
@@ -272,9 +272,9 @@ export default function AdminReportsPage() {
         }
     };
 
-    const currentWeek = weeks[currentWeekIndex];
-
     const handleDownloadMaster = async () => {
+        if (!weeks.length) return;
+        const currentWeek = weeks[currentWeekIndex];
         if (!masterReportRef.current || downloading) return;
         setDownloading(true);
 
@@ -333,11 +333,7 @@ export default function AdminReportsPage() {
         );
     }
 
-    const getColorStyle = (percentage: number) => {
-        if (percentage >= 80) return { primary: '#10b981', label: 'Elite' };
-        if (percentage >= 50) return { primary: '#f59e0b', label: 'Pro' };
-        return { primary: '#f43f5e', label: 'Growing' };
-    };
+    const currentWeek = weeks[currentWeekIndex];
 
     return (
         <div className="min-h-screen bg-[#050B14] p-6 md:p-12 text-white">
@@ -687,5 +683,17 @@ export default function AdminReportsPage() {
 
             </div>
         </div>
+    );
+}
+
+export default function AdminReportsPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen bg-[#050B14] flex items-center justify-center">
+                <Spinner />
+            </div>
+        }>
+            <ReportsContent />
+        </Suspense>
     );
 }

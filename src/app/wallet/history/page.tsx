@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import { 
     History, 
     ArrowUpRight, 
@@ -35,7 +35,7 @@ interface Transaction {
     referenceId?: string;
 }
 
-export default function TransactionHistoryPage() {
+function TransactionHistoryContent() {
     const searchParams = useSearchParams();
     const isPlayerView = searchParams.get("view") === "player";
     const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -238,5 +238,20 @@ export default function TransactionHistoryPage() {
                 </div>
             </div>
         </DashboardLayoutWrapper>
+    );
+}
+
+export default function TransactionHistoryPage() {
+    return (
+        <Suspense fallback={
+            <DashboardLayoutWrapper>
+                <div className="min-h-screen flex flex-col items-center justify-center gap-4">
+                    <Spinner />
+                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest animate-pulse">Synchronizing Ledger...</p>
+                </div>
+            </DashboardLayoutWrapper>
+        }>
+            <TransactionHistoryContent />
+        </Suspense>
     );
 }

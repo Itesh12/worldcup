@@ -1,12 +1,12 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { Trophy, ArrowLeft, PartyPopper, Medal, Star, Activity } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
-export default function HallOfFamePage() {
+function HallOfFameContent() {
     const searchParams = useSearchParams();
     const isPlayerView = searchParams.get("view") === "player";
     const [winners, setWinners] = useState<any[]>([]);
@@ -142,6 +142,18 @@ export default function HallOfFamePage() {
                 )}
             </main>
         </div>
+    );
+}
+
+export default function HallOfFamePage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen bg-[#050B14] flex items-center justify-center">
+                <Trophy className="w-12 h-12 text-indigo-500 animate-pulse" />
+            </div>
+        }>
+            <HallOfFameContent />
+        </Suspense>
     );
 }
 
