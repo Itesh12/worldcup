@@ -24,16 +24,17 @@ export async function GET(req: NextRequest) {
         ]);
         const totalRevenue = revenueResult[0]?.total || 0;
 
-        // 2. Active Liability (Total balance in all user wallets)
+        // 2. Active Liability (Total balance in all PLAYER wallets - Admin/SubAdmin are internal)
         const liabilityResult = await User.aggregate([
+            { $match: { role: 'user' } }, 
             { $group: { _id: null, total: { $sum: "$walletBalance" } } }
         ]);
         const totalLiability = liabilityResult[0]?.total || 0;
 
-        // 3. Sub-Admin Owed (Total commissionEarned for all sub-admins)
+        // 3. Sub-Admin Owed (Total walletBalance of all sub-admins - representing their earned commissions)
         const subAdminResult = await User.aggregate([
             { $match: { role: 'subadmin' } },
-            { $group: { _id: null, total: { $sum: "$commissionEarned" } } }
+            { $group: { _id: null, total: { $sum: "$walletBalance" } } }
         ]);
         const subAdminOwed = subAdminResult[0]?.total || 0;
 
@@ -44,7 +45,7 @@ export async function GET(req: NextRequest) {
         ]);
         const pendingWithdrawals = pendingWithdrawalResult[0]?.total || 0;
 
-        // 5. Total Volume (Sum of all 'bet_placed' or 'deposit' amounts - purely indicative)
+        // 5. Total Volume (Sum of all 'bet_placed' amounts)
         const volumeResult = await Transaction.aggregate([
             { $match: { type: 'bet_placed' } },
             { $group: { _id: null, total: { $sum: { $abs: "$amount" } } } }
