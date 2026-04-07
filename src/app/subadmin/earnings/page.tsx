@@ -12,12 +12,13 @@ import {
     ChevronRight,
     Trophy,
     RefreshCw,
-    Wallet,
     BarChart3,
-    History
+    History,
+    ArrowLeft
 } from "lucide-react";
+import Link from "next/link";
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useToast } from "@/contexts/ToastContext";
 import { Spinner } from "@/components/ui/Spinner";
 import { motion, AnimatePresence } from "framer-motion";
@@ -25,6 +26,8 @@ import { motion, AnimatePresence } from "framer-motion";
 export default function SubAdminEarningsPage() {
     const { data: session, status } = useSession();
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const isPlayerView = searchParams.get("view") === "player";
     const { showToast } = useToast();
     
     const [data, setData] = useState<any>(null);
@@ -120,13 +123,21 @@ export default function SubAdminEarningsPage() {
 
             {/* Financial Velocity Control (Repositioned to Content) */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-8 border-b border-white/5 relative z-10">
-                <div className="flex flex-col gap-2">
-                    <h2 className="text-xl md:text-2xl font-black text-white italic uppercase tracking-tighter leading-none">
-                        Financial <span className="text-purple-500 font-black">Velocity</span>
-                    </h2>
-                    <p className="text-slate-500 text-[9px] font-bold uppercase tracking-widest px-1 italic">
-                        Settlement & Revenue Analytics • {new Date().toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
-                    </p>
+                <div className="flex items-center gap-4">
+                    <Link 
+                        href={isPlayerView ? "/dashboard?view=player" : "/subadmin"}
+                        className="w-10 h-10 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-all focus:outline-none"
+                    >
+                        <ArrowLeft className="w-5 h-5" />
+                    </Link>
+                    <div className="flex flex-col gap-2">
+                        <h2 className="text-xl md:text-2xl font-black text-white italic uppercase tracking-tighter leading-none">
+                            Financial <span className="text-purple-500 font-black">Velocity</span>
+                        </h2>
+                        <p className="text-slate-500 text-[9px] font-bold uppercase tracking-widest px-1 italic">
+                            Settlement & Revenue Analytics • {new Date().toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
+                        </p>
+                    </div>
                 </div>
 
                 <div className="flex items-center gap-4">

@@ -44,7 +44,13 @@ async function getGlobalLeaderboard() {
     return JSON.parse(JSON.stringify(stats));
 }
 
-export default async function AdminLeaderboardPage() {
+export default async function AdminLeaderboardPage({ 
+    searchParams 
+}: { 
+    searchParams: Promise<{ [key: string]: string | string[] | undefined }> 
+}) {
+    const params = await searchParams;
+    const isPlayerView = params.view === "player";
     const leaderboard = await getGlobalLeaderboard();
 
     return (
@@ -62,6 +68,12 @@ export default async function AdminLeaderboardPage() {
                 <header className="sticky top-0 z-[100] bg-slate-950/40 backdrop-blur-2xl border-b border-white/[0.05] shadow-2xl">
                     <div className="max-w-7xl mx-auto px-4 md:px-6 py-3 md:py-5 flex items-center justify-between">
                         <div className="flex items-center gap-3 md:gap-6">
+                            <Link 
+                                href={isPlayerView ? "/dashboard?view=player" : "/admin"}
+                                className="w-9 h-9 md:w-11 md:h-11 rounded-xl md:rounded-2xl bg-white/[0.03] border border-white/[0.08] flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/[0.08] transition-all focus:outline-none"
+                            >
+                                <ArrowLeft className="w-4 h-4 md:w-5 md:h-5" />
+                            </Link>
                             <div className="flex items-center gap-2 md:gap-3">
                                 <div className="p-1.5 md:p-2 bg-indigo-500/10 rounded-lg">
                                     <Trophy className="w-4 h-4 md:w-5 md:h-5 text-indigo-400" />

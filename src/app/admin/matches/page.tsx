@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { RefreshCcw, Calendar, MapPin, Activity, Swords, Zap, ChevronRight, Globe, Lock, Clock, CheckCircle, ArrowLeft, Settings, DollarSign, Percent, X, AlertCircle } from "lucide-react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { AdminContextSwitcher } from "@/components/admin/AdminContextSwitcher";
 import { AnimatePresence } from "framer-motion";
 import { CreateArenaModal } from "@/components/dashboard/CreateArenaModal";
@@ -22,6 +23,8 @@ interface Match {
 type TabType = 'today' | 'upcoming' | 'past';
 
 export default function AdminMatchesPage() {
+    const searchParams = useSearchParams();
+    const isPlayerView = searchParams.get("view") === "player";
     const [matches, setMatches] = useState<Match[]>([]);
     const [loading, setLoading] = useState(true);
     const [syncing, setSyncing] = useState(false);
@@ -99,6 +102,12 @@ export default function AdminMatchesPage() {
                     
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
                         <div className="flex items-center gap-4">
+                            <Link 
+                                href={isPlayerView ? "/dashboard?view=player" : "/admin"}
+                                className="w-12 h-12 md:w-16 md:h-16 rounded-2xl md:rounded-3xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-all focus:outline-none"
+                            >
+                                <ArrowLeft className="w-6 h-6 md:w-8 md:h-8" />
+                            </Link>
                             <div className="w-12 h-12 md:w-16 md:h-16 rounded-2xl md:rounded-3xl bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20 shadow-lg shadow-indigo-500/5">
                                 <Swords className="w-6 h-6 md:w-8 md:h-8 text-indigo-400" />
                             </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { LayoutDashboard, Users, Trophy, LogOut, ArrowLeft, Swords, X, IndianRupee } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect } from "react";
@@ -13,6 +13,8 @@ interface AdminSidebarProps {
 
 export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
     const pathname = usePathname();
+    const searchParams = useSearchParams();
+    const isPlayerView = searchParams.get("view") === "player";
 
     // Prevent background scroll when drawer is open
     useEffect(() => {
@@ -59,7 +61,7 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
                         return (
                             <Link
                                 key={item.href}
-                                href={item.href}
+                                href={isPlayerView ? `${item.href}?view=player` : item.href}
                                 onClick={onClose}
                                 className={`group relative flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all duration-300 ${isActive
                                     ? "bg-indigo-600/10 border border-indigo-500/50 shadow-[0_0_20px_rgba(99,102,241,0.2)]"

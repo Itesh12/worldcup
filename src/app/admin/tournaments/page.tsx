@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CheckCircle, Circle, Plus, Trophy, Activity, Globe, Search, RefreshCw, ChevronDown, AlertTriangle, X, XCircle } from "lucide-react";
+import { CheckCircle, Circle, Plus, Trophy, Activity, Globe, Search, RefreshCw, ChevronDown, AlertTriangle, X, XCircle, ArrowLeft } from "lucide-react";
 import { Spinner } from "@/components/ui/Spinner";
 import { useToast } from "@/contexts/ToastContext";
+import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 
 interface Tournament {
     _id: string;
@@ -16,6 +18,8 @@ interface Tournament {
 }
 
 export default function AdminTournamentsPage() {
+    const searchParams = useSearchParams();
+    const isPlayerView = searchParams.get("view") === "player";
     const [tournaments, setTournaments] = useState<Tournament[]>([]);
     const [loading, setLoading] = useState(true);
     const [showNewForm, setShowNewForm] = useState(false);
@@ -206,13 +210,21 @@ export default function AdminTournamentsPage() {
 
             {/* Platform Controls (Repositioned to Content) */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-8 border-b border-white/5 relative z-10">
-                <div className="flex flex-col gap-2">
-                    <h2 className="text-xl md:text-2xl font-black text-white italic uppercase tracking-tighter leading-none">
-                        Platform <span className="text-indigo-500 font-black">Data Contexts</span>
-                    </h2>
-                    <p className="text-slate-500 text-[9px] font-bold uppercase tracking-widest px-1 italic">
-                        Series Sync & League Metadata Management
-                    </p>
+                <div className="flex items-center gap-4">
+                    <Link 
+                        href={isPlayerView ? "/dashboard?view=player" : "/admin"}
+                        className="w-10 h-10 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-all focus:outline-none"
+                    >
+                        <ArrowLeft className="w-5 h-5" />
+                    </Link>
+                    <div className="flex flex-col gap-2">
+                        <h2 className="text-xl md:text-2xl font-black text-white italic uppercase tracking-tighter leading-none">
+                            Platform <span className="text-indigo-500 font-black">Data Contexts</span>
+                        </h2>
+                        <p className="text-slate-500 text-[9px] font-bold uppercase tracking-widest px-1 italic">
+                            Series Sync & League Metadata Management
+                        </p>
+                    </div>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-3">

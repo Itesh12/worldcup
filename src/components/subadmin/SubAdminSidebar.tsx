@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { LayoutDashboard, Users, Trophy, LogOut, ArrowLeft, Swords, X, IndianRupee, PieChart } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect } from "react";
@@ -13,6 +13,8 @@ interface SubAdminSidebarProps {
 
 export function SubAdminSidebar({ isOpen, onClose }: SubAdminSidebarProps) {
     const pathname = usePathname();
+    const searchParams = useSearchParams();
+    const isPlayerView = searchParams.get("view") === "player";
 
     const navItems = [
         { name: "Overview", href: "/subadmin", icon: LayoutDashboard },
@@ -45,7 +47,7 @@ export function SubAdminSidebar({ isOpen, onClose }: SubAdminSidebarProps) {
                         return (
                             <Link
                                 key={item.href}
-                                href={item.href}
+                                href={isPlayerView ? `${item.href}?view=player` : item.href}
                                 onClick={onClose}
                                 className={`group relative flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all duration-300 ${isActive
                                     ? "bg-purple-600/10 border border-purple-500/50 shadow-[0_0_20px_rgba(168,85,247,0.2)]"

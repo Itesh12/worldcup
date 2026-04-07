@@ -15,10 +15,11 @@ import {
     Building2,
     Calendar,
     ChevronDown,
-    ChevronUp
+    ChevronUp,
+    ArrowLeft
 } from "lucide-react";
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useToast } from "@/contexts/ToastContext";
 import { Spinner } from "@/components/ui/Spinner";
 import { CreateArenaModal } from "@/components/dashboard/CreateArenaModal";
@@ -56,6 +57,8 @@ interface Arena {
 export default function AdminArenasPage() {
     const { data: session, status } = useSession();
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const isPlayerView = searchParams.get("view") === "player";
     const { showToast } = useToast();
     
     const [arenas, setArenas] = useState<Arena[]>([]);
@@ -156,8 +159,14 @@ export default function AdminArenasPage() {
         <div className="p-4 md:p-10 space-y-8 max-w-[1600px] mx-auto pb-24 lg:pb-12 animate-in fade-in duration-700">
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                <div>
-                    <div className="flex items-center gap-3 mb-2">
+                <div className="flex items-center gap-4">
+                    <Link 
+                        href={isPlayerView ? "/dashboard?view=player" : "/admin"}
+                        className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-all focus:outline-none"
+                    >
+                        <ArrowLeft className="w-6 h-6" />
+                    </Link>
+                    <div className="flex items-center gap-3">
                         <div className="w-12 h-12 rounded-2xl bg-indigo-600 flex items-center justify-center border border-indigo-400/30 shadow-lg shadow-indigo-600/20">
                             <Swords className="w-6 h-6 text-white" />
                         </div>
