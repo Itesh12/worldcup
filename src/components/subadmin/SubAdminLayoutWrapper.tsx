@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, Suspense } from "react";
 import { SubAdminSidebar } from "./SubAdminSidebar";
 import { Menu, X, Trophy } from "lucide-react";
 import { usePathname } from "next/navigation";
@@ -12,7 +12,10 @@ export function SubAdminLayoutWrapper({ children }: { children: React.ReactNode 
     return (
         <div className="flex h-screen bg-[#050B14] text-white overflow-hidden">
             {/* Sidebar Component */}
-            <SubAdminSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+            <Suspense fallback={<div className="w-64 bg-[#050B14] border-r border-white/5" />}>
+                <SubAdminSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+            </Suspense>
+
 
             {/* Main Content Area */}
             <div className="flex-1 flex flex-col h-full relative overflow-hidden">

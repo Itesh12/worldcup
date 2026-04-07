@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { AdminSidebar } from "./AdminSidebar";
 import { Menu, Trophy, ShieldAlert, Radio } from "lucide-react";
 import Link from "next/link";
@@ -11,7 +11,10 @@ export function AdminLayoutWrapper({ children }: { children: React.ReactNode }) 
 
     return (
         <div className="flex h-screen bg-background text-white overflow-hidden">
-            <AdminSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+            <Suspense fallback={<div className="w-72 bg-[#050B14] border-r border-white/5" />}>
+                <AdminSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+            </Suspense>
+
 
             {/* Main Content Area */}
             <div className="flex-1 flex flex-col min-w-0 h-full relative overflow-hidden">

@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { Suspense } from "react";
 import { DashboardHeader } from "./DashboardHeader";
 import { LivePulseTicker } from "./LivePulseTicker";
 import { Sidebar } from "../layout/Sidebar";
@@ -13,11 +13,15 @@ interface DashboardLayoutWrapperProps {
 export function DashboardLayoutWrapper({ children }: DashboardLayoutWrapperProps) {
     return (
         <div className="flex bg-[#050B14] relative overflow-hidden min-h-screen">
-            <Sidebar />
+            <Suspense fallback={<div className="w-72 bg-[#050B14] border-r border-white/5" />}>
+                <Sidebar />
+            </Suspense>
 
             <div className="flex-1 flex flex-col h-screen relative overflow-hidden lg:ml-72">
                 {/* Constant Global Appbar */}
-                <DashboardHeader />
+                <Suspense fallback={<div className="h-20 bg-[#050B14] border-b border-white/5" />}>
+                    <DashboardHeader />
+                </Suspense>
 
                 {/* Real-time Score Ticker (Live Pulse) - Sticky top */}
                 <LivePulseTicker />
