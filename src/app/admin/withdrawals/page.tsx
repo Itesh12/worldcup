@@ -103,53 +103,62 @@ export default function AdminWithdrawalsPage() {
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 relative pb-20">
             {/* Header is now at Layout Level */}
 
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-8 border-b border-white/5 relative z-10">
-                <div className="flex items-center gap-4">
-                    <Link 
-                        href={isPlayerView ? "/dashboard?view=player" : "/admin"}
-                        className="w-10 h-10 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-all"
-                    >
-                        <ArrowLeft className="w-5 h-5" />
-                    </Link>
-                    <div className="flex flex-col gap-2">
-                        <h2 className="text-xl md:text-2xl font-black text-white italic uppercase tracking-tighter leading-none">
-                            Settlement <span className="text-amber-500 font-black">Control Center</span>
-                        </h2>
-                        <p className="text-slate-500 text-[9px] font-bold uppercase tracking-widest px-1 italic">
-                            Revenue Integrity & Payout Oversight
-                        </p>
+            <div className="max-w-7xl mx-auto px-4 md:px-6 relative z-10 w-full">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-10 pt-4">
+                    <div className="flex items-center gap-5">
+                        <Link 
+                            href={isPlayerView ? "/dashboard?view=player" : "/admin"}
+                            className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 hover:border-white/20 transition-all duration-300 shadow-xl group"
+                        >
+                            <ArrowLeft className="w-6 h-6 group-hover:-translate-x-1 transition-transform" />
+                        </Link>
+                        <div className="flex flex-col">
+                            <div className="flex items-center gap-2 mb-1">
+                                <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse shadow-[0_0_10px_rgba(245,158,11,0.5)]" />
+                                <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">Oversight Live</span>
+                            </div>
+                            <h2 className="text-2xl md:text-4xl font-black text-white italic uppercase tracking-tighter leading-none drop-shadow-[0_5px_15px_rgba(0,0,0,0.5)]">
+                                Settlement <span className="bg-gradient-to-r from-amber-400 to-orange-600 bg-clip-text text-transparent">Control Center</span>
+                            </h2>
+                            <p className="text-slate-500 text-[10px] md:text-xs font-bold uppercase tracking-[0.2em] italic mt-1 opacity-70">
+                                Revenue Integrity <span className="text-slate-700 mx-1">/</span> Payout Audit
+                            </p>
+                        </div>
                     </div>
-                </div>
 
-                <div className="flex flex-wrap items-center gap-3">
-                    <button 
-                        onClick={() => { fetchWithdrawals(); fetchStats(); }}
-                        className="p-3.5 bg-white/5 border border-white/10 rounded-2xl text-slate-500 hover:text-white transition-all group shrink-0 active:scale-95"
-                    >
-                        <RefreshCw className={`w-5 h-5 group-hover:rotate-180 transition-transform duration-700 ${loading || statsLoading ? 'animate-spin' : ''}`} />
-                    </button>
-                    
-                    <div className="flex items-center gap-1.5 bg-white/5 p-1 rounded-2xl border border-white/10">
-                        {(["all", "pending", "completed", "failed"] as const).map((f) => (
-                            <button
-                                key={f}
-                                onClick={() => setFilter(f)}
-                                className={`px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                                    filter === f 
-                                        ? "bg-amber-600 text-white shadow-lg shadow-amber-900/20" 
-                                        : "text-slate-400 hover:text-slate-200 hover:bg-white/5"
-                                }`}
-                            >
-                                {f}
-                            </button>
-                        ))}
+                    <div className="flex items-center gap-4">
+                        <button 
+                            onClick={() => { fetchWithdrawals(); fetchStats(); }}
+                            className="w-12 h-12 bg-white/5 border border-white/10 rounded-2xl text-slate-500 hover:text-white hover:bg-white/10 hover:border-white/20 transition-all duration-300 group shrink-0 active:scale-95 shadow-xl flex items-center justify-center"
+                        >
+                            <RefreshCw className={`w-5 h-5 group-hover:rotate-180 transition-transform duration-700 ${loading || statsLoading ? 'animate-spin' : ''}`} />
+                        </button>
+                        
+                        <div className="flex items-center gap-1 bg-black/40 backdrop-blur-md p-1.5 rounded-[1.25rem] border border-white/5 shadow-2xl">
+                            {(["all", "pending", "completed", "failed"] as const).map((f) => (
+                                <button
+                                    key={f}
+                                    onClick={() => setFilter(f)}
+                                    className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 relative overflow-hidden group/tab ${
+                                        filter === f 
+                                            ? "text-white" 
+                                            : "text-slate-500 hover:text-slate-300"
+                                    }`}
+                                >
+                                    {filter === f && (
+                                        <div className="absolute inset-0 bg-gradient-to-br from-amber-500 to-orange-700 shadow-[0_0_20px_rgba(245,158,11,0.3)] animate-in fade-in zoom-in duration-300" />
+                                    )}
+                                    <span className="relative z-10">{f}</span>
+                                </button>
+                            ))}
+                        </div>
                     </div>
                 </div>
             </div>
 
             <main className="max-w-7xl mx-auto px-4 md:px-6 pt-6 md:pt-10 relative z-10 w-full mb-10">
                 {/* Finance Dashboard Grid */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 mb-10">
+                <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 md:gap-6 mb-10">
                     {[
                         { 
                             label: "Total Net Revenue", 
@@ -161,22 +170,31 @@ export default function AdminWithdrawalsPage() {
                             tag: "Platform Profit"
                         },
                         { 
-                            label: "Active Liability", 
-                            value: stats?.totalLiability || 0, 
+                            label: "Player Wallets", 
+                            value: stats?.totalUserCash || 0, 
                             icon: Wallet, 
                             color: "text-amber-400", 
                             bg: "bg-amber-500/10", 
                             border: "border-amber-500/20",
-                            tag: "User Balances"
+                            tag: "Available Cash"
                         },
                         { 
-                            label: "Sub-Admin Owed", 
+                            label: "Escrow Stakes", 
+                            value: stats?.activePrizePool || 0, 
+                            icon: ShieldCheck, 
+                            color: "text-blue-400", 
+                            bg: "bg-blue-500/10", 
+                            border: "border-blue-500/20",
+                            tag: "Unsettled Prizes"
+                        },
+                        { 
+                            label: "Partner Earnings", 
                             value: stats?.subAdminOwed || 0, 
                             icon: Coins, 
                             color: "text-indigo-400", 
                             bg: "bg-indigo-500/10", 
                             border: "border-indigo-500/20",
-                            tag: "Unpaid Commissions"
+                            tag: "Realized Commissions"
                         },
                         { 
                             label: "Pending Payouts", 
@@ -188,25 +206,27 @@ export default function AdminWithdrawalsPage() {
                             tag: "Cash Out Requests"
                         }
                     ].map((card, i) => (
-                        <div key={i} className="bg-slate-900/40 backdrop-blur-xl border border-white/5 hover:border-white/10 rounded-[2rem] p-5 md:p-6 transition-all duration-500 group relative overflow-hidden shadow-2xl">
+                        <div key={i} className="bg-slate-900/40 backdrop-blur-xl border border-white/5 hover:border-white/10 rounded-3xl p-4 md:p-5 transition-all duration-500 group relative overflow-hidden shadow-2xl flex flex-col justify-between min-h-[140px]">
                             {/* Subtle Ambient Glow */}
                             <div className={`absolute -right-4 -top-4 w-24 h-24 rounded-full blur-3xl opacity-0 group-hover:opacity-20 transition-opacity duration-700 ${card.bg}`} />
                             
-                            <div className="flex flex-col h-full justify-between">
-                                <div className="flex items-center justify-between mb-4">
-                                    <div className={`w-10 h-10 md:w-12 md:h-12 rounded-2xl ${card.bg} ${card.border} border flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-500`}>
-                                        <card.icon className={`w-5 h-5 md:w-6 md:h-6 ${card.color}`} />
-                                    </div>
-                                    <span className="text-[8px] md:text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">{card.tag}</span>
+                            <div className="flex items-center justify-between mb-4">
+                                <div className={`w-10 h-10 rounded-2xl ${card.bg} ${card.border} border flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-500`}>
+                                    <card.icon className={`w-5 h-5 ${card.color}`} />
                                 </div>
-                                
-                                <div>
-                                    <p className="text-[10px] md:text-xs font-black text-slate-400 uppercase tracking-widest mb-1.5">{card.label}</p>
-                                    <div className="flex items-baseline gap-1">
-                                        <span className={`text-xl md:text-3xl font-black italic tracking-tighter leading-none ${card.color}`}>
-                                            ₹{card.value.toLocaleString()}
-                                        </span>
-                                    </div>
+                                <span className={`text-[8px] md:text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] text-right truncate ml-2`}>
+                                    {card.tag}
+                                </span>
+                            </div>
+                            
+                            <div className="space-y-1">
+                                <p className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest truncate">
+                                    {card.label}
+                                </p>
+                                <div className="flex items-baseline gap-1">
+                                    <span className={`text-xl md:text-2xl font-black italic tracking-tighter leading-none ${card.color} truncate`}>
+                                        ₹{card.value.toLocaleString()}
+                                    </span>
                                 </div>
                             </div>
                         </div>

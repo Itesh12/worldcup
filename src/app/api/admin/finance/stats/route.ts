@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
 
         await connectDB();
 
-        // 1. Total Platform Revenue (Sum of all commissions for Admin users)
+        // 1. Total Platform Revenue (Admin's Share)
         const admins = await User.find({ role: 'admin' }).select('_id');
         const adminIds = admins.map(a => a._id);
         
@@ -24,40 +24,58 @@ export async function GET(req: NextRequest) {
         ]);
         const totalRevenue = revenueResult[0]?.total || 0;
 
-        // 2. Active Liability (Total balance in all PLAYER wallets - Admin/SubAdmin are internal)
-        const liabilityResult = await User.aggregate([
+        // 2. Active Stakes (Escrowed Prize Pools)
+        // This is the total amount currently held for active contests (EntryFees - Commissions)
+        // We'll calculate it from transactions of type 'bet_placed' that aren't settled/refunded yet.
+        // For simplicity in this logic, Stakes = Sum(Abs(bet_placed)) - Sum(Commissions related to those joins)
+        // But simpler: Total Liability = (All Players Wallet Sum) + (Total Entry Fees Staked - Paid out)
+        
+        const stakesResult = await Transaction.aggregate([
+            { $match: { type: 'bet_placed', status: 'completed' } },
+            { $group: { _id: null, total: { $sum: { $abs: "$amount" } } } }
+        ]);
+        const totalStaked = stakesResult[0]?.total || 0;
+
+        // We must subtract the commissions already distributed from the staked total to avoid double counting
+        const commsDistributedResult = await Transaction.aggregate([
+            { $match: { type: 'commission', status: 'completed' } },
+            { $group: { _id: null, total: { $sum: "$amount" } } }
+        ]);
+        const totalComms = commsDistributedResult[0]?.total || 0;
+        const activePrizePool = Math.max(0, totalStaked - totalComms);
+
+        // 3. User Cash (Available Player Wallets)
+        const userCashResult = await User.aggregate([
             { $match: { role: 'user' } }, 
             { $group: { _id: null, total: { $sum: "$walletBalance" } } }
         ]);
-        const totalLiability = liabilityResult[0]?.total || 0;
+        const totalUserCash = userCashResult[0]?.total || 0;
 
-        // 3. Sub-Admin Owed (Total walletBalance of all sub-admins - representing their earned commissions)
+        // Total Liability = User Cash + Prize Pools currently in escrow
+        const totalLiability = totalUserCash + activePrizePool;
+
+        // 4. Partner Earnings (Sum of Sub-Admin balances)
         const subAdminResult = await User.aggregate([
             { $match: { role: 'subadmin' } },
             { $group: { _id: null, total: { $sum: "$walletBalance" } } }
         ]);
         const subAdminOwed = subAdminResult[0]?.total || 0;
 
-        // 4. Pending Withdrawals
+        // 5. Pending Withdrawals
         const pendingWithdrawalResult = await Transaction.aggregate([
             { $match: { type: 'withdrawal', status: 'pending' } },
             { $group: { _id: null, total: { $sum: { $abs: "$amount" } } } }
         ]);
         const pendingWithdrawals = pendingWithdrawalResult[0]?.total || 0;
 
-        // 5. Total Volume (Sum of all 'bet_placed' amounts)
-        const volumeResult = await Transaction.aggregate([
-            { $match: { type: 'bet_placed' } },
-            { $group: { _id: null, total: { $sum: { $abs: "$amount" } } } }
-        ]);
-        const totalVolume = volumeResult[0]?.total || 0;
-
         return NextResponse.json({
             totalRevenue,
             totalLiability,
+            totalUserCash,
+            activePrizePool,
             subAdminOwed,
             pendingWithdrawals,
-            totalVolume
+            totalStaked // For debugging/additional info
         });
 
     } catch (error: any) {
