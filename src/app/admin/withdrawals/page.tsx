@@ -21,10 +21,13 @@ import {
   LayoutDashboard
 } from "lucide-react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useToast } from "@/contexts/ToastContext";
 import { Spinner } from "@/components/ui/Spinner";
 
 export default function AdminWithdrawalsPage() {
+  const searchParams = useSearchParams();
+  const isPlayerView = searchParams.get("view") === "player";
   const { showToast } = useToast();
   const [withdrawals, setWithdrawals] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -100,15 +103,22 @@ export default function AdminWithdrawalsPage() {
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 relative pb-20">
             {/* Header is now at Layout Level */}
 
-            {/* Settlement Controls (Repositioned to Content) */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-8 border-b border-white/5 relative z-10">
-                <div className="flex flex-col gap-2">
-                    <h2 className="text-xl md:text-2xl font-black text-white italic uppercase tracking-tighter leading-none">
-                        Settlement <span className="text-amber-500 font-black">Control Center</span>
-                    </h2>
-                    <p className="text-slate-500 text-[9px] font-bold uppercase tracking-widest px-1 italic">
-                        Revenue Integrity & Payout Oversight
-                    </p>
+                <div className="flex items-center gap-4">
+                    <Link 
+                        href={isPlayerView ? "/dashboard?view=player" : "/admin"}
+                        className="w-10 h-10 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-all"
+                    >
+                        <ArrowLeft className="w-5 h-5" />
+                    </Link>
+                    <div className="flex flex-col gap-2">
+                        <h2 className="text-xl md:text-2xl font-black text-white italic uppercase tracking-tighter leading-none">
+                            Settlement <span className="text-amber-500 font-black">Control Center</span>
+                        </h2>
+                        <p className="text-slate-500 text-[9px] font-bold uppercase tracking-widest px-1 italic">
+                            Revenue Integrity & Payout Oversight
+                        </p>
+                    </div>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-3">

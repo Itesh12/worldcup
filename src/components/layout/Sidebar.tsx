@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { 
     Trophy, 
     LayoutDashboard, 
@@ -23,17 +23,19 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 export function Sidebar() {
     const pathname = usePathname();
+    const searchParams = useSearchParams();
+    const isPlayerView = searchParams.get("view") === "player";
     const { data: session } = useSession();
     const [isOpen, setIsOpen] = useState(false);
 
     const userRole = (session?.user as any)?.role || 'player';
 
     const navItems = [
-        { id: 'dashboard', name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+        { id: 'dashboard', name: 'Dashboard', href: `/dashboard${isPlayerView ? "?view=player" : ""}`, icon: LayoutDashboard },
         { id: 'arenas', name: 'My Arenas', href: userRole === 'player' ? '/matches' : '/subadmin/arenas', icon: Swords },
-        { id: 'wallet', name: 'Wallet', href: '/dashboard', icon: Wallet }, 
-        { id: 'transactions', name: 'Transactions', href: '/wallet/history', icon: History },
-        { id: 'insights', name: 'Insights', href: '/dashboard', icon: BarChart3 },
+        { id: 'wallet', name: 'Wallet', href: `/dashboard${isPlayerView ? "?view=player" : ""}`, icon: Wallet }, 
+        { id: 'transactions', name: 'Transactions', href: `/wallet/history${isPlayerView ? "?view=player" : ""}`, icon: History },
+        { id: 'insights', name: 'Insights', href: `/dashboard${isPlayerView ? "?view=player" : ""}`, icon: BarChart3 },
     ];
 
     const adminItems = [
@@ -48,7 +50,7 @@ export function Sidebar() {
             
             {/* Branding */}
             <div className="mb-12 relative z-10">
-                <Link href="/dashboard" className="flex items-center gap-3 group">
+                <Link href={`/dashboard${isPlayerView ? "?view=player" : ""}`} className="flex items-center gap-3 group">
                     <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-600/20 group-hover:scale-110 transition-transform duration-500 border border-indigo-400/30">
                         <Trophy className="w-5 h-5 text-white" />
                     </div>

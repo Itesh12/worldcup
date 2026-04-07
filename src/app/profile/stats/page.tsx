@@ -18,6 +18,7 @@ import {
     BarChart3
 } from "lucide-react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -57,6 +58,8 @@ interface DetailedStats {
 }
 
 export default function ProfileStatsPage() {
+    const searchParams = useSearchParams();
+    const isPlayerView = searchParams.get("view") === "player";
     const { data: session } = useSession();
     const [stats, setStats] = useState<DetailedStats | null>(null);
     const [loading, setLoading] = useState(true);
@@ -107,7 +110,7 @@ export default function ProfileStatsPage() {
             <header className="sticky top-0 z-50 bg-[#050B14]/80 backdrop-blur-xl border-b border-white/5">
                 <div className="max-w-6xl mx-auto px-6 py-5 flex items-center justify-between">
                     <div className="flex items-center gap-6">
-                        <Link href="/dashboard" className="p-2.5 bg-white/5 rounded-2xl hover:bg-white/10 transition-all">
+                        <Link href={`/dashboard${isPlayerView ? "?view=player" : ""}`} className="p-2.5 bg-white/5 rounded-2xl hover:bg-white/10 transition-all">
                             <ArrowLeft className="w-5 h-5 text-white" />
                         </Link>
                         <div className="flex flex-col">

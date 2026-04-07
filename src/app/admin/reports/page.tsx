@@ -21,6 +21,7 @@ import {
     User as UserIcon
 } from "lucide-react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { toPng } from "html-to-image";
 import jsPDF from "jspdf";
@@ -243,6 +244,8 @@ const MasterReportTemplate = React.forwardRef<HTMLDivElement, { week: any }>((({
 }));
 
 export default function AdminReportsPage() {
+    const searchParams = useSearchParams();
+    const isPlayerView = searchParams.get("view") === "player";
     const { data: session } = useSession();
     const [weeks, setWeeks] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -323,7 +326,7 @@ export default function AdminReportsPage() {
                 <Activity className="w-16 h-16 text-slate-800 mx-auto mb-6" />
                 <h1 className="text-3xl font-black text-white uppercase italic tracking-tighter">No Reports Found</h1>
                 <p className="text-slate-500 mt-4 font-bold tracking-widest uppercase text-sm">Waiting for match data to accumulate...</p>
-                <Link href="/admin" className="inline-flex items-center gap-2 mt-10 text-indigo-400 hover:text-indigo-300 font-black uppercase tracking-widest text-xs transition-all">
+                <Link href={isPlayerView ? "/dashboard?view=player" : "/admin"} className="inline-flex items-center gap-2 mt-10 text-indigo-400 hover:text-indigo-300 font-black uppercase tracking-widest text-xs transition-all">
                     <ArrowLeft className="w-4 h-4" /> Back to Dashboard
                 </Link>
             </div>
@@ -348,9 +351,9 @@ export default function AdminReportsPage() {
                 {/* Navigation & Actions */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
                     <div className="space-y-4">
-                        <Link href="/admin" className="group flex items-center gap-2 text-slate-500 hover:text-white transition-all">
+                        <Link href={isPlayerView ? "/dashboard?view=player" : "/admin"} className="group flex items-center gap-2 text-slate-500 hover:text-white transition-all">
                             <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-                            <span className="text-[10px] font-black uppercase tracking-[0.3em]">Back to Management</span>
+                            <span className="text-[10px] font-black uppercase tracking-[0.3em]">{isPlayerView ? "Back to Dashboard" : "Back to Management"}</span>
                         </Link>
                         <h1 className="text-4xl md:text-6xl font-black tracking-tighter leading-none italic uppercase">
                             Weekly <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400 pr-4">Reports Hub</span>

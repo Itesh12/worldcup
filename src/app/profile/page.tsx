@@ -26,7 +26,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { signOut, useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ImageUpload } from "@/components/ImageUpload";
 import { updateProfile } from "@/app/actions/profile";
@@ -41,6 +41,8 @@ import { Spinner } from "@/components/ui/Spinner";
 
 export default function ProfilePage() {
   const { showToast } = useToast();
+  const searchParams = useSearchParams();
+  const isPlayerView = searchParams.get("view") === "player";
   const { data: session, update } = useSession();
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
@@ -196,7 +198,7 @@ export default function ProfilePage() {
             <header className="fixed top-0 left-0 right-0 z-50 bg-[#050B14]/80 backdrop-blur-xl border-b border-white/5">
                 <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between gap-4">
                     <div className="flex items-center gap-3 md:gap-6 min-w-0">
-                        <Link href="/dashboard" className="shrink-0 w-8 h-8 md:w-10 md:h-10 rounded-full bg-slate-900 border border-white/5 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800 transition-colors shadow-lg">
+                        <Link href={`/dashboard${isPlayerView ? "?view=player" : ""}`} className="shrink-0 w-8 h-8 md:w-10 md:h-10 rounded-full bg-slate-900 border border-white/5 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800 transition-colors shadow-lg">
                             <ArrowLeft className="w-4 h-4 md:w-5 md:h-5" />
                         </Link>
                         <div className="flex items-center gap-2 md:gap-3 min-w-0">

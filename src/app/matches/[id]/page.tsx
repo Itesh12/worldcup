@@ -431,7 +431,7 @@ function MatchDetailContent({ params }: { params: Promise<{ id: string }> }) {
             <header className="fixed top-0 left-0 right-0 z-50 bg-[#050B14]/80 backdrop-blur-xl border-b border-white/5">
                 <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
                     <div className="flex items-center gap-3 md:gap-6">
-                        <Link href="/dashboard" className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-slate-900 border border-white/5 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800 transition-colors shadow-lg">
+                        <Link href={`/dashboard${searchParams.get("view") === "player" ? "?view=player" : ""}`} className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-slate-900 border border-white/5 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800 transition-colors shadow-lg">
                             <ArrowLeft className="w-4 h-4 md:w-5 md:h-5" />
                         </Link>
                         <div className="flex items-center gap-2 md:gap-3">

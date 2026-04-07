@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { PartyPopper, ChevronRight } from "lucide-react";
+import { Trophy, ChevronRight, Activity } from "lucide-react";
 import Link from "next/link";
 
 interface Winner {
@@ -52,7 +52,7 @@ export function HallOfFameSection() {
             <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6">
                 <div className="flex items-center gap-4 md:gap-5">
                     <div className="p-3.5 md:p-4 bg-indigo-500/10 rounded-[1.25rem] border border-indigo-500/20 shadow-lg shadow-indigo-500/5">
-                        <PartyPopper className="w-6 h-6 md:w-7 md:h-7 text-indigo-400" />
+                        <Trophy className="w-6 h-6 md:w-7 md:h-7 text-indigo-400" />
                     </div>
                     <div>
                         <h2 className="text-2xl md:text-4xl font-black text-white uppercase tracking-tighter leading-none">Hall of <span className="text-indigo-500 italic">Fame</span></h2>
@@ -72,18 +72,18 @@ export function HallOfFameSection() {
 
             <div className="flex lg:grid overflow-x-auto lg:overflow-x-visible snap-x snap-mandatory lg:snap-none lg:grid-cols-3 gap-6 scrollbar-hide -mx-4 px-4 lg:mx-0 lg:px-0">
                 {winners.map((item, idx) => (
-                    <div key={idx} className="min-w-[85vw] md:min-w-[45vw] lg:min-w-0 snap-center shrink-0 lg:shrink group relative overflow-hidden bg-slate-900/40 border border-white/5 rounded-[2rem] p-6 hover:border-indigo-500/30 transition-all duration-500 hover:bg-slate-900/60 shadow-lg">
-                        <div className="absolute -top-10 -right-10 w-32 h-32 bg-indigo-500/10 blur-[50px] rounded-full group-hover:bg-indigo-500/20 transition-all duration-500" />
+                    <div className="min-w-[85vw] md:min-w-[45vw] lg:min-w-0 snap-center shrink-0 lg:shrink group relative overflow-hidden bg-slate-950/80 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 hover:border-indigo-500/30 transition-all duration-500 shadow-2xl">
+                        <div className="absolute -top-10 -right-10 w-32 h-32 bg-indigo-500/5 blur-[50px] rounded-full group-hover:bg-indigo-500/15 transition-all duration-500" />
 
                         <div className="relative z-10 flex items-center justify-between gap-4 mb-6">
                             <div className="flex flex-col">
-                                <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">{new Date(item.match.date).toLocaleDateString()}</span>
+                                <span className="text-[8px] font-black text-slate-500 uppercase tracking-[0.2em] mb-1">{new Date(item.match.date).toLocaleDateString()}</span>
                                 <div className="flex items-center gap-2">
-                                    <h3 className="text-sm font-black text-white uppercase">{item.match.teams[0]?.shortName} <span className="text-slate-600">vs</span> {item.match.teams[1]?.shortName}</h3>
+                                    <h3 className="text-sm font-black text-white uppercase tracking-tight">{item.match.teams[0]?.shortName} <span className="text-slate-600 font-bold">VS</span> {item.match.teams[1]?.shortName}</h3>
                                 </div>
                             </div>
-                            <div className="px-3 py-1 rounded-lg bg-indigo-500/10 border border-indigo-500/20">
-                                <span className="text-[9px] font-black text-indigo-400 uppercase tracking-widest">Winner</span>
+                            <div className="px-3 py-1.5 rounded-lg bg-indigo-500/10 border border-indigo-500/20 shadow-inner">
+                                <span className="text-[8px] font-black text-indigo-400 uppercase tracking-[0.2em]">Winner</span>
                             </div>
                         </div>
 
@@ -99,16 +99,16 @@ export function HallOfFameSection() {
                             </div>
 
                             <div className="flex-1 min-w-0">
-                                <h4 className="text-lg font-black text-white truncate group-hover:text-indigo-400 transition-colors">{item.winner.name}</h4>
-                                <div className="flex items-center gap-3 mt-1">
-                                    <div className="flex items-center gap-1.5">
-                                        <span className="text-xs font-black text-white">{item.winner.score}</span>
-                                        <span className="text-[8px] font-bold text-slate-500 uppercase">Runs</span>
+                                <h4 className="text-lg font-black text-white truncate group-hover:text-indigo-400 transition-colors leading-tight">{item.winner.name}</h4>
+                                <div className="flex items-center gap-4 mt-2">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-xs font-black text-white tabular-nums italic">{item.winner.score}</span>
+                                        <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Runs</span>
                                     </div>
-                                    <div className="w-1 h-1 rounded-full bg-slate-700" />
-                                    <div className="flex items-center gap-1.5">
-                                        <span className="text-xs font-black text-indigo-400">{item.winner.strikeRate}</span>
-                                        <span className="text-[8px] font-bold text-slate-500 uppercase">S/R</span>
+                                    <div className="w-1 h-1 rounded-full bg-slate-800" />
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-xs font-black text-indigo-400 tabular-nums italic">{item.winner.strikeRate}</span>
+                                        <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">S/R</span>
                                     </div>
                                 </div>
                             </div>

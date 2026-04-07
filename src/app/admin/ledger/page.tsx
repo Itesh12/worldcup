@@ -14,6 +14,7 @@ import {
   BookOpen
 } from "lucide-react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 
 interface PaginationInfo {
     total: number;
@@ -23,6 +24,8 @@ interface PaginationInfo {
 }
 
 export default function MasterLedgerPage() {
+    const searchParams = useSearchParams();
+    const isPlayerView = searchParams.get("view") === "player";
     const [transactions, setTransactions] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState<"all" | "commission" | "withdrawal" | "deposit" | "winnings" | "refund">("all");
@@ -58,7 +61,7 @@ export default function MasterLedgerPage() {
                         {/* Title & Back button */}
                         <div className="flex items-center gap-6">
                             <Link 
-                                href="/admin"
+                                href={isPlayerView ? "/dashboard?view=player" : "/admin"}
                                 className="w-10 h-10 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-all"
                             >
                                 <ArrowLeft className="w-4 h-4" />

@@ -22,6 +22,7 @@ import { DashboardLayoutWrapper } from '@/components/dashboard/DashboardLayoutWr
 import { motion, AnimatePresence } from 'framer-motion';
 import { useToast } from '@/contexts/ToastContext';
 import { Spinner } from '@/components/ui/Spinner';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
 interface Transaction {
@@ -35,6 +36,8 @@ interface Transaction {
 }
 
 export default function TransactionHistoryPage() {
+    const searchParams = useSearchParams();
+    const isPlayerView = searchParams.get("view") === "player";
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
@@ -94,7 +97,7 @@ export default function TransactionHistoryPage() {
                 {/* Breadcrumb & Header */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                     <div>
-                        <Link href="/dashboard" className="flex items-center gap-2 text-slate-500 hover:text-white transition-colors mb-4 group w-fit">
+                        <Link href={`/dashboard${isPlayerView ? "?view=player" : ""}`} className="flex items-center gap-2 text-slate-500 hover:text-white transition-colors mb-4 group w-fit">
                             <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
                             <span className="text-[10px] font-black uppercase tracking-widest">Back to Hub</span>
                         </Link>

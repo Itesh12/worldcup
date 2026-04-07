@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useSearchParams } from "next/navigation";
 import { Trophy, RefreshCcw, LayoutDashboard, Menu, LogOut } from "lucide-react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
@@ -13,13 +14,15 @@ interface DashboardHeaderProps {
 
 export function DashboardHeader({ refreshing, onRefresh }: DashboardHeaderProps) {
     const { data: session } = useSession();
+    const searchParams = useSearchParams();
+    const isPlayerView = searchParams.get("view") === "player";
     const { setTournamentId } = useTournament();
 
     return (
         <header className="sticky top-0 z-50 bg-[#050B14]/80 backdrop-blur-xl border-b border-white/5 h-16 md:h-20 flex items-center shrink-0">
             <div className="max-w-7xl mx-auto px-4 md:px-6 w-full flex items-center justify-between gap-4">
                 {/* Brand Identity - Only visible on mobile/tablet since it's in sidebar on desktop */}
-                <Link href="/dashboard" className="flex lg:hidden items-center gap-2 md:gap-3 min-w-0 font-bold group">
+                <Link href={`/dashboard${isPlayerView ? "?view=player" : ""}`} className="flex lg:hidden items-center gap-2 md:gap-3 min-w-0 font-bold group">
                     <Trophy className="w-5 h-5 md:w-8 md:h-8 text-indigo-500 shrink-0 group-hover:scale-110 transition-transform" />
                     <div className="min-w-0">
                         <h1 className="text-xs md:text-xl font-black text-white tracking-tight leading-none uppercase italic">
