@@ -43,8 +43,8 @@ export function PlayerStatsHeader({ stats, loading, tournamentId }: PlayerStatsH
                         <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest leading-none">Gladiator Career Summary</span>
                     </div>
                     
-                    <h3 className="text-4xl lg:text-6xl font-black text-white uppercase tracking-tighter italic leading-[1.1] mb-3">
-                        SESSION <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-indigo-400">MASTERY</span>
+                    <h3 className="text-4xl lg:text-6xl font-black text-white uppercase tracking-tighter italic leading-normal py-4 mb-3">
+                        SESSION <span className="inline-block text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-indigo-400 pr-6 pb-2">MASTERY</span>
                     </h3>
                     
                     <p className="text-slate-500 text-[11px] md:text-sm font-bold uppercase tracking-[0.3em] mb-8">

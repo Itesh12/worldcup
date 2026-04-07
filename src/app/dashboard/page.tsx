@@ -235,7 +235,7 @@ function UserMatchesContent() {
             onHostClick={setMatchForHosting}
           />
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
             {/* 3. TABS: Upcoming & Finished */}
             <MatchListTabs 
                 upcomingMatches={upcomingMatches} 
@@ -245,7 +245,7 @@ function UserMatchesContent() {
             />
 
             {/* Sidebar */}
-            <aside className="lg:col-span-4 space-y-8">
+            <aside className="lg:col-span-4 space-y-8 lg:-mt-[44px]">
                 {/* User Profile Summary */}
                 <div className="bg-slate-900/40 border border-white/5 rounded-3xl p-6 hover:border-indigo-500/20 transition-all group">
                   <div className="flex items-center gap-4 mb-6">
