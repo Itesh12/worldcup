@@ -23,6 +23,78 @@ interface WeeklyReportCardProps {
     loading: boolean;
 }
 
+function IntensityHeatmap({ matches, startDate }: { matches: any[], startDate: string }) {
+    const start = new Date(startDate);
+    const dayLabels = ['Fri', 'Sat', 'Sun', 'Mon', 'Tue', 'Wed', 'Thu']; // Friday start logic
+    
+    const dailyStats = new Array(7).fill(0);
+    matches.forEach(m => {
+        const mDate = new Date(m.date);
+        const diffDays = Math.floor((mDate.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+        if (diffDays >= 0 && diffDays < 7) {
+            dailyStats[diffDays] += m.runs;
+        }
+    });
+
+    const maxRuns = Math.max(...dailyStats, 10);
+
+    return (
+        <div className="w-full mt-6 p-8 bg-white/[0.02] border border-white/5 rounded-[2.5rem] relative overflow-hidden group/heatmap">
+            <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-indigo-500/[0.02] to-transparent pointer-events-none" />
+            <div className="flex items-center justify-between mb-8 relative z-10">
+                <div className="flex items-center gap-3">
+                    <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse" />
+                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">Battle Intensity Map</span>
+                </div>
+                <span className="text-[8px] font-black text-indigo-400 uppercase tracking-[0.2em] bg-indigo-500/10 px-2 py-0.5 rounded-full border border-indigo-500/20">7-Day Strategic Cycle</span>
+            </div>
+            <div className="h-32 flex items-end justify-between gap-4 px-2 relative z-10">
+                {dailyStats.map((runs, idx) => {
+                    const h = (runs / maxRuns) * 100;
+                    return (
+                        <div key={idx} className="flex-1 flex flex-col items-center gap-4 group/bar">
+                            <div className="relative w-full flex flex-col items-center justify-end h-full">
+                                {runs > 0 && (
+                                    <div className="absolute -top-8 opacity-0 group-hover/bar:opacity-100 transition-all duration-300 transform translate-y-2 group-hover/bar:translate-y-0">
+                                        <span className="text-[11px] font-black text-white italic tabular-nums bg-indigo-600 px-2 py-1 rounded-lg border border-indigo-400/30 shadow-[0_5px_15px_rgba(99,102,241,0.4)]">{runs}</span>
+                                    </div>
+                                )}
+                                <motion.div 
+                                    initial={{ height: 0 }}
+                                    animate={{ height: `${Math.max(h, 6)}%` }}
+                                    transition={{ duration: 1, delay: idx * 0.1, ease: "easeOut" }}
+                                    className={`w-full max-w-[24px] rounded-t-xl transition-all duration-500 ${runs > 0 ? 'bg-gradient-to-t from-indigo-600 via-indigo-400 to-purple-400 shadow-[0_0_25px_rgba(99,102,241,0.4)]' : 'bg-white/5 opacity-40'}`}
+                                />
+                            </div>
+                            <span className={`text-[9px] font-black uppercase tracking-widest ${runs > 0 ? 'text-slate-300' : 'text-slate-600'}`}>{dayLabels[idx]}</span>
+                        </div>
+                    );
+                })}
+            </div>
+        </div>
+    );
+}
+
+function TrendBadge({ current, previous, label, isCurrency = false }: { current: number, previous: number, label: string, isCurrency?: boolean }) {
+    if (previous === 0) return (
+        <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-white/5 border border-white/10 opacity-40 group-hover:opacity-100 transition-opacity">
+            <span className="text-[7px] font-black text-slate-500 uppercase tracking-widest leading-none">Calibrating</span>
+        </div>
+    );
+    
+    const diff = current - previous;
+    const pct = ((diff / Math.abs(previous)) * 100).toFixed(0);
+    const isUp = diff >= 0;
+
+    return (
+        <div className={`flex items-center gap-1.5 px-2 py-1 rounded-full border transition-all ${isUp ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.15)]' : 'bg-rose-500/10 border-rose-500/20 text-rose-400'}`}>
+            <span className="text-[8px] font-black uppercase tracking-tighter tabular-nums leading-none">
+                {isUp ? '↑' : '↓'} {Math.abs(Number(pct))}% {label}
+            </span>
+        </div>
+    );
+}
+
 export function WeeklyReportCard({ weeks, loading }: WeeklyReportCardProps) {
     const { data: session } = useSession();
     const [currentIndex, setCurrentIndex] = useState(0);
@@ -32,10 +104,10 @@ export function WeeklyReportCard({ weeks, loading }: WeeklyReportCardProps) {
 
     if (loading) {
         return (
-            <div className="w-full h-[400px] bg-slate-900/20 rounded-[2rem] border border-white/5 animate-pulse flex items-center justify-center">
+            <div className="w-full h-[400px] bg-slate-900/20 rounded-[3rem] border border-white/10 animate-pulse flex items-center justify-center backdrop-blur-md">
                 <div className="flex flex-col items-center gap-4">
-                    <div className="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
-                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Compiling Weekly Insight...</span>
+                    <div className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin shadow-[0_0_20px_rgba(99,102,241,0.3)]" />
+                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest animate-pulse">Analyzing Session Intelligence...</span>
                 </div>
             </div>
         );
@@ -44,17 +116,12 @@ export function WeeklyReportCard({ weeks, loading }: WeeklyReportCardProps) {
     if (!weeks || weeks.length === 0) return null;
 
     const currentWeek = weeks[currentIndex];
+    const previousWeek = weeks[currentIndex + 1] || null;
+    
     if (!currentWeek) return null;
 
     const isLatest = currentIndex === 0;
     const isOldest = currentIndex === weeks.length - 1;
-
-    const handlePrev = () => {
-        if (!isOldest) setCurrentIndex(prev => prev + 1);
-    };
-    const handleNext = () => {
-        if (!isLatest) setCurrentIndex(prev => prev - 1);
-    };
 
     const handleDownload = async () => {
         if (!fullReportRef.current) return;
@@ -81,45 +148,45 @@ export function WeeklyReportCard({ weeks, loading }: WeeklyReportCardProps) {
 
     return (
         <section className="relative group/report">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
-                <div className="flex items-center gap-4">
-                    <div className="p-3 bg-amber-500/10 rounded-2xl border border-amber-500/20 shrink-0">
+            {/* Nav Header */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 mb-10">
+                <div className="flex items-center gap-6">
+                    <div className="p-4 bg-amber-500/10 rounded-3xl border border-amber-500/20 shrink-0 shadow-2xl">
                         <BarChart3 className="w-6 h-6 text-amber-400" />
                     </div>
                     <div>
-                        <h2 className="text-xl md:text-2xl font-black text-white uppercase tracking-tight">Weekly <span className="text-amber-500">Pulse</span></h2>
-                        <p className="text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-widest leading-none mt-1">{currentIndex === 0 ? "Current Week Overview" : "Previous Week Review"}</p>
+                        <h2 className="text-2xl md:text-3xl font-black text-white uppercase tracking-tighter italic">Weekly <span className="text-amber-500">Pulse</span></h2>
+                        <p className="text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-[0.4em] leading-none mt-2">{currentIndex === 0 ? "Strategic Current Session" : "Historical Combat Review"}</p>
                     </div>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-                    <div className="flex items-center gap-2 bg-slate-900/60 border border-white/5 rounded-xl p-1">
+                <div className="flex flex-wrap items-center gap-3">
+                    <div className="flex items-center gap-0 bg-slate-950/60 border border-white/10 rounded-2xl p-1 shadow-2xl">
                         <button
-                            onClick={handlePrev}
+                            onClick={() => !isOldest && setCurrentIndex(prev => prev + 1)}
                             disabled={isOldest}
-                            className={`p-2 rounded-lg transition-all ${isOldest ? 'opacity-30 text-slate-600' : 'bg-slate-800 text-white hover:bg-slate-700'}`}
+                            className={`p-3 rounded-xl transition-all ${isOldest ? 'opacity-20 cursor-not-allowed' : 'hover:bg-white/5 text-white active:scale-95'}`}
                         >
-                            <ChevronLeft className="w-4 h-4 md:w-5 md:h-5" />
+                            <ChevronLeft className="w-5 h-5" />
                         </button>
-                        <div className="px-2 md:px-4">
-                            <span className="text-[9px] md:text-[10px] font-black text-white uppercase tracking-widest whitespace-nowrap">{currentWeek.label}</span>
+                        <div className="px-6 border-x border-white/5">
+                            <span className="text-[11px] font-black text-white uppercase tracking-widest whitespace-nowrap tabular-nums">{currentWeek.label}</span>
                         </div>
                         <button
-                            onClick={handleNext}
+                            onClick={() => !isLatest && setCurrentIndex(prev => prev - 1)}
                             disabled={isLatest}
-                            className={`p-2 rounded-lg transition-all ${isLatest ? 'opacity-30 text-slate-600' : 'bg-slate-800 text-white hover:bg-slate-700'}`}
+                            className={`p-3 rounded-xl transition-all ${isLatest ? 'opacity-20 cursor-not-allowed' : 'hover:bg-white/5 text-white active:scale-95'}`}
                         >
-                            <ChevronRight className="w-4 h-4 md:w-5 md:h-5" />
+                            <ChevronRight className="w-5 h-5" />
                         </button>
                     </div>
-                    <div className="hidden sm:block w-px h-6 bg-white/5 mx-1" />
                     <button
                         onClick={handleDownload}
                         disabled={downloading}
-                        className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-50"
+                        className="px-6 py-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-50 shadow-xl shadow-indigo-600/20 flex items-center gap-3"
                     >
-                        {downloading ? <RefreshCcw className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />}
-                        {downloading ? "Exporting" : "Download"}
+                        {downloading ? <RefreshCcw className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+                        {downloading ? "Compiling PDF" : "Audit Export"}
                     </button>
                 </div>
             </div>
@@ -128,181 +195,291 @@ export function WeeklyReportCard({ weeks, loading }: WeeklyReportCardProps) {
                 <motion.div
                     ref={reportRef}
                     key={currentWeek.key}
-                    initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                    initial={{ opacity: 0, scale: 0.98, y: 20 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 1.05, y: -10 }}
-                    transition={{ duration: 0.4, ease: "easeOut" }}
-                    className="relative overflow-hidden rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-10 bg-slate-900/40 border border-white/5 shadow-2xl backdrop-blur-md"
+                    exit={{ opacity: 0, scale: 1.02, y: -20 }}
+                    transition={{ duration: 0.5, ease: "circOut" }}
+                    className="relative overflow-hidden rounded-[3rem] p-8 md:p-14 bg-[#0A0F1C]/80 border border-white/10 shadow-[0_0_120px_rgba(0,0,0,0.6)] backdrop-blur-3xl"
                 >
-                    <div className="absolute top-0 right-0 w-96 h-96 bg-amber-500/5 blur-[120px] rounded-full pointer-events-none" />
-                    <div className="absolute bottom-0 left-0 w-96 h-96 bg-indigo-500/5 blur-[120px] rounded-full pointer-events-none" />
+                    {/* Atmospheric Glows */}
+                    <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-indigo-600/[0.04] blur-[150px] rounded-full pointer-events-none" />
+                    <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-amber-500/[0.04] blur-[150px] rounded-full pointer-events-none" />
 
-                    <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-10">
-                        <div className="lg:col-span-4 space-y-8">
-                            <div className="space-y-6">
-                                <div>
-                                    <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] mb-4">Performance Score</h3>
-                                    <div className="grid grid-cols-2 gap-3 md:gap-4">
-                                        <div className="p-3 md:p-4 rounded-2xl bg-white/5 border border-white/5">
-                                            <p className="text-[8px] font-black text-slate-500 uppercase mb-1">Total Runs</p>
-                                            <p className="text-xl md:text-2xl font-black text-white">{currentWeek.stats.runs}</p>
+                    <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-14">
+                        
+                        {/* LEFT: Core Metrics & Chronicle (7/12) */}
+                        <div className="lg:col-span-7 space-y-14">
+                            
+                            {/* Performance Grid */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <section className="space-y-6">
+                                    <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] px-2">Battle Scores</h3>
+                                    <div className="space-y-4">
+                                        <div className="p-6 rounded-3xl bg-white/[0.03] border border-white/5 hover:border-white/20 transition-all group/card">
+                                            <div className="flex items-center justify-between mb-2">
+                                                <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest">Total Runs Scored</span>
+                                                <TrendBadge current={currentWeek.stats.runs} previous={previousWeek?.stats.runs || 0} label="Runs" />
+                                            </div>
+                                            <p className="text-5xl font-black text-white italic tracking-tighter leading-none">{currentWeek.stats.runs.toLocaleString()}</p>
                                         </div>
-                                        <div className="p-3 md:p-4 rounded-2xl bg-white/5 border border-white/5">
-                                            <p className="text-[8px] font-black text-slate-500 uppercase mb-1">Average</p>
-                                            <p className="text-xl md:text-2xl font-black text-indigo-400">{currentWeek.stats.average}</p>
+                                        <div className="p-6 rounded-3xl bg-white/[0.03] border border-white/5 hover:border-white/20 transition-all group/card">
+                                            <div className="flex items-center justify-between mb-2">
+                                                <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest">Batting Power Index</span>
+                                                <TrendBadge current={parseFloat(currentWeek.stats.average)} previous={parseFloat(previousWeek?.stats.average || "0")} label="Skill" />
+                                            </div>
+                                            <p className="text-5xl font-black text-indigo-400 italic tracking-tighter leading-none">{currentWeek.stats.average}</p>
                                         </div>
                                     </div>
-                                </div>
-                                <div>
-                                    <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] mb-4">Financial Flow</h3>
-                                    <div className="p-6 rounded-2xl bg-gradient-to-br from-slate-950 to-slate-900 border border-white/5 shadow-inner">
-                                        <div className="flex items-center justify-between mb-2">
-                                            <span className="text-xs font-bold text-slate-500">Net Weekly P&L</span>
-                                            <span className={`text-xl font-black ${currentWeek.stats.netWorth >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                                                {currentWeek.stats.netWorth >= 0 ? `+₹${currentWeek.stats.netWorth}` : `-₹${Math.abs(currentWeek.stats.netWorth)}`}
+                                </section>
+
+                                <section className="space-y-6">
+                                    <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] px-2">Financial Flow</h3>
+                                    <div className="p-8 h-full rounded-[2.5rem] bg-gradient-to-br from-slate-900 to-black border border-white/10 shadow-[inset_0_0_40px_rgba(0,0,0,0.5)] flex flex-col justify-center relative overflow-hidden group/pnl">
+                                        <div className="absolute inset-0 bg-emerald-500/[0.02] opacity-0 group-hover/pnl:opacity-100 transition-opacity" />
+                                        <div className="relative z-10 flex flex-col mb-8">
+                                            <div className="flex items-center justify-between mb-3">
+                                                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Net Weekly Yield</span>
+                                                <TrendBadge current={currentWeek.stats.netWorth} previous={previousWeek?.stats.netWorth || 0} label="Flux" isCurrency />
+                                            </div>
+                                            <span className={`text-5xl md:text-6xl font-black italic tracking-tighter leading-none tabular-nums ${currentWeek.stats.netWorth >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                                                {currentWeek.stats.netWorth >= 0 ? `+₹${currentWeek.stats.netWorth.toLocaleString()}` : `-₹${Math.abs(currentWeek.stats.netWorth).toLocaleString()}`}
                                             </span>
                                         </div>
-                                        <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
+                                        <div className="relative z-10 w-full h-2.5 bg-white/5 rounded-full overflow-hidden p-[2px]">
                                             <motion.div
                                                 initial={{ width: 0 }}
                                                 animate={{ width: "100%" }}
-                                                transition={{ duration: 1, delay: 0.5 }}
-                                                className={`h-full ${currentWeek.stats.netWorth >= 0 ? 'bg-emerald-500 shadow-[0_0_10px_#10b981]' : 'bg-rose-500 shadow-[0_0_10px_#f43f5e]'}`}
+                                                transition={{ duration: 1.5, delay: 0.5 }}
+                                                className={`h-full rounded-full ${currentWeek.stats.netWorth >= 0 ? 'bg-gradient-to-r from-emerald-600 to-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.5)]' : 'bg-gradient-to-r from-rose-600 to-rose-400 shadow-[0_0_20px_rgba(244,63,94,0.5)]'}`}
                                             />
                                         </div>
                                     </div>
-                                </div>
-                                <div className="pt-2">
-                                    <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] mb-5 flex items-center justify-between">
-                                        Performance Hub
-                                        <Trophy className="w-3 h-3 text-amber-500" />
-                                    </h3>
-                                    <div className="relative group/hub p-6 rounded-[2rem] bg-slate-950/50 border border-white/5 overflow-hidden">
-                                        <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 via-transparent to-amber-500/5 opacity-0 group-hover/hub:opacity-100 transition-opacity duration-700" />
-                                        <div className="relative z-10 flex flex-col items-center">
-                                            <PerformanceHub percentage={parseFloat(currentWeek.stats.wins > 0 ? ((currentWeek.stats.wins / (currentWeek.stats.wins + currentWeek.stats.losses)) * 100).toFixed(0) : "0")} wins={currentWeek.stats.wins} losses={currentWeek.stats.losses} />
-                                        </div>
-                                    </div>
-                                </div>
+                                </section>
                             </div>
-                        </div>
 
-                        <div className="lg:col-span-4 space-y-6">
-                            <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] mb-4 flex items-center gap-2">
-                                <PieChart className="w-3 h-3 text-amber-500" />
-                                Settlement Ledger
-                            </h3>
-                            <div className="space-y-2 md:space-y-3 max-h-[300px] md:max-h-[350px] overflow-y-auto pr-2 scrollbar-hide">
-                                {currentWeek.ledger.length > 0 ? (
-                                    currentWeek.ledger.map((item: any) => (
-                                        <div key={item.userId} className="p-3 md:p-4 bg-white/5 border border-white/5 rounded-2xl hover:bg-white/[0.08] transition-all">
-                                            <div className="flex items-center justify-between">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-slate-800 flex items-center justify-center text-[9px] md:text-[10px] font-black text-slate-400 shrink-0">
-                                                        {item.name[0]}
-                                                    </div>
-                                                    <span className="text-[11px] md:text-xs font-bold text-white truncate max-w-[100px]">{item.name}</span>
+                            {/* Match Chronicle */}
+                            <section className="space-y-8">
+                                <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] flex items-center gap-4 px-2">
+                                    <Clock className="w-4 h-4 text-indigo-400" />
+                                    Strategic Match Chronicle
+                                </h3>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                                    {currentWeek.matches.slice(0, 4).map((m: any, idx: number) => (
+                                        <motion.div
+                                            key={idx}
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ delay: idx * 0.1 }}
+                                            className="group/item flex items-center gap-5 p-6 bg-white/[0.02] rounded-[2rem] border border-white/5 hover:border-indigo-500/30 transition-all hover:bg-white/[0.05]"
+                                        >
+                                            <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${m.outcome === 'win' ? 'bg-emerald-500 shadow-[0_0_12px_#10b981]' : 'bg-rose-500 shadow-[0_0_12px_#f43f5e]'}`} />
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-center justify-between mb-1 gap-4">
+                                                    <span className="text-[11px] font-black text-white uppercase italic tracking-tight truncate leading-relaxed py-0.5">{m.venue?.split(',')[0] || "Battle Arena"}</span>
+                                                    <span className={`text-[12px] font-black tabular-nums shrink-0 ${m.pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                                                        {m.pnl >= 0 ? `+₹${m.pnl}` : `-₹${Math.abs(m.pnl)}`}
+                                                    </span>
                                                 </div>
-                                                <span className={`text-[11px] md:text-xs font-black ${item.amount >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                                                    {item.amount >= 0 ? `+₹${item.amount}` : `-₹${Math.abs(item.amount)}`}
-                                                </span>
+                                                <div className="flex items-center gap-4 opacity-50">
+                                                    <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">{m.runs} Runs • {m.balls} Balls</span>
+                                                    <span className="text-[9px] font-black text-indigo-400 uppercase">{new Date(m.date).toLocaleDateString([], { weekday: 'short' })}</span>
+                                                </div>
                                             </div>
+                                        </motion.div>
+                                    ))}
+                                </div>
+                                <Link href="/profile/stats" className="flex items-center justify-center gap-4 w-full py-5 rounded-[1.5rem] bg-indigo-600/5 border border-indigo-500/10 hover:bg-indigo-600/10 transition-all text-[11px] font-black text-indigo-400 uppercase tracking-widest group/btn">
+                                    Analyze Full Battle History
+                                    <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
+                                </Link>
+
+                                {/* Session Highs Refinement */}
+                                <div className="grid grid-cols-2 gap-5 pt-8 border-t border-white/5 mt-auto">
+                                    <div className="p-5 rounded-[2rem] bg-white/[0.02] border border-white/5 flex flex-col gap-2 group/high">
+                                        <div className="flex items-center gap-3 mb-1">
+                                            <Trophy className="w-3 h-3 text-amber-500" />
+                                            <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Personal Best</span>
                                         </div>
-                                    ))
-                                ) : (
-                                    <div className="py-20 text-center opacity-30">
-                                        <span className="text-[8px] font-black uppercase tracking-widest">No Transactions This Week</span>
+                                        <p className="text-2xl font-black text-white italic tabular-nums leading-none">
+                                            {Math.max(...currentWeek.matches.map((m: any) => m.runs), 0)} <span className="text-[10px] font-bold text-slate-600 ml-1 uppercase">Runs</span>
+                                        </p>
                                     </div>
-                                )}
-                            </div>
+                                    <div className="p-5 rounded-[2rem] bg-white/[0.02] border border-white/5 flex flex-col gap-2 group/high">
+                                        <div className="flex items-center gap-3 mb-1">
+                                            <Clock className="w-3 h-3 text-indigo-400" />
+                                            <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Persistence</span>
+                                        </div>
+                                        <p className="text-2xl font-black text-white italic tabular-nums leading-none">
+                                            {currentWeek.matches.reduce((acc: number, m: any) => acc + (m.balls || 0), 0)} <span className="text-[10px] font-bold text-slate-600 ml-1 uppercase">Balls</span>
+                                        </p>
+                                    </div>
+                                </div>
+                            </section>
                         </div>
 
-                        <div className="lg:col-span-4 space-y-6">
-                            <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] mb-4 flex items-center gap-2">
-                                <Clock className="w-3 h-3 text-purple-500" />
-                                Recent Activity
-                            </h3>
-                            <div className="space-y-3 md:space-y-4">
-                                {currentWeek.matches.slice(0, 4).map((m: any, idx: number) => (
-                                    <motion.div
-                                        key={idx}
-                                        initial={{ opacity: 0, x: 20 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        transition={{ delay: idx * 0.1 }}
-                                        className="group/item flex items-center gap-3 md:gap-4 p-3 md:p-4 bg-slate-950/40 rounded-2xl border border-white/5"
-                                    >
-                                        <div className={`w-1.5 h-1.5 md:w-2 md:h-2 rounded-full shrink-0 ${m.outcome === 'win' ? 'bg-emerald-500 shadow-[0_0_8px_#10b981]' : 'bg-rose-500 shadow-[0_0_8px_#f43f5e]'}`} />
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex items-center justify-between mb-0.5 gap-2">
-                                                <span className="text-[9px] md:text-[10px] font-black text-white uppercase tracking-tight truncate">{m.venue?.split(',')[0] || "Match"}</span>
-                                                <span className={`text-[9px] md:text-[10px] font-bold shrink-0 ${m.pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                                                    {m.pnl >= 0 ? `+₹${m.pnl}` : `-₹${Math.abs(m.pnl)}`}
-                                                </span>
+                        {/* RIGHT: High-Intensity Hubs (5/12) */}
+                        <div className="lg:col-span-5 space-y-14">
+                            
+                            {/* Pulse Hub */}
+                            <section>
+                                <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] mb-8 flex items-center justify-between px-4 underline-offset-[12px]">
+                                    Pro Master Hub
+                                    <Trophy className="w-4 h-4 text-amber-500/50" />
+                                </h3>
+                                <div className="relative group/hub p-14 rounded-[4rem] bg-black/40 border border-white/5 overflow-hidden shadow-[inset_0_0_80px_rgba(0,0,0,0.8)] backdrop-blur-xl">
+                                    <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 via-transparent to-amber-500/10 opacity-0 group-hover/hub:opacity-100 transition-all duration-1000" />
+                                    <div className="relative z-10">
+                                        <PerformanceHub percentage={parseFloat(currentWeek.stats.wins > 0 ? ((currentWeek.stats.wins / (currentWeek.stats.wins + currentWeek.stats.losses)) * 100).toFixed(0) : "0")} wins={currentWeek.stats.wins} losses={currentWeek.stats.losses} />
+                                    </div>
+                                </div>
+                            </section>
+
+                            {/* Settlement Ledger */}
+                            <section>
+                                <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] mb-8 flex items-center gap-4 px-4">
+                                    <PieChart className="w-4 h-4 text-amber-500" />
+                                    Strategic Settlement Audit
+                                </h3>
+                                <div className="space-y-4 max-h-[450px] overflow-y-auto pr-4 custom-scrollbar">
+                                    {currentWeek.ledger.length > 0 ? (
+                                        currentWeek.ledger.map((item: any) => (
+                                            <div key={item.userId} className="p-6 bg-white/[0.02] border border-white/5 rounded-[2rem] hover:bg-white/[0.07] transition-all group/ledger">
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex items-center gap-5">
+                                                        <div className="w-12 h-12 rounded-2xl bg-slate-900 border border-white/5 flex items-center justify-center text-sm font-black text-slate-500 group-hover/ledger:text-indigo-400 group-hover/ledger:border-indigo-500/30 transition-all">
+                                                            {item.name[0]}
+                                                        </div>
+                                                        <div>
+                                                            <span className="block text-sm font-black text-white uppercase italic tracking-tighter mb-1">{item.name}</span>
+                                                            <span className="text-[10px] font-black text-slate-600 uppercase tracking-[0.2em] italic">Session Payment</span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <p className={`text-xl font-black italic tabular-nums leading-none mb-1 ${item.amount >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                                                            {item.amount >= 0 ? `+₹${item.amount.toLocaleString()}` : `-₹${Math.abs(item.amount).toLocaleString()}`}
+                                                        </p>
+                                                        <p className="text-[9px] font-black text-slate-700 uppercase tracking-widest">Yield Processed</p>
+                                                    </div>
+                                                </div>
                                             </div>
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-[7px] md:text-[8px] font-bold text-slate-600 uppercase whitespace-nowrap">Res: {m.runs} ({m.balls})</span>
-                                                <span className="text-[7px] md:text-[8px] font-bold text-indigo-400 uppercase">{new Date(m.date).toLocaleDateString([], { weekday: 'short' })}</span>
-                                            </div>
+                                        ))
+                                    ) : (
+                                        <div className="py-28 text-center bg-white/[0.02] border border-white/5 rounded-[2rem] opacity-30">
+                                            <RefreshCcw className="w-10 h-10 mx-auto mb-6 text-slate-600/30 animate-spin-slow" />
+                                            <span className="text-[11px] font-black uppercase tracking-[0.4em] text-slate-700">Financial Audit Pending</span>
                                         </div>
-                                    </motion.div>
-                                ))}
-                            </div>
-                            <Link href="/profile/stats" className="flex items-center justify-center gap-2 w-full py-3 mt-4 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition-all text-[9px] font-black text-slate-400 hover:text-white uppercase tracking-widest">
-                                View Full Analytics
-                                <ArrowRight className="w-3 h-3" />
-                            </Link>
+                                    )}
+                                </div>
+                            </section>
+                        </div>
+
+                        {/* FOOTER: Intensity View (12/12) */}
+                        <div className="lg:col-span-12 border-t border-white/10 pt-14 -mx-2">
+                             <IntensityHeatmap matches={currentWeek.matches} startDate={currentWeek.startDate} />
                         </div>
                     </div>
                 </motion.div>
             </AnimatePresence>
 
+            {/* Hidden Export Template */}
             <div className="fixed left-[-9999px] top-0 pointer-events-none">
-                <WeeklyReportTemplate ref={fullReportRef} week={currentWeek} userName={session?.user?.name || "Player"} />
+                <WeeklyReportTemplate ref={fullReportRef} week={currentWeek} userName={session?.user?.name || "Gladiator"} />
             </div>
         </section>
     );
 }
 
 function PerformanceHub({ percentage, wins, losses }: { percentage: number, wins: number, losses: number }) {
-    const radius = 42;
+    const radius = 45;
     const circumference = 2 * Math.PI * radius;
     const strokeDashoffset = circumference - (percentage / 100) * circumference;
 
     const getColor = () => {
-        if (percentage >= 80) return { primary: '#10b981', label: 'Elite' };
-        if (percentage >= 50) return { primary: '#f59e0b', label: 'Pro' };
-        return { primary: '#f43f5e', label: 'Growing' };
+        if (percentage >= 80) return { primary: '#10b981', label: 'Elite', aura: 'rgba(16,185,129,0.3)' };
+        if (percentage >= 50) return { primary: '#6366f1', label: 'Pro', aura: 'rgba(99,102,241,0.3)' };
+        return { primary: '#f43f5e', label: 'Growing', aura: 'rgba(244,63,94,0.3)' };
     };
 
     const style = getColor();
 
     return (
-        <div className="flex flex-col items-center gap-6 w-full">
+        <div className="flex flex-col items-center gap-10 w-full">
             <div className="relative flex items-center justify-center">
-                <div className="absolute inset-x-[-15%] inset-y-[-15%] rounded-full blur-2xl opacity-20 transition-colors duration-1000" style={{ backgroundColor: style.primary }} />
-                <svg className="w-32 h-32 transform -rotate-90">
+                <motion.div 
+                    animate={{ 
+                        scale: [1, 1.15, 1],
+                        opacity: [0.15, 0.35, 0.15]
+                    }}
+                    transition={{ 
+                        duration: 3, 
+                        repeat: Infinity,
+                        ease: "easeInOut"
+                    }}
+                    className="absolute inset-x-[-20%] inset-y-[-20%] rounded-full blur-3xl pointer-events-none" 
+                    style={{ backgroundColor: style.primary }} 
+                />
+
+                <svg className="w-44 h-44 transform -rotate-90">
                     <defs>
                         <linearGradient id="hubGradient" x1="0%" y1="0%" x2="100%" y2="0%">
                             <stop offset="0%" stopColor={style.primary} />
-                            <stop offset="100%" stopColor={percentage >= 50 ? '#6366f1' : '#fb7185'} />
+                            <stop offset="100%" stopColor="#8b5cf6" />
                         </linearGradient>
+                        <filter id="glow">
+                            <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+                            <feMerge>
+                                <feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/>
+                            </feMerge>
+                        </filter>
                     </defs>
-                    <circle cx="64" cy="64" r={radius} stroke="currentColor" strokeWidth="3" fill="transparent" className="text-white/5" />
-                    <motion.circle cx="64" cy="64" r={radius} stroke="url(#hubGradient)" strokeWidth="5" fill="transparent" strokeDasharray={circumference} initial={{ strokeDashoffset: circumference }} animate={{ strokeDashoffset }} transition={{ duration: 1.5, ease: "circOut" }} strokeLinecap="round" />
+                    <circle cx="88" cy="88" r={radius} stroke="currentColor" strokeWidth="2" fill="transparent" className="text-white/[0.04]" />
+                    <motion.circle 
+                        cx="88" cy="88" r={radius} 
+                        stroke={style.primary} strokeWidth="1" fill="transparent" 
+                        strokeDasharray={circumference} 
+                        initial={{ strokeDashoffset: circumference }}
+                        animate={{ 
+                            strokeDashoffset,
+                            opacity: [0.3, 0.6, 0.3]
+                        }}
+                        transition={{ 
+                            strokeDashoffset: { duration: 1.5, ease: "circOut" },
+                            opacity: { duration: 2, repeat: Infinity }
+                        }}
+                        strokeLinecap="round"
+                    />
+                    <motion.circle 
+                        cx="88" cy="88" r={radius} 
+                        stroke="url(#hubGradient)" strokeWidth="6" fill="transparent" 
+                        strokeDasharray={circumference} 
+                        initial={{ strokeDashoffset: circumference }}
+                        animate={{ strokeDashoffset }}
+                        transition={{ duration: 1.5, ease: "circOut" }}
+                        strokeLinecap="round"
+                        filter="url(#glow)"
+                    />
                 </svg>
+
                 <div className="absolute flex flex-col items-center justify-center">
-                    <span className="text-2xl font-black text-white">{percentage}%</span>
-                    <span className="text-[6px] font-black uppercase tracking-[0.4em] mt-2" style={{ color: style.primary }}>{style.label}</span>
+                    <motion.span 
+                        animate={{ scale: [1, 1.05, 1] }}
+                        transition={{ duration: 3, repeat: Infinity }}
+                        className="text-4xl font-black text-white italic tracking-tighter"
+                    >
+                        {percentage}%
+                    </motion.span>
+                    <span className="text-[8px] font-black uppercase tracking-[0.5em] mt-2" style={{ color: style.primary }}>{style.label} Rank</span>
                 </div>
             </div>
-            <div className="w-full grid grid-cols-2 gap-px bg-white/5 rounded-2xl overflow-hidden border border-white/5">
-                <div className="flex items-center justify-center gap-2 py-3 bg-slate-950/60">
-                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
-                    <span className="text-[8px] font-black text-slate-400">WINS: <span className="text-white ml-1">{wins}</span></span>
+
+            <div className="w-full flex gap-4 text-center">
+                <div className="flex-1 flex flex-col items-center p-4 bg-white/[0.03] border border-white/5 rounded-3xl group/win">
+                    <span className="text-[8px] font-black text-slate-600 uppercase tracking-[0.3em] mb-2 group-hover/win:text-emerald-400 transition-colors">Victories</span>
+                    <span className="text-xl font-black text-emerald-400 italic tabular-nums tracking-tighter">{wins}</span>
                 </div>
-                <div className="flex items-center justify-center gap-2 py-3 bg-slate-950/60">
-                    <div className="w-1.5 h-1.5 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]" />
-                    <span className="text-[8px] font-black text-slate-400">LOSS: <span className="text-white ml-1">{losses}</span></span>
+                <div className="flex-1 flex flex-col items-center p-4 bg-white/[0.03] border border-white/5 rounded-3xl group/loss">
+                    <span className="text-[8px] font-black text-slate-600 uppercase tracking-[0.3em] mb-2 group-hover/loss:text-rose-400 transition-colors">Defeats</span>
+                    <span className="text-xl font-black text-rose-400 italic tabular-nums tracking-tighter">{losses}</span>
                 </div>
             </div>
         </div>
