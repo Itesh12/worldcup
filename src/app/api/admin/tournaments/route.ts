@@ -3,6 +3,7 @@ import connectDB from "@/lib/db";
 import Tournament from "@/models/Tournament";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../auth/[...nextauth]/route";
+import { performMatchSync } from "@/lib/matchSync";
 
 export async function GET(req: NextRequest) {
     try {
@@ -36,6 +37,15 @@ export async function POST(req: NextRequest) {
             name, cricbuzzSeriesId, cricbuzzSlug, isActive, commissionPercentage
         });
 
+        // Instant Match Sync upon successful league creation
+        try {
+            console.log(`Tournament API - Proactive sync for new tournament: ${name}`);
+            await performMatchSync(tournament._id.toString());
+        } catch (syncError) {
+            console.error("Tournament API - Proactive sync failed during creation:", syncError);
+            // We don't fail the tournament creation if sync fails
+        }
+
         return NextResponse.json(tournament, { status: 201 });
     } catch (error: any) {
         return NextResponse.json({ message: error.message }, { status: 500 });
@@ -59,6 +69,16 @@ export async function PUT(req: NextRequest) {
         await connectDB();
 
         const tournament = await Tournament.findByIdAndUpdate(id, { isActive }, { new: true });
+
+        // If activation is toggled ON, perform an immediate match sync
+        if (isActive && tournament) {
+            try {
+                console.log(`Tournament API - Re-syncing for newly activated context: ${tournament.name}`);
+                await performMatchSync(id);
+            } catch (syncError) {
+                console.error("Tournament API - Re-sync failed during activation:", syncError);
+            }
+        }
 
         return NextResponse.json(tournament);
     } catch (error: any) {
