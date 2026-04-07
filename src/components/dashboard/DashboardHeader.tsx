@@ -4,7 +4,6 @@ import React from "react";
 import { Trophy, RefreshCcw, LayoutDashboard, Menu, LogOut } from "lucide-react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
-import { UserContextSwitcher } from "@/components/UserContextSwitcher";
 import { useTournament } from "@/contexts/TournamentContext";
 
 interface DashboardHeaderProps {
@@ -19,25 +18,22 @@ export function DashboardHeader({ refreshing, onRefresh }: DashboardHeaderProps)
     return (
         <header className="sticky top-0 z-50 bg-[#050B14]/80 backdrop-blur-xl border-b border-white/5 h-16 md:h-20 flex items-center shrink-0">
             <div className="max-w-7xl mx-auto px-4 md:px-6 w-full flex items-center justify-between gap-4">
-                {/* Brand Identity */}
-                <Link href="/dashboard" className="flex items-center gap-2 md:gap-3 min-w-0 font-bold group">
+                {/* Brand Identity - Only visible on mobile/tablet since it's in sidebar on desktop */}
+                <Link href="/dashboard" className="flex lg:hidden items-center gap-2 md:gap-3 min-w-0 font-bold group">
                     <Trophy className="w-5 h-5 md:w-8 md:h-8 text-indigo-500 shrink-0 group-hover:scale-110 transition-transform" />
                     <div className="min-w-0">
                         <h1 className="text-xs md:text-xl font-black text-white tracking-tight leading-none uppercase italic">
                             WORLD CUP <span className="text-indigo-500">HUB</span>
                         </h1>
-                        <p className="text-[8px] md:text-[10px] text-slate-500 font-bold uppercase tracking-widest hidden xs:block mt-0.5 md:mt-1">
-                            Official Player Portal
-                        </p>
                     </div>
                 </Link>
 
-                {/* Switcher & Tools */}
-                <div className="flex items-center gap-2 md:gap-4 shrink-0">
-                    {/* Desktop Tournament Switcher */}
-                    <div className="hidden lg:flex items-center gap-2 w-[280px]">
-                        <UserContextSwitcher onSelect={(id) => setTournamentId(id || "")} />
-                    </div>
+                <div className="hidden lg:block">
+                    {/* Placeholder for desktop header alignment if needed */}
+                </div>
+
+                {/* Tools */}
+                <div className="flex items-center gap-2 md:gap-4 shrink-0 px-2 lg:px-0">
 
                     {/* Refresh Button */}
                     <button

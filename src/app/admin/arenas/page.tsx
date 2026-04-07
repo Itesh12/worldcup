@@ -23,6 +23,7 @@ import { useToast } from "@/contexts/ToastContext";
 import { Spinner } from "@/components/ui/Spinner";
 import { CreateArenaModal } from "@/components/dashboard/CreateArenaModal";
 import { ArenaDetailView } from "@/components/dashboard/ArenaDetailView";
+import { DollarSign, CheckCircle2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 
@@ -34,6 +35,8 @@ interface Arena {
     slotsCount: number;
     isPrivate: boolean;
     status: string;
+    adminCommissionPercentage?: number;
+    organizerCommissionPercentage?: number;
     createdBy: {
         _id: string;
         name: string;
@@ -59,6 +62,7 @@ export default function AdminArenasPage() {
     const [loading, setLoading] = useState(true);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [selectedArenaForView, setSelectedArenaForView] = useState<{ arenaId: string; matchId: string } | null>(null);
+    const [settling, setSettling] = useState<string | null>(null);
     
     // Filters
     const [searchQuery, setSearchQuery] = useState("");
@@ -345,6 +349,56 @@ export default function AdminArenasPage() {
                                                             <span className="block text-xs font-black text-white">{arena.slotsCount}/{arena.maxSlots}</span>
                                                         </div>
                                                     </div>
+
+                                                    {/* Operational Financials & Settlement */}
+                                                    <div className="grid grid-cols-2 gap-3 mb-4">
+                                                        <div className="bg-indigo-500/5 rounded-xl p-2.5 border border-indigo-500/10">
+                                                            <span className="block text-[8px] font-black text-indigo-500/60 uppercase mb-0.5 tracking-tight">Platform Profit</span>
+                                                            <span className="block text-xs font-black text-indigo-400 italic">
+                                                                ₹{((arena.slotsCount * arena.entryFee) * (arena.adminCommissionPercentage || 0) / 100).toFixed(2)}
+                                                            </span>
+                                                        </div>
+                                                        <div className="bg-purple-500/5 rounded-xl p-2.5 border border-purple-500/10">
+                                                            <span className="block text-[8px] font-black text-purple-500/60 uppercase mb-0.5 tracking-tight">Org Comm.</span>
+                                                            <span className="block text-xs font-black text-purple-400 italic">
+                                                                ₹{((arena.slotsCount * arena.entryFee) * (arena.organizerCommissionPercentage || 0) / 100).toFixed(2)}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+
+                                                    {['finished', 'completed', 'result', 'settled'].includes(arena.matchId.status) && arena.status !== 'completed' && (
+                                                        <button
+                                                            onClick={async (e) => {
+                                                                e.stopPropagation();
+                                                                if (settling) return;
+                                                                try {
+                                                                    setSettling(arena._id);
+                                                                    const res = await fetch(`/api/admin/arenas/${arena._id}/settle`, { method: 'POST' });
+                                                                    if (res.ok) {
+                                                                        showToast("Arena Settled Successfully", "success");
+                                                                        fetchArenas();
+                                                                    } else {
+                                                                        const data = await res.json();
+                                                                        showToast(data.message || "Settlement Failed", "error");
+                                                                    }
+                                                                } catch (err) {
+                                                                    showToast("Network Error", "error");
+                                                                } finally {
+                                                                    setSettling(null);
+                                                                }
+                                                            }}
+                                                            className="w-full mb-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-emerald-600/20 active:scale-[0.98] flex items-center justify-center gap-2"
+                                                        >
+                                                            {settling === arena._id ? (
+                                                                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                                                            ) : (
+                                                                <>
+                                                                    <CheckCircle2 className="w-3.5 h-3.5" />
+                                                                    Quick Settle Prize Pool
+                                                                </>
+                                                            )}
+                                                        </button>
+                                                    )}
 
                                                     <div className="flex items-center justify-between pt-4 border-t border-white/5">
                                                         <div className="min-w-0">

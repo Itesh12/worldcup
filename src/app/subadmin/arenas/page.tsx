@@ -16,7 +16,8 @@ import {
     Filter,
     RefreshCw,
     ChevronUp,
-    ChevronDown
+    ChevronDown,
+    CheckCircle2
 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -37,6 +38,7 @@ export default function MyArenasPage() {
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [expandedMatches, setExpandedMatches] = useState<Record<string, boolean>>({});
     const [selectedArenaForView, setSelectedArenaForView] = useState<{ arenaId: string; matchId: string } | null>(null);
+    const [settling, setSettling] = useState<string | null>(null);
 
     const fetchArenas = async () => {
         try {
@@ -252,6 +254,40 @@ export default function MyArenasPage() {
                                                         <span className="text-[9px] font-black text-slate-400 group-hover/btn:text-white uppercase tracking-[0.2em] transition-colors">Audit Grid</span>
                                                         <ChevronRight className="w-4 h-4 text-slate-600 group-hover/btn:text-purple-400 group-hover/btn:translate-x-1 transition-all" />
                                                     </button>
+
+                                                    {['finished', 'completed', 'result', 'settled'].includes(arena.matchId.status) && arena.status !== 'completed' && (
+                                                        <button 
+                                                            onClick={async (e) => {
+                                                                e.stopPropagation();
+                                                                if (settling) return;
+                                                                try {
+                                                                    setSettling(arena._id);
+                                                                    const res = await fetch(`/api/admin/arenas/${arena._id}/settle`, { method: 'POST' });
+                                                                    if (res.ok) {
+                                                                        showToast("Arena Fixed & Settled", "success");
+                                                                        fetchArenas();
+                                                                    } else {
+                                                                        const data = await res.json();
+                                                                        showToast(data.message || "Settlement Failed", "error");
+                                                                    }
+                                                                } catch (err) {
+                                                                    showToast("Sync Error", "error");
+                                                                } finally {
+                                                                    setSettling(null);
+                                                                }
+                                                            }}
+                                                            className="mt-3 w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-black uppercase tracking-widest rounded-2xl transition-all shadow-lg shadow-emerald-600/20 active:scale-[0.98] flex items-center justify-center gap-2"
+                                                        >
+                                                            {settling === arena._id ? (
+                                                                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                                                            ) : (
+                                                                <>
+                                                                    <CheckCircle2 className="w-3.5 h-3.5" />
+                                                                    Reconcile & Settle Prize
+                                                                </>
+                                                            )}
+                                                        </button>
+                                                    )}
                                                 </div>
                                             ))}
                                         </div>
