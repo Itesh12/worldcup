@@ -1,9 +1,14 @@
 import connectDB from "@/lib/db";
 import Arena from "@/models/Arena";
+import Match from "@/models/Match";
 import UserBattingAssignment from "@/models/UserBattingAssignment";
 import SubAdminConfig from "@/models/SubAdminConfig";
 import User from "@/models/User";
 import Transaction from "@/models/Transaction";
+import UserMatchStats from "@/models/UserMatchStats";
+import SlotScore from "@/models/SlotScore";
+import Notification from "@/models/Notification";
+import { createNotification, notifyAdmins, notifyUsersInArena } from "./notificationLogic";
 import mongoose from "mongoose";
 
 /**
@@ -118,10 +123,17 @@ export async function revealArenaPositions(arenaId: string) {
             }
         }
 
-        // 7. Update Arena Status
         arena.isRevealed = true;
         arena.status = 'revealed';
         await arena.save({ session: mongooseSession });
+
+        // User Notification for Reveal
+        await notifyUsersInArena(arenaId, {
+            title: "Arena Positions Revealed! 🏏",
+            message: `Check your batting number for ${arena.name}. The match is starting soon!`,
+            type: 'match',
+            link: `/matches/${arena.matchId._id || arena.matchId}`
+        });
 
         await mongooseSession.commitTransaction();
         return { 
@@ -235,5 +247,189 @@ export async function finalizeMatchCommissions(matchId: string, matchStatus: str
         console.error("Failed to finalize commissions for match", matchId, e);
     } finally {
         mongooseSession.endSession();
+    }
+}
+
+/**
+ * Core Settlement Logic for an Arena
+ */
+export async function settleArena(arenaId: string, providedSession?: mongoose.ClientSession) {
+    const mongooseSession = providedSession || await mongoose.startSession();
+    if (!providedSession) mongooseSession.startTransaction();
+
+    try {
+        await connectDB();
+
+        // 1. Fetch Arena and Match
+        const arena = await Arena.findById(arenaId).populate('matchId').session(mongooseSession);
+        if (!arena) throw new Error("Arena not found");
+        if (arena.status === 'completed') return { success: false, message: "Arena already settled" };
+
+        const match = arena.matchId;
+        if (!['finished', 'completed', 'result', 'settled'].includes(match.status)) {
+            throw new Error(`Match is still ${match.status}. Cannot settle.`);
+        }
+
+        // 2. Finalize Commissions
+        await finalizeMatchCommissions(match._id.toString(), match.status);
+
+        // 3. Identification of Winners
+        const assignments = await UserBattingAssignment.find({ arenaId }).session(mongooseSession);
+        if (assignments.length === 0) {
+            arena.status = 'completed';
+            await arena.save({ session: mongooseSession });
+            if (!providedSession) await mongooseSession.commitTransaction();
+            return { success: true, message: "Arena settled (no players)" };
+        }
+
+        const scoresWithUser = [];
+        for (const assignment of assignments) {
+            const score = await SlotScore.findOne({
+                matchId: match._id,
+                inningsNumber: assignment.inningsNumber,
+                position: assignment.position
+            }).session(mongooseSession);
+
+            scoresWithUser.push({
+                assignment,
+                runs: score?.runs || 0,
+                balls: score?.balls || 0
+            });
+        }
+
+        scoresWithUser.sort((a, b) => {
+            if (b.runs !== a.runs) return b.runs - a.runs;
+            return a.balls - b.balls;
+        });
+
+        // 4. Calculate Payout Pool
+        const totalRevenue = assignments.length * arena.entryFee;
+        const adminCommission = (totalRevenue * arena.adminCommissionPercentage) / 100;
+        const organizerCommission = (totalRevenue * arena.organizerCommissionPercentage) / 100;
+        const prizePool = totalRevenue - adminCommission - organizerCommission;
+
+        // 5. Distribution
+        if (prizePool > 0) {
+            const topScore = scoresWithUser[0].runs;
+            const winners = scoresWithUser.filter(s => s.runs === topScore && s.runs > 0);
+
+            if (winners.length > 0) {
+                const prizePerWinner = prizePool / winners.length;
+                for (const winner of winners) {
+                    const winnerUser = await User.findById(winner.assignment.userId).session(mongooseSession);
+                    if (winnerUser) {
+                        winnerUser.walletBalance += prizePerWinner; // Fixed field name to walletBalance
+                        await winnerUser.save({ session: mongooseSession });
+
+                        await Transaction.create([{
+                            userId: winnerUser._id,
+                            amount: prizePerWinner,
+                            type: 'winnings',
+                            description: `Winnings: ${arena.name} (Rank #1)`,
+                            status: 'completed',
+                            referenceId: arenaId
+                        }], { session: mongooseSession });
+
+                        // User Notification
+                        await createNotification(winnerUser._id.toString(), {
+                            title: "Champion! 🏆",
+                            message: `You won ₹${prizePerWinner.toLocaleString()} in Arena: ${arena.name}`,
+                            type: 'money',
+                            link: `/wallet/history`
+                        });
+                    }
+                }
+            }
+        }
+
+        arena.status = 'completed';
+        await arena.save({ session: mongooseSession });
+
+        // General Settlement Notification for All Participants
+        await notifyUsersInArena(arenaId, {
+            title: "Arena Settled! ✅",
+            message: `Results for ${arena.name} are finalized. Check the leaderboard!`,
+            type: 'success',
+            link: `/matches/${match._id}`
+        });
+
+        if (!providedSession) await mongooseSession.commitTransaction();
+        return { success: true, message: "Arena settled successfully" };
+
+    } catch (error: any) {
+        if (!providedSession) await mongooseSession.abortTransaction();
+        throw error;
+    } finally {
+        if (!providedSession) mongooseSession.endSession();
+    }
+}
+
+/**
+ * Cron Batch Processor: Finds all arenas for finalized matches and settles them
+ */
+export async function processAllPendingSettlements() {
+    try {
+        await connectDB();
+        
+        // Safety Buffer: 20 minutes ago
+        const twentyMinsAgo = new Date(Date.now() - 20 * 60 * 1000);
+
+        // 1. Find matches that finished > 20 mins ago
+        const finalizedMatches = await Match.find({
+            status: { $in: ['finished', 'completed', 'result', 'settled'] },
+            updatedAt: { $lte: twentyMinsAgo }
+        }).select('_id name');
+
+        if (finalizedMatches.length === 0) {
+            return { message: "No finalized matches pending settlement buffer.", count: 0 };
+        }
+
+        const matchIds = finalizedMatches.map(m => m._id);
+
+        // 2. Find revealed/live arenas linked to these matches
+        const pendingArenas = await Arena.find({
+            matchId: { $in: matchIds },
+            status: { $ne: 'completed' }
+        });
+
+        if (pendingArenas.length === 0) {
+            return { message: "No arenas pending settlement for finalized matches.", count: 0 };
+        }
+
+        console.log(`Cron - Found ${pendingArenas.length} arenas to auto-settle.`);
+        
+        let successCount = 0;
+        const details = [];
+
+        for (const arena of pendingArenas) {
+            try {
+                await settleArena(arena._id.toString());
+                successCount++;
+                details.push({ id: arena._id, name: arena.name, success: true });
+            } catch (err: any) {
+                console.error(`Cron - Failed to settle ${arena.name}:`, err.message);
+                details.push({ id: arena._id, name: arena.name, success: false, error: err.message });
+            }
+        }
+
+        // 3. Notify Admins of daily settlement activity
+        if (successCount > 0) {
+            await notifyAdmins({
+                title: "Auto-Settlement Report",
+                message: `Successfully settled ${successCount} arenas automatically.`,
+                type: 'success',
+                link: '/admin/reports'
+            });
+        }
+
+        return {
+            message: `Processed ${pendingArenas.length} arenas`,
+            successCount,
+            details
+        };
+
+    } catch (error: any) {
+        console.error("Cron - Bulk settlement error:", error);
+        throw error;
     }
 }

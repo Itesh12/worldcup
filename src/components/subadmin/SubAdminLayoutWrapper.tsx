@@ -4,6 +4,7 @@ import React, { useState, Suspense } from "react";
 import { SubAdminSidebar } from "./SubAdminSidebar";
 import { Menu, X, Trophy } from "lucide-react";
 import { usePathname } from "next/navigation";
+import { NotificationBell } from "../NotificationBell";
 
 export function SubAdminLayoutWrapper({ children }: { children: React.ReactNode }) {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -28,12 +29,18 @@ export function SubAdminLayoutWrapper({ children }: { children: React.ReactNode 
                         </h1>
                     </div>
                     
-                    <button 
-                        onClick={() => setIsSidebarOpen(true)}
-                        className="lg:hidden w-10 h-10 bg-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-purple-600/30 hover:bg-purple-500 transition-all active:scale-90 select-none"
-                    >
-                        <Menu className="w-5 h-5 text-white" />
-                    </button>
+                    <div className="flex items-center gap-4">
+                        <Suspense fallback={<div className="w-10 h-10 bg-slate-800/20 rounded-xl" />}>
+                            <NotificationBell />
+                        </Suspense>
+
+                        <button 
+                            onClick={() => setIsSidebarOpen(true)}
+                            className="lg:hidden w-10 h-10 bg-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-purple-600/30 hover:bg-purple-500 transition-all active:scale-90 select-none"
+                        >
+                            <Menu className="w-5 h-5 text-white" />
+                        </button>
+                    </div>
                 </header>
 
                 {/* Content Container */}

@@ -5,6 +5,7 @@ import { useState, Suspense } from "react";
 import { AdminSidebar } from "./AdminSidebar";
 import { Menu, Trophy, ShieldAlert, Radio } from "lucide-react";
 import Link from "next/link";
+import { NotificationBell } from "../NotificationBell";
 
 export function AdminLayoutWrapper({ children }: { children: React.ReactNode }) {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -40,6 +41,10 @@ export function AdminLayoutWrapper({ children }: { children: React.ReactNode }) 
                         </div>
 
                         <div className="flex items-center gap-3">
+                            <Suspense fallback={<div className="w-10 h-10 bg-slate-800/20 rounded-xl" />}>
+                                <NotificationBell />
+                            </Suspense>
+
                             <Link
                                 href="/dashboard?view=player"
                                 className="hidden sm:flex items-center gap-2 px-4 py-2 bg-indigo-600/20 border border-indigo-500/30 hover:bg-indigo-600 hover:border-indigo-500 text-indigo-300 hover:text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all"

@@ -6,6 +6,7 @@ import { Trophy, RefreshCcw, LayoutDashboard, Menu, LogOut } from "lucide-react"
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useTournament } from "@/contexts/TournamentContext";
+import { NotificationBell } from "../NotificationBell";
 
 interface DashboardHeaderProps {
     refreshing?: boolean;
@@ -46,6 +47,9 @@ export function DashboardHeader({ refreshing, onRefresh }: DashboardHeaderProps)
                     >
                         <RefreshCcw className={`w-3.5 h-3.5 md:w-4 md:h-4 ${refreshing ? 'animate-spin text-indigo-500' : 'group-hover:rotate-180 transition-transform duration-500'}`} />
                     </button>
+
+                    {/* Notification System */}
+                    <NotificationBell />
 
                     {/* Admin/Sub-Admin Quick Access */}
                     {session?.user && ((session.user as any).role === "admin" || (session.user as any).role === "subadmin") ? (

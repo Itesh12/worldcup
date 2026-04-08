@@ -8,6 +8,8 @@ import UserBattingAssignment from "@/models/UserBattingAssignment";
 import Tournament from "@/models/Tournament";
 import { getLiveMatchData } from "@/lib/cricketApi";
 
+import { notifyAdmins, notifyUsersInMatch } from "@/lib/notificationLogic";
+
 export async function GET(req: NextRequest) {
     const authHeader = req.headers.get("authorization");
     const { searchParams } = new URL(req.url);
@@ -21,8 +23,20 @@ export async function GET(req: NextRequest) {
     try {
         await connectDB();
 
-        // 1. Get matches to sync
-        const query = targetMatchId ? { _id: targetMatchId } : { status: "live" };
+        // 1. Get matches to sync:
+        // - Specific match if targetMatchId provided
+        // - ALL Live matches
+        // - Upcoming matches that should have started by now
+        const now = new Date();
+        const query = targetMatchId 
+            ? { _id: targetMatchId } 
+            : { 
+                $or: [
+                    { status: "live" },
+                    { status: "upcoming", startTime: { $lte: now } }
+                ]
+            };
+            
         const matchesToSync = await Match.find(query);
 
         for (const match of matchesToSync) {
@@ -169,25 +183,57 @@ export async function GET(req: NextRequest) {
                 }
             }
 
-            // 5. Update match status if finished (simulated)
+            // 5. Update match status
             if (liveData.status === 'finished') {
                 // Fetch tournament for commission info
                 const tournament = await Tournament.findById(match.tournamentId).lean() as any;
+                let adminCommissionEarned = 0;
+
                 if (tournament) {
                     const numParticipants = await UserBattingAssignment.countDocuments({ matchId: match._id });
                     const currentEntryFee = match.entryFee || tournament.entryFee || 50;
                     const currentCommissionPct = match.commissionPercentage ?? tournament.commissionPercentage ?? 0;
                     
                     const totalPool = numParticipants * currentEntryFee;
-                    const adminCommissionEarned = totalPool * (currentCommissionPct / 100);
-                    
-                    await Match.findByIdAndUpdate(match._id, { 
-                        status: 'finished',
-                        adminCommissionEarned
-                    });
-                } else {
-                    await Match.findByIdAndUpdate(match._id, { status: 'finished' });
+                    adminCommissionEarned = totalPool * (currentCommissionPct / 100);
                 }
+
+                await Match.findByIdAndUpdate(match._id, { 
+                    status: 'finished',
+                    adminCommissionEarned
+                });
+
+                await notifyAdmins({
+                    title: "Match Finished",
+                    message: `Match ${match.teams[0].shortName} vs ${match.teams[1].shortName} has concluded. Settlement will be processed in 20 mins.`,
+                    type: 'match'
+                });
+
+                // User Notification for Match Finish
+                await notifyUsersInMatch(match._id.toString(), {
+                    title: "Match Concluded! 🏁",
+                    message: `${match.teams[0].shortName} vs ${match.teams[1].shortName} is over. Settlement starting soon.`,
+                    type: 'match',
+                    link: `/matches/${match._id}`
+                });
+
+            } else if (match.status === 'upcoming') {
+                // Moving from upcoming to live
+                await Match.findByIdAndUpdate(match._id, { status: 'live' });
+                
+                await notifyAdmins({
+                    title: "Match Live Now! 🏏",
+                    message: `${match.teams[0].shortName} vs ${match.teams[1].shortName} is now LIVE. Scores are being synced.`,
+                    type: 'match'
+                });
+
+                // User Notification for Match Live
+                await notifyUsersInMatch(match._id.toString(), {
+                    title: "Match Live Now! 🏏",
+                    message: `${match.teams[0].shortName} vs ${match.teams[1].shortName} has started. Good luck!`,
+                    type: 'match',
+                    link: `/matches/${match._id}`
+                });
             }
         }
 
