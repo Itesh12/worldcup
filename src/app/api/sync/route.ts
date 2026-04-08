@@ -7,8 +7,8 @@ import UserMatchStats from "@/models/UserMatchStats";
 import UserBattingAssignment from "@/models/UserBattingAssignment";
 import Tournament from "@/models/Tournament";
 import { getLiveMatchData } from "@/lib/cricketApi";
-
 import { notifyAdmins, notifyUsersInMatch } from "@/lib/notificationLogic";
+import { logSystemEvent } from "@/lib/systemLogger";
 
 export async function GET(req: NextRequest) {
     const authHeader = req.headers.get("authorization");
@@ -20,6 +20,8 @@ export async function GET(req: NextRequest) {
         // return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
+    const statusUpdates: { matchId: string, updated: boolean }[] = [];
+
     try {
         await connectDB();
 
@@ -27,15 +29,26 @@ export async function GET(req: NextRequest) {
         // - Specific match if targetMatchId provided
         // - ALL Live matches
         // - Upcoming matches that should have started by now
+        // - FINISHED matches that still have unsettled arenas (Critical for restoring past data)
         const now = new Date();
-        const query = targetMatchId 
-            ? { _id: targetMatchId } 
-            : { 
+        
+        let query: any;
+        if (targetMatchId) {
+            query = { _id: targetMatchId };
+        } else {
+            // Find Match IDs that have open arenas
+            const Arena = (await import("@/models/Arena")).default;
+            const openArenas = await Arena.find({ status: { $ne: 'completed' } }).select('matchId');
+            const openMatchIds = [...new Set(openArenas.map(a => a.matchId))];
+
+            query = { 
                 $or: [
                     { status: "live" },
-                    { status: "upcoming", startTime: { $lte: now } }
+                    { status: "upcoming", startTime: { $lte: now } },
+                    { _id: { $in: openMatchIds }, status: "finished" }
                 ]
             };
+        }
             
         const matchesToSync = await Match.find(query);
 
@@ -106,17 +119,6 @@ export async function GET(req: NextRequest) {
                     );
                 }
             }
-
-            // --- Handle "Did Not Bat" Players ---
-            // Fetch all assignments for this match/innings that were NOT updated above
-            // We need to check both innings if liveData contains both, or just current.
-            // But simple approach: check assignments for the innings we just processed.
-            // Since liveData.batsmen might contain multiple innings, we should group by innings.
-
-            // Allow checking for players who were assigned but missed the database update above
-            // We iterate all assignments for this match. If their position/innings wasn't in updatedPositions (per innings),
-            // we assume they played but got 0 runs (did not bat).
-            // NOTE: We need to know which innings assignments belong to.
 
             // --- Handle "Did Not Bat" Players ---
             // Fetch all assignments for this match/innings that were NOT updated above
@@ -202,6 +204,7 @@ export async function GET(req: NextRequest) {
                     status: 'finished',
                     adminCommissionEarned
                 });
+                statusUpdates.push({ matchId: match._id.toString(), updated: true });
 
                 await notifyAdmins({
                     title: "Match Finished",
@@ -220,6 +223,7 @@ export async function GET(req: NextRequest) {
             } else if (match.status === 'upcoming') {
                 // Moving from upcoming to live
                 await Match.findByIdAndUpdate(match._id, { status: 'live' });
+                statusUpdates.push({ matchId: match._id.toString(), updated: true });
                 
                 await notifyAdmins({
                     title: "Match Live Now! 🏏",
@@ -234,12 +238,22 @@ export async function GET(req: NextRequest) {
                     type: 'match',
                     link: `/matches/${match._id}`
                 });
+            } else {
+                statusUpdates.push({ matchId: match._id.toString(), updated: false });
             }
+        }
+
+        const updatedCount = statusUpdates.filter(u => u.updated).length;
+        if (updatedCount > 0) {
+            await logSystemEvent('sync', 'success', `Synced ${matchesToSync.length} matches. ${updatedCount} status transitions performed.`);
+        } else {
+            await logSystemEvent('sync', 'success', `Heartbeat: Sync completed for ${matchesToSync.length} matches.`);
         }
 
         return NextResponse.json({ message: "Sync completed" });
     } catch (error: any) {
         console.error("Sync Error:", error);
+        await logSystemEvent('sync', 'error', `Sync failed: ${error.message}`);
         return NextResponse.json({ message: error.message }, { status: 500 });
     }
 }

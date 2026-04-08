@@ -183,8 +183,84 @@ export default function AdminDashboardPage() {
 
                 <div className="flex items-center justify-between px-2">
                     <h2 className="text-lg font-black text-white italic uppercase tracking-tight flex items-center gap-3">
-                        <Zap className="w-5 h-5 text-indigo-400" /> System <span className="text-indigo-400 font-black">Operations</span>
                     </h2>
+                </div>
+                
+                {/* SYSTEM HEALTH MONITOR - NEW */}
+                <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                    <div className="lg:col-span-1 space-y-4">
+                        <div className="bg-slate-950/40 border border-white/5 p-5 rounded-3xl backdrop-blur-xl">
+                            <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-4">Automation Heartbeat</h3>
+                            <div className="space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <div className={`w-2 h-2 rounded-full ${(data as any).systemHealth?.lastSync ? 'bg-emerald-500 shadow-[0_0_8px_#10b981]' : 'bg-slate-700 animate-pulse'}`} />
+                                        <span className="text-[10px] font-black text-white uppercase tracking-tight">Match Syncing</span>
+                                    </div>
+                                    <span className="text-[8px] font-bold text-slate-500 uppercase">
+                                        {(data as any).systemHealth?.lastSync ? new Date((data as any).systemHealth.lastSync).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Standby'}
+                                    </span>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <div className={`w-2 h-2 rounded-full ${(data as any).systemHealth?.lastReveal ? 'bg-indigo-500 shadow-[0_0_8px_#6366f1]' : 'bg-slate-700 animate-pulse'}`} />
+                                        <span className="text-[10px] font-black text-white uppercase tracking-tight">Slot Revealing</span>
+                                    </div>
+                                    <span className="text-[8px] font-bold text-slate-500 uppercase">
+                                        {(data as any).systemHealth?.lastReveal ? new Date((data as any).systemHealth.lastReveal).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Standby'}
+                                    </span>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <div className={`w-2 h-2 rounded-full ${(data as any).systemHealth?.lastSettle ? 'bg-purple-500 shadow-[0_0_8px_#a855f7]' : 'bg-slate-700 animate-pulse'}`} />
+                                        <span className="text-[10px] font-black text-white uppercase tracking-tight">Prize Settlement</span>
+                                    </div>
+                                    <span className="text-[8px] font-bold text-slate-500 uppercase">
+                                        {(data as any).systemHealth?.lastSettle ? new Date((data as any).systemHealth.lastSettle).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Standby'}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <button 
+                                onClick={async () => {
+                                    const confirm = window.confirm("Exhaustive Repair: This will scan ALL arenas and fix any missing data. Proceed?");
+                                    if(confirm) {
+                                        const res = await fetch('/api/admin/repair');
+                                        const json = await res.json();
+                                        if(res.ok) {
+                                            showToast(`Repair Successful: Fixed ${json.count} arenas`, "success");
+                                            fetchAnalytics();
+                                        }
+                                    }
+                                }}
+                                className="w-full mt-6 py-3 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 text-indigo-400 text-[9px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 group"
+                            >
+                                <Database className="w-3.5 h-3.5 group-hover:rotate-12 transition-transform" /> Trigger Global Repair
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="lg:col-span-3">
+                        <div className="bg-slate-900/40 border border-white/5 rounded-3xl p-5 backdrop-blur-xl">
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Maintenance Log</h3>
+                                <div className="text-[8px] font-black text-indigo-400 uppercase tracking-widest bg-indigo-500/10 px-2 py-1 rounded border border-indigo-500/10">Read Only Feed</div>
+                            </div>
+                            <div className="space-y-2">
+                                {(data as any).systemHealth?.logs?.length > 0 ? (data as any).systemHealth.logs.map((log: any) => (
+                                    <div key={log._id} className="flex items-center gap-4 bg-black/20 p-3 rounded-xl border border-white/5 group hover:border-white/10 transition-all">
+                                        <div className={`w-1.5 h-1.5 rounded-full ${log.status === 'success' ? 'bg-emerald-500' : 'bg-red-500'}`} />
+                                        <div className="flex-1">
+                                            <p className="text-[10px] font-bold text-slate-200 uppercase tracking-tight">{log.message}</p>
+                                            <p className="text-[8px] font-black text-slate-600 uppercase mt-0.5 tracking-widest">{log.type} // {new Date(log.timestamp).toLocaleTimeString()}</p>
+                                        </div>
+                                    </div>
+                                )) : (
+                                    <div className="h-32 flex items-center justify-center text-[10px] font-black text-slate-700 uppercase italic">Awaiting System Activity...</div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 {/* ACTION DESK - Top Tier Operations */}

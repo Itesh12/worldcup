@@ -5,6 +5,7 @@ import UserBattingAssignment from "@/models/UserBattingAssignment";
 import SlotScore from "@/models/SlotScore";
 import BattingResolution from "@/models/BattingResolution";
 import User from "@/models/User";
+import { revealArenaPositions } from "@/lib/revealLogic";
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
@@ -17,13 +18,25 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
             return NextResponse.json({ message: "Arena not found" }, { status: 404 });
         }
 
-        // 2. Fetch all Assignments for this arena (with User details)
+        // 2. SELF-HEALING: If revealTime has passed but arena is not revealed, reveal it now!
+        if (!arena.isRevealed) {
+            const now = new Date();
+            if (arena.revealTime && new Date(arena.revealTime) <= now) {
+                console.log(`Zero-Latency Fail-Safe: Automatically revealing ${arena.name} on view.`);
+                await revealArenaPositions(arenaId);
+                // Refresh arena metadata after reveal
+                const updatedArena = await Arena.findById(arenaId).populate('createdBy', 'name image');
+                if (updatedArena) Object.assign(arena, updatedArena.toObject());
+            }
+        }
+
+        // 3. Fetch all Assignments for this arena (with User details)
         const assignments = await UserBattingAssignment.find({ arenaId }).populate('userId', 'name image');
 
-        // 3. Fetch all Scores for the match associated with this arena
+        // 4. Fetch all Scores for the match associated with this arena
         const scores = await SlotScore.find({ matchId: arena.matchId });
 
-        // 4. Fetch all Resolutions (Cricketer Names) for the match
+        // 5. Fetch all Resolutions (Cricketer Names) for the match
         const resolutions = await BattingResolution.find({ matchId: arena.matchId });
 
         // 5. Construct Participant List & Data Map

@@ -10,6 +10,7 @@ import Transaction from "@/models/Transaction";
 import SubAdminConfig from "@/models/SubAdminConfig";
 import Arena from "@/models/Arena";
 import Tournament from "@/models/Tournament";
+import SystemLog from "@/models/SystemLog";
 
 export async function GET() {
     try {
@@ -175,6 +176,12 @@ export async function GET() {
             return tx;
         }));
 
+        // [5] System Health Monitor Data
+        const lastSync = await SystemLog.findOne({ type: 'sync', status: 'success' }).sort({ timestamp: -1 });
+        const lastReveal = await SystemLog.findOne({ type: 'reveal', status: 'success' }).sort({ timestamp: -1 });
+        const lastSettle = await SystemLog.findOne({ type: 'settle', status: 'success' }).sort({ timestamp: -1 });
+        const recentSystemLogs = await SystemLog.find().sort({ timestamp: -1 }).limit(5).lean();
+
         return NextResponse.json({
             actionDesk: {
                 pendingWithdrawals,
@@ -197,6 +204,12 @@ export async function GET() {
             },
             intelligence: {
                 tournamentStats
+            },
+            systemHealth: {
+                lastSync: lastSync?.timestamp || null,
+                lastReveal: lastReveal?.timestamp || null,
+                lastSettle: lastSettle?.timestamp || null,
+                logs: recentSystemLogs
             },
             auditFeed: latestTransactions
         });

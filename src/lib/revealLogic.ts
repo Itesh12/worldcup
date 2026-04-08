@@ -9,6 +9,7 @@ import UserMatchStats from "@/models/UserMatchStats";
 import SlotScore from "@/models/SlotScore";
 import Notification from "@/models/Notification";
 import { createNotification, notifyAdmins, notifyUsersInArena } from "./notificationLogic";
+import { logSystemEvent } from "./systemLogger";
 import mongoose from "mongoose";
 
 /**
@@ -136,6 +137,10 @@ export async function revealArenaPositions(arenaId: string) {
         });
 
         await mongooseSession.commitTransaction();
+
+        // Audit Log
+        await logSystemEvent('reveal', 'success', `Revealed positions for ${assignments.length} players in ${arena.name}`, arenaId);
+
         return { 
             message: `Successfully revealed ${assignments.length} positions for arena: ${arena.name}`,
             count: assignments.length,
@@ -144,6 +149,7 @@ export async function revealArenaPositions(arenaId: string) {
 
     } catch (error: any) {
         await mongooseSession.abortTransaction();
+        await logSystemEvent('reveal', 'error', `Failed to reveal arena ${arenaId}: ${error.message}`, arenaId);
         throw error;
     } finally {
         mongooseSession.endSession();
@@ -372,8 +378,10 @@ export async function settleArena(arenaId: string, providedSession?: mongoose.Cl
             }
         }
 
-        arena.status = 'completed';
         await arena.save({ session: mongooseSession });
+
+        // Audit Log
+        await logSystemEvent('settle', 'success', `Settled arena ${arena.name}. Winners notified.`, arenaId);
 
         // General Settlement Notification for All Participants
         await notifyUsersInArena(arenaId, {
@@ -388,6 +396,7 @@ export async function settleArena(arenaId: string, providedSession?: mongoose.Cl
 
     } catch (error: any) {
         if (!providedSession) await mongooseSession.abortTransaction();
+        await logSystemEvent('settle', 'error', `Failed to settle ${arenaId}: ${error.message}`, arenaId);
         throw error;
     } finally {
         if (!providedSession) mongooseSession.endSession();
