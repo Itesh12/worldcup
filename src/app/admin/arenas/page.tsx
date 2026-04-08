@@ -69,7 +69,7 @@ function ArenasContent() {
     
     // Filters
     const [searchQuery, setSearchQuery] = useState("");
-    const [roleFilter, setRoleFilter] = useState<"all" | "admin" | "subadmin">("all");
+    const [roleFilter, setRoleFilter] = useState<"all" | "admin" | "subadmin" | "player">("all");
     const [statusFilter, setStatusFilter] = useState<"all" | "upcoming" | "live" | "completed">("all");
     const [expandedMatches, setExpandedMatches] = useState<Record<string, boolean>>({});
 
@@ -213,8 +213,8 @@ function ArenasContent() {
                     <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Filter Matrix:</span>
                 </div>
                 
-                <div className="flex items-center gap-2">
-                    {['all', 'admin', 'subadmin'].map(f => (
+                <div className="flex flex-wrap items-center gap-2">
+                    {['all', 'admin', 'subadmin', 'player'].map(f => (
                         <button
                             key={f}
                             onClick={() => setRoleFilter(f as any)}
@@ -224,7 +224,7 @@ function ArenasContent() {
                                 : 'bg-white/5 border-transparent text-slate-500 hover:text-white'
                             }`}
                         >
-                            {f === 'admin' ? 'Official' : f === 'subadmin' ? 'Franchise' : 'All Agencies'}
+                            {f === 'admin' ? 'Official' : f === 'subadmin' ? 'Franchise' : f === 'player' ? 'Player' : 'All Agencies'}
                         </button>
                     ))}
                 </div>
@@ -266,11 +266,11 @@ function ArenasContent() {
                             >
                                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                                     <div className="flex items-center gap-6">
-                                        <div className="flex items-center -space-x-4">
+                                        <div className="flex items-center gap-3">
                                             <div className="w-14 h-14 rounded-2xl bg-slate-900 border-2 border-white/5 flex items-center justify-center overflow-hidden z-10 shadow-xl group-hover:border-indigo-500/50 transition-colors">
                                                 <span className="text-xl font-black text-white italic">{group.match.teams[0].shortName}</span>
                                             </div>
-                                            <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center z-20 shadow-lg border-2 border-[#0A0F1C]">
+                                            <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center z-20 shadow-lg border-2 border-[#0A0F1C] -mx-4">
                                                 <Zap className="w-5 h-5 text-white animate-pulse" />
                                             </div>
                                             <div className="w-14 h-14 rounded-2xl bg-slate-900 border-2 border-white/5 flex items-center justify-center overflow-hidden z-10 shadow-xl group-hover:border-indigo-500/50 transition-colors">
@@ -330,17 +330,19 @@ function ArenasContent() {
                                                 >
                                                     <div className="flex items-start justify-between gap-4 mb-4">
                                                         <div className="flex-1 min-w-0">
-                                                            <div className="flex items-center gap-2 mb-1.5 font-black uppercase tracking-widest">
                                                                 {arena.createdBy.role === 'admin' ? (
                                                                     <span className="flex items-center gap-1 text-[7px] text-indigo-400 bg-indigo-400/10 px-1.5 py-0.5 rounded border border-indigo-400/20">
                                                                         <ShieldCheck className="w-2.5 h-2.5" /> PLATFORM OFFICIAL
                                                                     </span>
-                                                                ) : (
+                                                                ) : arena.createdBy.role === 'subadmin' ? (
                                                                     <span className="flex items-center gap-1 text-[7px] text-purple-400 bg-purple-400/10 px-1.5 py-0.5 rounded border border-purple-400/20">
                                                                         <Building2 className="w-2.5 h-2.5" /> FRANCHISE UNIT
                                                                     </span>
+                                                                ) : (
+                                                                    <span className="flex items-center gap-1 text-[7px] text-emerald-400 bg-emerald-400/10 px-1.5 py-0.5 rounded border border-emerald-400/20">
+                                                                        <Users className="w-2.5 h-2.5" /> PLAYER PRIVATE
+                                                                    </span>
                                                                 )}
-                                                            </div>
                                                             <h4 className="text-sm font-black text-white italic uppercase truncate">{arena.name}</h4>
                                                         </div>
                                                         <div className={`p-2.5 rounded-xl ${arena.createdBy.role === 'admin' ? 'bg-indigo-600/10 text-indigo-400' : 'bg-purple-600/10 text-purple-400'}`}>
