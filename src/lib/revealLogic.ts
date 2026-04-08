@@ -265,6 +265,36 @@ export async function settleArena(arenaId: string, providedSession?: mongoose.Cl
         if (!arena) throw new Error("Arena not found");
         if (arena.status === 'completed') return { success: false, message: "Arena already settled" };
 
+        // SELF-HEALING: If arena was never revealed, reveal it now before settling
+        if (!arena.isRevealed) {
+            console.log(`Self-Healing: Arena ${arena.name} was not revealed. Triggering reveal before settlement.`);
+            // We can't easily call revealArenaPositions here because of nested transaction sessions
+            // So we manually perform the shuffle logic for this specific arena
+            const assignments = await UserBattingAssignment.find({ arenaId }).session(mongooseSession);
+            if (assignments.length > 0) {
+                const slotsPerInning1 = Math.ceil(arena.maxSlots / 2);
+                const slotPool = [];
+                for (let i = 1; i <= slotsPerInning1; i++) slotPool.push({ inningsNumber: 1, position: i });
+                for (let i = 1; i <= (arena.maxSlots - slotsPerInning1); i++) slotPool.push({ inningsNumber: 2, position: i });
+                
+                // Shuffle
+                for (let i = slotPool.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [slotPool[i], slotPool[j]] = [slotPool[j], slotPool[i]];
+                }
+
+                // Update assignments
+                for (let i = 0; i < assignments.length; i++) {
+                    assignments[i].inningsNumber = slotPool[i].inningsNumber;
+                    assignments[i].position = slotPool[i].position;
+                    await assignments[i].save({ session: mongooseSession });
+                }
+            }
+            arena.isRevealed = true;
+            arena.status = 'revealed';
+            await arena.save({ session: mongooseSession });
+        }
+
         const match = arena.matchId;
         if (!['finished', 'completed', 'result', 'settled'].includes(match.status)) {
             throw new Error(`Match is still ${match.status}. Cannot settle.`);
