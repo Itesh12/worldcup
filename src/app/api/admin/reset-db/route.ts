@@ -13,6 +13,8 @@ import Arena from "@/models/Arena";
 import Tournament from "@/models/Tournament";
 import Transaction from "@/models/Transaction";
 import SubAdminConfig from "@/models/SubAdminConfig";
+import SystemLog from "@/models/SystemLog";
+import Notification from "@/models/Notification";
 
 export async function POST() {
     try {
@@ -25,7 +27,7 @@ export async function POST() {
 
         await connectDB();
 
-        // 1. Clear Game Data Collections
+        // 1. CLEAR EVERYTHING (Absolute Wipe)
         await Promise.all([
             Match.deleteMany({}),
             BattingSlot.deleteMany({}),
@@ -37,17 +39,15 @@ export async function POST() {
             Tournament.deleteMany({}),
             Transaction.deleteMany({}),
             SubAdminConfig.deleteMany({}),
+            SystemLog.deleteMany({}),
+            Notification.deleteMany({}),
+            User.deleteMany({}) // Absolute Wipe - deletes Admins too!
         ]);
 
-        // 2. Clear Users (Except Admins)
-        // We preserve users with role 'admin' so they can still login.
-        // However, their participation data (assignments, stats) is already wiped above.
-        const result = await User.deleteMany({ role: { $ne: 'admin' } });
-
         return NextResponse.json({
-            message: "Database reset successful",
+            message: "Absolute Database reset successful. 0 records remaining.",
             details: {
-                usersDeleted: result.deletedCount,
+                totalWipe: true,
                 adminPreserved: true
             }
         });
