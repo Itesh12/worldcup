@@ -14,25 +14,31 @@ export const authOptions: NextAuthOptions = {
             },
             async authorize(credentials) {
                 if (!credentials?.email || !credentials?.password) {
+                    console.log("❌ [AUTH] Missing Credentials");
                     throw new Error("Invalid credentials");
                 }
 
                 await connectDB();
-                const user = await User.findOne({ email: credentials.email });
+                const user = await User.findOne({ email: credentials.email.toLowerCase().trim() });
 
                 if (!user || !user.password) {
+                    console.log(`❌ [AUTH] User not found: ${credentials.email}`);
                     throw new Error("User not found");
                 }
 
-                const isValid = await bcrypt.compare(credentials.password, user.password);
+                const isValid = await bcrypt.compare(credentials.password.trim(), user.password);
 
                 if (!isValid) {
+                    console.log(`❌ [AUTH] Password Mismatch for: ${credentials.email}`);
                     throw new Error("Invalid password");
                 }
 
                 if (user.isBanned) {
+                    console.log(`❌ [AUTH] Blocked (Banned): ${credentials.email}`);
                     throw new Error("Your account has been banned. Please contact support.");
                 }
+
+                console.log(`✅ [AUTH] Success: ${credentials.email} [${user.role}]`);
 
                 // Update Last Login
                 user.lastLogin = new Date();

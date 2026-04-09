@@ -5,12 +5,13 @@ import { useState, Suspense } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Loader2, Mail, Lock, CheckCircle, Trophy, ArrowRight, User } from "lucide-react";
+import { Loader2, Mail, Lock, CheckCircle, Trophy, ArrowRight, User, Eye, EyeOff } from "lucide-react";
 import { useToast } from "@/contexts/ToastContext";
 
 function LoginContent() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
     const { showToast } = useToast();
     const router = useRouter();
@@ -128,13 +129,20 @@ function LoginContent() {
                                     <Lock className="h-5 w-5 text-slate-500 group-focus-within:text-purple-500 transition-colors" />
                                 </div>
                                 <input
-                                    type="password"
+                                    type={showPassword ? "text" : "password"}
                                     required
-                                    className="w-full pl-11 pr-4 py-3.5 bg-slate-900/50 border border-slate-800 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all"
+                                    className="w-full pl-11 pr-12 py-3.5 bg-slate-900/50 border border-slate-800 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all"
                                     placeholder="••••••••"
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                 />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-500 hover:text-white transition-colors"
+                                >
+                                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                                </button>
                             </div>
                             <div className="flex justify-end">
                                 <Link href="/forgot-password" className="text-xs font-medium text-purple-400 hover:text-purple-300 transition-colors">

@@ -4,12 +4,13 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Key, ArrowLeft, Loader2 } from "lucide-react";
+import { Key, ArrowLeft, Loader2, Eye, EyeOff } from "lucide-react";
 
 export default function ForgotPasswordPage() {
     const [email, setEmail] = useState("");
     const [code, setCode] = useState("");
     const [newPassword, setNewPassword] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState("");
     const [success, setSuccess] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -102,14 +103,23 @@ export default function ForgotPasswordPage() {
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-slate-300 mb-2">New Password</label>
+                    <div className="relative group">
                         <input
-                            type="password"
+                            type={showPassword ? "text" : "password"}
                             required
-                            className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                            className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white pr-12 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                             placeholder="Enter new password"
                             value={newPassword}
                             onChange={(e) => setNewPassword(e.target.value)}
                         />
+                        <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-500 hover:text-white transition-colors"
+                        >
+                            {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                        </button>
+                    </div>
                     </div>
                     <button
                         type="submit"
