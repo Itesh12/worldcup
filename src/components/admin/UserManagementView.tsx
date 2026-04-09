@@ -153,7 +153,7 @@ export function UserManagementView({ initialUsers, subAdmins }: { initialUsers: 
                                         </div>
                                     </td>
                                     <td className="px-8 py-6">
-                                        {user.role === 'user' ? (
+                                        {(user.role === 'user' || user.role === 'player') ? (
                                             <div className="flex flex-col">
                                                 <span className="text-[10px] font-black text-white truncate">
                                                     {user.assignedSubAdminId?.name || "Unassigned"}
