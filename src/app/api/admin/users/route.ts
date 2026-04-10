@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
 
         await connectDB();
         
-        let query: any = { role: 'user' };
+        let query: any = { role: { $in: ['user', 'player'] } };
         
         // Role-Based Scoping: Sub-admins only see their assigned users
         if (user.role === 'subadmin') {

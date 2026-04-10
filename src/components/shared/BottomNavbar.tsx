@@ -17,7 +17,7 @@ export function BottomNavbar() {
   const { data: session } = useSession();
 
   // Only show for players (or if role is user)
-  const isPlayer = (session?.user as any)?.role === "user";
+  const isPlayer = (session?.user as any)?.role === "user" || (session?.user as any)?.role === "player";
   const isAdmin = (session?.user as any)?.role === "admin" || (session?.user as any)?.role === "subadmin";
 
   // If not logged in, don't show

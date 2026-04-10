@@ -76,12 +76,12 @@ export async function GET() {
 
         // [2] Financial Liability & Ecosystem
         const liabilityAgg = await User.aggregate([
-            { $match: { role: "user" } },
+            { $match: { role: { $in: ["user", "player"] } } },
             { $group: { _id: null, totalBalance: { $sum: "$walletBalance" } } }
         ]);
         const totalSystemLiability = liabilityAgg[0]?.totalBalance || 0;
 
-        const whales = await User.find({ role: "user" })
+        const whales = await User.find({ role: { $in: ["user", "player"] } })
             .select("name email walletBalance image")
             .sort({ walletBalance: -1 })
             .limit(3);
@@ -110,8 +110,8 @@ export async function GET() {
         }
         const globalFillRate = totalActiveSlots > 0 ? (activeAssignments / totalActiveSlots) * 100 : 0;
 
-        const reg24h = await User.countDocuments({ createdAt: { $gte: oneDayAgo }, role: "user" });
-        const reg7d = await User.countDocuments({ createdAt: { $gte: sevenDaysAgo }, role: "user" });
+        const reg24h = await User.countDocuments({ createdAt: { $gte: oneDayAgo }, role: { $in: ["user", "player"] } });
+        const reg7d = await User.countDocuments({ createdAt: { $gte: sevenDaysAgo }, role: { $in: ["user", "player"] } });
 
         // [3.5] Today's Match Stats
         const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);

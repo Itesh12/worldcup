@@ -46,7 +46,7 @@ export async function GET(req: NextRequest) {
 
         // 3. User Cash (Available Player Wallets)
         const userCashResult = await User.aggregate([
-            { $match: { role: 'user' } }, 
+            { $match: { role: { $in: ['user', 'player'] } } }, 
             { $group: { _id: null, total: { $sum: "$walletBalance" } } }
         ]);
         const totalUserCash = userCashResult[0]?.total || 0;

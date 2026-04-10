@@ -147,7 +147,7 @@ export async function POST(req: NextRequest) {
                     : (match.commissionPercentage || 5),
                 organizerCommissionPercentage: user.role === 'subadmin' || user.role === 'admin'
                     ? (organizerCommissionPercentage || 0)
-                    : (user.role === 'user' ? 2 : 0)
+                    : ((user.role === 'user' || user.role === 'player') ? 2 : 0)
             }], { session: mongooseSession });
 
             // 4. Auto-Join if Private

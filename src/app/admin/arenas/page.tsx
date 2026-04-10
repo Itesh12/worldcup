@@ -114,7 +114,8 @@ function ArenasContent() {
             const matchSearch = (arena.matchId.teams[0].name + arena.matchId.teams[1].name + arena.matchId.seriesName).toLowerCase();
             const matchesSearch = matchSearch.includes(searchQuery.toLowerCase());
             
-            const matchesRole = roleFilter === "all" || arena.createdBy.role === roleFilter;
+            const matchesRole = roleFilter === "all" || 
+                (roleFilter === "player" ? (arena.createdBy.role === "player" || arena.createdBy.role === "user") : arena.createdBy.role === roleFilter);
             const matchesStatus = statusFilter === "all" || arena.matchId.status === statusFilter;
             
             return matchesSearch && matchesRole && matchesStatus;

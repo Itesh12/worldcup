@@ -93,6 +93,7 @@ export function UserManagementDialogs({ user, subAdmins }: UserManagementProps) 
 
     const roleOptions = [
         { id: "user", label: "User", subLabel: "Standard platform access", icon: UserIcon },
+        { id: "player", label: "Player", subLabel: "Contest participation access", icon: Trophy },
         { id: "subadmin", label: "Sub-Admin", subLabel: "Franchise management access", icon: Shield },
     ];
 
@@ -246,7 +247,7 @@ export function UserManagementDialogs({ user, subAdmins }: UserManagementProps) 
                                             icon={ShieldCheck}
                                         />
 
-                                        {formData.role === 'user' && (
+                                        {(formData.role === 'user' || formData.role === 'player') && (
                                             <CustomDropdown
                                                 label="Linked Franchise"
                                                 options={subAdminOptions}

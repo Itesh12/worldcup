@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
         await connectDB();
 
         // 1. Get all available users
-        const users = await User.find({ role: 'user' });
+        const users = await User.find({ role: { $in: ['user', 'player'] } });
         if (users.length === 0) {
             return NextResponse.json({ message: "No users available for assignment" }, { status: 404 });
         }
